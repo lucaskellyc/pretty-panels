@@ -255,7 +255,7 @@ function DocPageView({
 const TIER_CODE: Record<Group, string> = { atoms: 'A', molecules: 'M', organisms: 'O' };
 
 /** The install command — shown in the hero CTA and echoed in Get started. */
-const INSTALL_CMD = 'npm install pretty-panels';
+const INSTALL_CMD = 'npm install github:lucaskellyc/pretty-panels';
 
 /** The home's primary call to action: copy the install command. Styled as a
  *  recessed track; the trailing label flips to "copied" briefly on success. */

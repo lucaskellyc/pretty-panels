@@ -1,8 +1,7 @@
 # pretty-panels
 
 A tiny, themeable React component library of control-panel UI — plates,
-capsule tracks, collapsible sections. Ported and decoupled from
-[Totem Studio](../totem-studio).
+capsule tracks, collapsible sections.
 
 - **6 components**, ~0 runtime dependencies (React is a peer dep).
 - **Fully controlled** — you own the state; every component is a pure function of props.
@@ -12,7 +11,7 @@ capsule tracks, collapsible sections. Ported and decoupled from
 ## Install
 
 ```bash
-npm install pretty-panels
+npm install github:lucaskellyc/pretty-panels
 ```
 
 ## Usage

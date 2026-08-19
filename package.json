@@ -1,7 +1,7 @@
 {
   "name": "pretty-panels",
   "version": "0.1.0",
-  "description": "A tiny, themeable React component library of control-panel UI — grey plates, capsule tracks, collapsible sections. Ported from Totem Studio.",
+  "description": "A tiny, themeable React component library of control-panel UI — grey plates, capsule tracks, collapsible sections.",
   "type": "module",
   "license": "MIT",
   "author": "Kelly",
@@ -37,7 +37,8 @@
     "build": "vite build",
     "build:demo": "vite build --config vite.demo.config.ts",
     "preview": "vite preview --config vite.demo.config.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
