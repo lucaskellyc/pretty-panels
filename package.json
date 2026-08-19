@@ -1,6 +1,6 @@
 {
   "name": "pretty-panels",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "A tiny, themeable React component library of control-panel UI — grey plates, capsule tracks, collapsible sections.",
   "type": "module",
   "license": "MIT",

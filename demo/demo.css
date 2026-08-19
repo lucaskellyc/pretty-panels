@@ -51,6 +51,10 @@
   --doc-radius-xl: 40px;
   --doc-radius-pill: 9999px;
   --doc-sidebar-w: 210px;
+  /* One source of truth for the readable column width, shared by every page
+     (home + component docs). It's a cap — content always shrinks to fit a
+     narrower viewport. */
+  --doc-content-w: 720px;
 }
 
 /* ---- Dark (when the OS prefers it) ---- */
@@ -232,11 +236,16 @@ body {
 
 /* ---- Content ---- */
 .content {
+  /* min-width: 0 lets the 1fr grid track shrink below its content's intrinsic
+     width. Without it a wide child (props table, code block, example panel)
+     forces the column past the viewport, so the readable width would drift with
+     the page's content. This keeps it stable and always within the viewport. */
+  min-width: 0;
   padding: 64px 56px 112px;
   transition: opacity 240ms ease;
 }
 .doc {
-  max-width: 720px;
+  max-width: var(--doc-content-w);
   margin: 0 auto;
   /* Lift the page article into its own view-transition snapshot so it can slide
      + scale independently, while the persistent sidebar just cross-fades. */
@@ -249,7 +258,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  max-width: 720px;
+  max-width: var(--doc-content-w);
   margin: 72px auto 0;
   padding-top: 24px;
   border-top: 2px solid var(--doc-border-quiet);
@@ -375,8 +384,9 @@ body {
 }
 .doc-example .panel {
   /* Set the width variable (not `width`) so a collapsed panel can still shrink
-     to `fit-content`. */
-  --panel-w: 340px;
+     to `fit-content`. min() caps it at the well's width so it never overflows a
+     narrow viewport. */
+  --panel-w: min(340px, 100%);
   box-shadow: var(--doc-shadow-panel);
 }
 
@@ -495,9 +505,9 @@ body {
    mark. Boldness lives here; everything below stays quiet.
    ============================================================ */
 
-/* The home breaks out of the 720px article width so the catalog can breathe. */
+/* Home shares the same readable width as the component pages. */
 .home {
-  max-width: 1040px;
+  max-width: var(--doc-content-w);
   margin: 0 auto;
 }
 
@@ -585,6 +595,7 @@ body {
   justify-content: space-between;
   gap: 10px;
   width: 100%;
+  max-width: 100%;
   padding: 13px 15px;
   border: 0;
   border-radius: var(--doc-radius-md);
@@ -606,6 +617,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  /* min-width: 0 lets this flex item shrink so `overflow: hidden` can clip a
+     long command instead of stretching the button past the poster. */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

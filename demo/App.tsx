@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { pages, PropsTable, type DocPage, type Group } from './pages';
-import { Panel, Slider, Toggle, Vector } from '../src';
+import { Panel, Slider, Vector } from '../src';
 import { version } from '../package.json';
 
 const GITHUB = (
@@ -14,10 +14,9 @@ const GITHUB = (
 function Footer() {
   return (
     <footer className="doc-footer">
-      {/* Placeholder — point this at the real repo once it's published. */}
       <a
         className="doc-footer-link"
-        href="https://github.com/pretty-panels/pretty-panels"
+        href="https://github.com/lucaskellyc/pretty-panels"
         target="_blank"
         rel="noreferrer"
       >
@@ -254,36 +253,8 @@ function DocPageView({
  *  taxonomy — the atomic level it sits at — so the code encodes something true. */
 const TIER_CODE: Record<Group, string> = { atoms: 'A', molecules: 'M', organisms: 'O' };
 
-/** The install command — shown in the hero CTA and echoed in Get started. */
+/** The install command, shown in the "Get started" section. */
 const INSTALL_CMD = 'npm install github:lucaskellyc/pretty-panels';
-
-/** The home's primary call to action: copy the install command. Styled as a
- *  recessed track; the trailing label flips to "copied" briefly on success. */
-function CopyInstall() {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard?.writeText(INSTALL_CMD);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* Clipboard blocked — the command stays visible to copy by hand. */
-    }
-  };
-  return (
-    <button
-      type="button"
-      className={`hero-cta${copied ? ' is-copied' : ''}`}
-      onClick={copy}
-      aria-label={`Copy install command: ${INSTALL_CMD}`}
-    >
-      <span className="cta-cmd">
-        <span className="cta-prompt" aria-hidden="true">$</span> {INSTALL_CMD}
-      </span>
-      <span className="cta-copy">{copied ? 'copied' : 'copy'}</span>
-    </button>
-  );
-}
 
 /** The stacked pretty-panels monogram, as its glyph paths in a 131×120 user
  *  space. Kept as a constant so the mark's markup below stays legible. */
@@ -360,7 +331,7 @@ function HeroMark({
  *  it. Tagline, install CTA, and the spec strip round out the card. */
 function HeroPoster() {
   const [angle, setAngle] = useState(135);
-  const [highlight, setHighlight] = useState(true);
+  const [highlight] = useState(true);
   // Seeded to the mark's poster purple (#C792EA); the color vector repaints it live.
   const [color, setColor] = useState([199, 146, 234]);
 
@@ -396,8 +367,6 @@ function HeroPoster() {
         Panel plates, capsule tracks, collapsible sections. Fully controlled, zero
         runtime dependencies.
       </p>
-
-      <CopyInstall />
 
       <div className="hero-specs">
 
