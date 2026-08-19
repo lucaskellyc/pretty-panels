@@ -14,8 +14,8 @@ A running log of bugs and rough edges found in the codebase. File references are
 
 2. ✅ **Fixed (v0.1.0-alpha).** ~~`npm run typecheck` fails.~~ Removed the unused
    `Toggle` import, the dead `CopyInstall` function, and the unused `setHighlight`
-   setter; `tsc --noEmit` is clean. (Still worth adding a `typecheck` step to CI —
-   nothing runs it automatically, so a future regression would again be silent.)
+   setter; `tsc --noEmit` is clean. `.github/workflows/ci.yml` now runs `typecheck`
+   + build on every push and PR, so a regression won't be silent.
 
 ## Incomplete / dead code (_WIP_)
 
@@ -24,10 +24,9 @@ A running log of bugs and rough edges found in the codebase. File references are
    the hero copy-to-clipboard CTA (`CopyInstall`) was dead; it's been removed. If the
    fancy copy-button belongs back in the hero, re-add it and its `.hero-cta` CSS.
 
-4. **Hero highlight rim is permanently on.** The unused `setHighlight` setter was
-   removed, but the toggle control that used to drive it is still gone, so the mark's
-   rim highlight is always on. `HeroPoster`'s doc comment (`demo/App.tsx`) still
-   describes a "highlight toggle" — either restore the control or update the comment.
+4. ✅ **Fixed (v0.1.0-alpha).** ~~Hero highlight rim is permanently on.~~ Restored
+   the `Highlight` toggle in the hero Inspector (it drives `setHighlight` again) and
+   corrected the stale doc comment.
 
 5. **Dead committed assets.** `demo/hero_bg.jpg` and `demo/hero_logo.svg` are not
    referenced anywhere (the hero uses inline SVG paths). They ship for nothing.
@@ -37,10 +36,8 @@ A running log of bugs and rough edges found in the codebase. File references are
 
 ## Consistency / drift
 
-7. **Hardcoded version strings.** The brand badge `v0.1` (`demo/App.tsx:152`) and
-   hero spec `v0.1.0` (`demo/App.tsx:408`) are hardcoded, while `version` is
-   imported from `package.json` and used in the Footer. These drift on the next
-   version bump.
+7. ✅ **Fixed (v0.1.0-alpha).** ~~Hardcoded version strings.~~ The brand badge and
+   hero spec strip now read `version` from `package.json`, matching the Footer.
 
 8. **`Section` has no controlled API.** `Panel` supports both controlled and
    uncontrolled collapse, but `Section` (`src/components/Section.tsx:11`) is

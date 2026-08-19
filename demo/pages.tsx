@@ -19,8 +19,9 @@ export interface DocPage {
   name: string;
   group: Group;
   summary: string;
-  /** A self-contained, interactive demo of the component. */
-  Example: FC;
+  /** A self-contained, interactive demo of the component. Omit to hide the
+   *  Example section on that page. */
+  Example?: FC;
   props: PropRow[];
 }
 
@@ -269,31 +270,6 @@ function VectorExample() {
   );
 }
 
-function PanelExample() {
-  const [gain, setGain] = useState(0.6);
-  const [grid, setGrid] = useState(true);
-  const [exposure, setExposure] = useState(0.4);
-  return (
-    <div className="doc-stack">
-      <Panel title="With header">
-        <Slider label="gain" value={gain} min={0} max={1} step={0.01} onChange={setGain} />
-        <Toggle checked={grid} onChange={setGrid} label="Grid" />
-      </Panel>
-      <Panel title="Collapsible" collapsible>
-        <Slider
-          label="exposure"
-          value={exposure}
-          min={0}
-          max={1}
-          step={0.01}
-          onChange={setExposure}
-        />
-        <p className="doc-note">Hit the − to fold this into a title capsule; + reopens it.</p>
-      </Panel>
-    </div>
-  );
-}
-
 function SectionExample() {
   const [focus, setFocus] = useState(42);
   const [gain, setGain] = useState(0.6);
@@ -392,7 +368,7 @@ export const pages: DocPage[] = [
     slug: 'vector',
     name: 'Vector',
     group: 'atoms',
-    summary: 'A capsule of fused numeric fields — one per value entry (2, 3, or 4). Drag a field vertically to scrub or type a value; color mode paints each field with its live rgb.',
+    summary: 'A segmented capsule with 2, 3, or 4 numeric fields. Drag a field vertically to scrub or type a value; color mode paints each field with its live rgb.',
     Example: VectorExample,
     props: [
       { name: 'value', type: 'number[]', required: true, description: 'The field values. The capsule renders one field per entry — use 2, 3, or 4.' },
@@ -407,16 +383,15 @@ export const pages: DocPage[] = [
     slug: 'panel',
     name: 'Panel',
     group: 'organisms',
-    summary: 'A static control-panel plate: the grey surface with an optional header bar and a padded body. Use it to group controls anywhere. Optionally collapses into a title capsule.',
-    Example: PanelExample,
+    summary: 'A static control-panel plate: the grey surface with an optional header bar and a padded body. Use it to group controls anywhere. Optionally folds its body away while keeping the plate width.',
     props: [
       { name: 'children', type: 'ReactNode', required: true, description: 'The panel body content.' },
       { name: 'title', type: 'ReactNode', description: 'Optional header bar. A string renders bold; pass a node for custom markup.' },
-      { name: 'collapsible', type: 'boolean', default: 'false', description: 'Show a header −/+ toggle that collapses the plate into a title capsule.' },
+      { name: 'collapsible', type: 'boolean', default: 'false', description: "Show a header −/+ toggle that folds the plate's body away." },
       { name: 'collapsed', type: 'boolean', description: 'Collapsed state (controlled). Pair with onCollapsedChange; omit to use defaultCollapsed.' },
       { name: 'defaultCollapsed', type: 'boolean', default: 'false', description: 'Start collapsed (uncontrolled). Only meaningful with collapsible.' },
       { name: 'onCollapsedChange', type: '(collapsed: boolean) => void', description: 'Called with the next state when the collapse toggle is clicked.' },
-      { name: 'width', type: 'number | string', default: '380px', description: 'Plate width. Dropped while collapsed so the capsule hugs its title.' },
+      { name: 'width', type: 'number | string', default: '380px', description: 'Plate width. Unchanged while collapsed — only the body folds away.' },
       { name: 'className', type: 'string', description: 'Extra class names on the plate.' },
       { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the plate.' },
     ],

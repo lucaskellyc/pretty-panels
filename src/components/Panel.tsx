@@ -9,10 +9,10 @@ import {
 export interface PanelProps {
   /** Optional header bar. A string renders bold; pass a node for custom markup. */
   title?: ReactNode;
-  /** Plate width (default 380px from the stylesheet). While collapsed the plate
-   *  animates down to hug its header. */
+  /** Plate width (default 380px from the stylesheet). Unchanged while collapsed —
+   *  collapsing only folds the body away. */
   width?: number | string;
-  /** Show a header toggle (−/+) that collapses the plate into a title capsule. */
+  /** Show a header toggle (−/+) that folds the plate's body away. */
   collapsible?: boolean;
   /** Collapsed state (controlled). Pair with `onCollapsedChange`; omit for
    *  uncontrolled behavior via `defaultCollapsed`. */
@@ -40,8 +40,8 @@ const PLUS = (
 /**
  * A static control-panel plate — the grey `.panel` surface with an optional
  * header bar and a padded body. Use it to group controls anywhere in a layout.
- * With `collapsible`, the header grows a −/+ toggle that folds the plate down to
- * a title capsule.
+ * With `collapsible`, the header grows a −/+ toggle that folds the body away
+ * while the plate keeps its width.
  */
 export function Panel({
   title,
@@ -61,40 +61,26 @@ export function Panel({
   const showHead = title != null || collapsible;
 
   const panelRef = useRef<HTMLDivElement>(null);
-  const headRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 
-  // Collapse animates between fixed pixel sizes rather than intrinsic keywords,
-  // so measure the two dynamic endpoints and expose them as custom properties:
-  //   --panel-collapsed-w  the header's hug width (+ plate borders)
-  //   --panel-body-h       the body's natural height at its fixed width
-  // The body content is laid out at a fixed width (never reflows), so we observe
-  // only the inner — its size is stable during the collapse, so this never runs
-  // mid-animation. The header is measured by momentarily letting it hug.
+  // Collapse folds the body away vertically while the plate keeps its width, so
+  // measure the body's natural height and expose it as --panel-body-h for the
+  // height animation. The content is laid out at a fixed width (never reflows),
+  // so observing the inner catches only genuine content-size changes, not the
+  // collapse animation itself.
   useLayoutEffect(() => {
     if (!collapsible) return;
     const panel = panelRef.current;
     const inner = innerRef.current;
-    if (!panel) return;
+    if (!panel || !inner) return;
 
     const measure = () => {
-      const head = headRef.current;
-      if (head) {
-        const prev = head.style.width;
-        head.style.width = 'max-content';
-        const hug = head.getBoundingClientRect().width;
-        head.style.width = prev;
-        const border = parseFloat(getComputedStyle(panel).borderLeftWidth) || 0;
-        panel.style.setProperty('--panel-collapsed-w', `${Math.ceil(hug + border * 2)}px`);
-      }
-      if (inner) {
-        panel.style.setProperty('--panel-body-h', `${inner.offsetHeight}px`);
-      }
+      panel.style.setProperty('--panel-body-h', `${inner.offsetHeight}px`);
     };
 
     measure();
     const ro = new ResizeObserver(measure);
-    if (inner) ro.observe(inner);
+    ro.observe(inner);
     window.addEventListener('resize', measure);
     return () => {
       ro.disconnect();
@@ -116,16 +102,16 @@ export function Panel({
   ]
     .filter(Boolean)
     .join(' ');
-  // Drive the plate width through a custom property so the `.is-collapsed` rule
-  // can override it (an inline `width` couldn't be beaten by a class), and so the
-  // collapse can animate between the two.
+  // Drive the plate width through a custom property so a stylesheet can theme it
+  // (an inline `width` couldn't be beaten by a class). Collapsing leaves the
+  // width untouched — only the body folds away.
   const w = typeof width === 'number' ? `${width}px` : width;
   const mergedStyle = { ...(w != null ? { '--panel-w': w } : null), ...style } as CSSProperties;
 
   return (
     <div ref={panelRef} className={cls} style={mergedStyle}>
       {showHead && (
-        <div ref={headRef} className="panel-head">
+        <div className="panel-head">
           {title != null && (typeof title === 'string' ? <b>{title}</b> : title)}
           {collapsible && (
             <button

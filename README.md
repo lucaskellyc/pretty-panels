@@ -1,11 +1,11 @@
-# pretty-panels
+# PrettyPanels
 
-A tiny, themeable React component library of control-panel UI — plates,
-capsule tracks, collapsible sections.
+A lightweight, themeable React component library for control-panel UIs.
 
-- **6 components**, ~0 runtime dependencies (React is a peer dep).
+**[Full documentation →](https://lucaskellyc.github.io/pretty-panels/)**
+
+- **8 components**, 0 runtime dependencies (React is a peer dep).
 - **Fully controlled** — you own the state; every component is a pure function of props.
-- **Soft light-gray look** — light plates, recessed capsule tracks, a warm gold accent.
 - Ships an ESM + CJS bundle, TypeScript types, and one stylesheet.
 
 ## Install
@@ -66,7 +66,7 @@ Grouped by kind, mirroring the documentation site:
 
 | Component  | What it is                                          |
 | ---------- | --------------------------------------------------- |
-| `Panel`    | Plate with optional header + padded body; collapses to a capsule. |
+| `Panel`    | Plate with optional header + padded body; collapsibly folds its body away. |
 | `Section`  | Collapsible titled section (smooth wipe).           |
 | `Platter`  | Capsule tray of icon / text buttons, row or column. |
 

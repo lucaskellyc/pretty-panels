@@ -14,27 +14,10 @@
   box-shadow: var(--shadow-inset);
   overflow: hidden;
 }
-/* Collapsible plates animate between fixed pixel sizes (measured in JS and
-   exposed as --panel-collapsed-w / --panel-body-h), so the morph never reflows
-   the content — the plate/body just clip the fixed-width inner. `interpolate-size`
-   is inert for the normal px↔px case, and only rescues the `fit-content`/`auto`
-   fallbacks (pre-measurement) so the width/height still animate. */
-.panel.is-collapsible {
-  interpolate-size: allow-keywords;
-  transition: width var(--dur-slow) var(--ease-out),
-              border-radius var(--dur-slow) var(--ease-out);
-}
-/* Collapsed — the plate shrinks to hug just its header, as a capsule.
-   `fit-content` is the pre-measurement fallback for --panel-collapsed-w. */
-.panel.is-collapsed {
-  width: var(--panel-collapsed-w, fit-content);
-  border-radius: var(--radius-pill);
-}
 
 .panel-body {
-  /* Fill the plate without widening it (percent min-width + zero width don't
-     count toward the plate's intrinsic size), so the `fit-content` fallback hugs
-     the header instead of the body's content. */
+  /* Fill the plate's width without adding to its intrinsic size (percent
+     min-width + zero width). */
   width: 0;
   min-width: 100%;
   background: transparent;
@@ -48,14 +31,14 @@
   transition: height var(--dur-slow) var(--ease-out),
               margin var(--dur-slow) var(--ease-out);
 }
-/* Body clips away as the plate folds to its header. */
+/* Body clips away as it folds shut. */
 .panel.is-collapsed .panel-body {
   height: 0;
   margin-bottom: 0;
 }
 
 /* The content lives at a fixed width (= plate content width) so it never reflows
-   while the plate animates; the body simply clips it. */
+   while the body folds; the body simply clips it. */
 .panel-body-inner {
   width: calc(var(--panel-w, 380px) - 2 * var(--border-width-thick));
   padding: var(--space-2) var(--space-4);
