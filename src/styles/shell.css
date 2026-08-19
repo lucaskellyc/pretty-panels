@@ -1,0 +1,189 @@
+/* ============================================================
+   pretty-panels · Shell layer
+   Layout chrome around the plates: the static panel header, the round icon
+   button, and the collapse animation that folds a Section body.
+   ============================================================ */
+
+/* ---- Static panel header (Panel `title`) ---- */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 10px var(--space-3);
+  user-select: none;
+  --webkit-user-select: none;
+}
+.panel-head b {
+  font: var(--type-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  color: var(--ctl-text);
+}
+/* Collapse toggle (Panel `collapsible`) — a compact −/+ pinned to the header's
+   top-right (margin-left:auto keeps it right even with no title). */
+.panel-collapse-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ctl-text);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.panel-collapse-btn:hover { background: var(--ctl-bar); }
+.panel-collapse-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.panel-collapse-btn svg { display: block; }
+
+/* ---- Round icon button (IconButton) ---- */
+.pp-round-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: var(--border-width-thick) solid var(--ctl-panel);
+  border-radius: 50%;
+  background: var(--ctl-panel);
+  color: var(--ctl-text);
+  cursor: pointer;
+  user-select: none;
+  --webkit-user-select: none;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+.pp-round-btn:hover { background: var(--ctl-bar); }
+.pp-round-btn svg { display: block; }
+.pp-round-btn.is-active {
+  background: var(--ctl-accent);
+  border-color: var(--ctl-accent);
+  color: var(--ctl-on-track);
+}
+.pp-round-btn.is-active:hover { background: var(--ctl-accent-hover); border-color: var(--ctl-accent-hover); }
+.pp-round-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.pp-round-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---- Text button (TextButton) ----
+   IconButton's text-label sibling: a capsule that hugs its label on the same
+   plate ground, lighting up on hover and painting the accent when active. */
+.pp-text-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 var(--space-4);
+  border: var(--border-width-thick) solid var(--ctl-panel);
+  border-radius: var(--radius-pill);
+  background: var(--ctl-panel);
+  color: var(--ctl-text);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  --webkit-user-select: none;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+.pp-text-btn svg { display: block; }
+.pp-text-btn:hover { background: var(--ctl-bar); border-color: var(--ctl-bar); }
+.pp-text-btn.is-active {
+  background: var(--ctl-accent);
+  border-color: var(--ctl-accent);
+  color: var(--ctl-on-track);
+}
+.pp-text-btn.is-active:hover {
+  background: var(--ctl-accent-hover);
+  border-color: var(--ctl-accent-hover);
+}
+.pp-text-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.pp-text-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---- Button platter (Platter) ----
+   A recessed capsule tray holding a row or column of icon / text segments.
+   The tray sinks like a slider track; segments sit flush, lighten toward the
+   bar on hover, and paint the accent when active. */
+.pp-platter {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--ctl-track);
+  border-radius: var(--radius-pill);
+  width: fit-content;
+  user-select: none;
+  --webkit-user-select: none;
+}
+/* Horizontal, the pill radius resolves to half the tray height — already
+   concentric with the item pills (item radius + padding). Vertical, a pill
+   would clamp to half the tray *width*, so pin the corners to the same
+   item-radius + padding to keep them concentric. */
+.pp-platter.is-vertical {
+  flex-direction: column;
+  border-radius: calc(var(--control-sm) / 2 + var(--space-1));
+}
+
+.pp-platter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: var(--control-sm);
+  height: var(--control-sm);
+  padding: 0 var(--space-1);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ctl-on-track);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+/* Text segments hug their label with a little breathing room; icon-only ones
+   stay square via `min-width`. */
+.pp-platter-btn.has-text { padding: 0 var(--space-3); }
+.pp-platter-btn svg { display: block; }
+.pp-platter-btn:hover { background: var(--ctl-bar); }
+.pp-platter-btn.is-active { background: var(--ctl-accent); }
+.pp-platter-btn.is-active:hover { background: var(--ctl-accent-hover); }
+.pp-platter-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.pp-platter-btn:disabled { opacity: 0.5; cursor: default; }
+.pp-platter-btn:disabled:hover { background: transparent; }
+
+/* ---- Slide-collapse (Section body) ----
+   Folds a body open<->closed without measuring its height, by animating the
+   grid track from 1fr to 0fr. The clip child hides overflow and fades out so
+   the reveal reads as a subtle wipe. Bodies stay mounted so there is something
+   to animate. */
+.collapsible {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-slow) var(--ease-out);
+}
+.collapsible.is-collapsed { grid-template-rows: 0fr; }
+.collapsible > .collapsible-clip {
+  overflow: hidden;
+  min-height: 0;
+  /* The wipe needs `overflow: hidden`, which would otherwise shave the focus
+     ring off controls that span the body's full width. Widen the clip box by the
+     ring's reach and pull it back with a matching negative margin, so the body
+     stays flush while the ring has room to paint. Vertical overflow (the wipe)
+     is unaffected; the section's side padding absorbs the overhang. */
+  margin-inline: -4px;
+  padding-inline: 4px;
+  opacity: 1;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.collapsible.is-collapsed > .collapsible-clip { opacity: 0; }

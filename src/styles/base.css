@@ -1,0 +1,29 @@
+/* ============================================================
+   pretty-panels · Minimal reset
+   Intentionally non-invasive: the components need border-box sizing, but we do
+   NOT touch <body> background / color / font so importing the library never
+   hijacks the host page. Retint by overriding the --ctl-* tokens (colors.css).
+   ============================================================ */
+
+.panel *,
+.panel *::before,
+.panel *::after,
+.switch-row,
+.switch-row *,
+.pp-round-btn,
+.pp-round-btn *,
+.pp-text-btn,
+.pp-text-btn * {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* `!important` so this wins over the component transitions, which are defined
+     in later-imported layers (equal specificity would otherwise beat this). */
+  .collapsible,
+  .collapsible > .collapsible-clip,
+  .panel,
+  .panel-body {
+    transition: none !important;
+  }
+}

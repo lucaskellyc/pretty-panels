@@ -1,0 +1,14 @@
+/* ============================================================
+   pretty-panels · Stylesheet entry point
+   Consumers link THIS file (published as `pretty-panels/styles.css`).
+   Tokens first, then the base reset, then the component + shell layers.
+   ============================================================ */
+
+@import url("./fonts.css");
+@import url("./colors.css");
+@import url("./spacing.css");
+@import url("./typography.css");
+@import url("./effects.css");
+@import url("./base.css");
+@import url("./panels.css");
+@import url("./shell.css");

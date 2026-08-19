@@ -1,0 +1,40 @@
+/* ============================================================
+   pretty-panels · Spacing, sizing, radius
+   4px grid; capsule + rounded-panel radii.
+   ============================================================ */
+
+:root {
+  /* base grid */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* radii — soft: capsules and rounded panels */
+  --radius-0: 0px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 25px;   /* panel corners */
+  --radius-pill: 999px;
+
+  /* control heights */
+  --control-sm: 26px;
+  --control-md: 32px;
+  --control-lg: 40px;
+
+  /* borders */
+  --border-width: 1px;
+  --border-width-thick: 2px;
+
+  /* z-index */
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-overlay: 1000;
+}

@@ -1,0 +1,41 @@
+/* ============================================================
+   pretty-panels · Color tokens
+   The control-panel language: soft cool blue-gray plates, capsule tracks that
+   recess into them, and a warm gold accent. Everything the components paint with
+   comes from the --ctl-* set, so you can retheme by overriding these properties.
+   ============================================================ */
+
+:root {
+  /* accent (drives focus rings + the control accent) */
+  --accent:         #b17806;
+  --accent-hover:   #cd8b06;
+
+  /* semantic hues */
+  --success: #22E36C;
+  --danger:  #FF5F52;
+  --warning: #F6B93B;
+  --info:    #34D6CE;
+
+  /* ---- Panel & control surfaces ----
+     Cool blue-tinted grays (hue ~214). Value ordering gives depth on a flat
+     (shadowless) theme: sections and the header bar sit a touch below the plate,
+     and capsule tracks recess furthest. The accent stays warm gold. */
+  --ctl-panel:            hsl(55 45% 90%);   /* panel plate                    */
+  --ctl-bar:              hsl(55 36% 72%);   /* header bar / menus / zebra rows */
+  --ctl-section:          hsl(55 36% 66%);   /* collapsible section plate       */
+  --ctl-row-hover:        hsl(45 25% 66%);   /* list row hover                  */
+  --ctl-track:            hsl(45 36% 62%);   /* slider / field / btn capsule    */
+  --ctl-track-hover:      hsl(45 25% 67%);
+  --ctl-deep-hover:       hsl(45 25% 62%);   /* hover inside recessed tracks    */
+  --ctl-accent:           var(--accent);
+  --ctl-accent-hover:     var(--accent-hover);
+  --ctl-text:             hsl(45 22% 15%);   /* text on panel plates            */
+  --ctl-hint:             hsl(45 12% 46%);   /* secondary hint text             */
+  --ctl-on-track:         hsl(45 22% 95%);   /* text/icons on track capsules    */
+  --ctl-switch-off:       hsl(45 16% 54%);   /* switch capsule, off             */
+  --ctl-switch-off-hover: hsl(45 15% 48%);
+  --ctl-knob-off:         hsl(45 13% 77%);   /* off knob reads against the track */
+  --ctl-knob-off-hover:   hsl(45 13% 82%);
+  --ctl-knob-on:          #FFFFFF;            /* on knob lights up white on gold  */
+  --ctl-meter-fill:       hsl(45 14% 75%);   /* read-only meter fill            */
+}

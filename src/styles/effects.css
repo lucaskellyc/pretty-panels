@@ -1,0 +1,23 @@
+/* ============================================================
+   pretty-panels · Effects — shadow, focus, motion
+   Flat theme: elevation via borders + faint inner light, an accent
+   ring reserved for focus.
+   ============================================================ */
+
+:root {
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  /* Gentle lit top edge on the panel plate (flat theme's "faint inner light"). */
+  --shadow-inset: inset 0 1px 4px white;
+
+  /* Inner gap matches the plate so the accent ring floats clear of the control. */
+  --focus-ring: 0 0 0 2px var(--ctl-panel), 0 0 0 3px var(--accent);
+
+  /* motion — snappy, mechanical, no bounce */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 90ms;
+  --dur-base: 150ms;
+  --dur-slow: 240ms;
+}

@@ -1,0 +1,870 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400..700&display=swap");
+
+/* Docs-site chrome only — not part of the published library. The look is ported
+   from ../my-design-system (surface/shadow treatments), retinted pink, with a
+   Plus Jakarta Sans display face over Inter body. It skins the PAGE only — the
+   pretty-panels components keep their own fixed look. Light and dark palettes
+   follow the OS `prefers-color-scheme`. */
+
+/* ---- Light (the default) ---- */
+:root {
+  color-scheme: light;
+
+  /* Retint the whole chrome by moving these two hues. Currently a soft pink. */
+  --doc-hue-neutral: 280;
+  --doc-hue-accent: 300;
+
+  /* A deeper canvas under brighter cards and darker text — wider value range
+     than the design-system's soft pastel, so elevation and copy read clearly. */
+  --doc-bg: hsl(var(--doc-hue-neutral) 38% 84%);
+  --doc-surface: hsl(calc(var(--doc-hue-neutral) + 2) 54% 92%);
+  --doc-surface-recessed: hsl(calc(var(--doc-hue-neutral) - 2) 32% 80%);
+  --doc-heading: hsl(calc(var(--doc-hue-neutral) - 10) 40% 14%);
+  --doc-text: hsl(calc(var(--doc-hue-neutral) - 10) 40% 14%);
+  --doc-quiet: hsl(calc(var(--doc-hue-neutral) - 10) 24% 40%);
+  --doc-accent: hsl(var(--doc-hue-accent) 58% 43%);
+  --doc-accent-hover: hsl(var(--doc-hue-accent) 60% 51%);
+  --doc-accent-dim: hsl(calc(var(--doc-hue-accent) + 2) 56% 78%);
+  --doc-border: hsl(var(--doc-hue-neutral) 30% 67%);
+  --doc-border-quiet: hsl(var(--doc-hue-neutral) 32% 79%);
+  --doc-highlight: hsl(calc(var(--doc-hue-neutral) + 4) 72% 99%);
+  --doc-grad-light: hsl(calc(var(--doc-hue-neutral) + 4) 64% 97%);
+  --doc-grad-dark: hsl(var(--doc-hue-neutral) 46% 90%);
+  --doc-example-grid: hsl(calc(var(--doc-hue-neutral) - 10) 74% 14% / 0.1);
+
+  --doc-shadow-inset:
+    inset 0 2px 4px hsl(calc(var(--doc-hue-neutral) - 10) 32% 18% / 0.14),
+    inset 0 0 0 1px hsl(calc(var(--doc-hue-neutral) - 10) 24% 52% / 0.16);
+  --doc-shadow-raised:
+    0 4px 12px 2px hsl(calc(var(--doc-hue-neutral) - 10) 32% 18% / 0.18),
+    inset 0 2px 1px var(--doc-highlight);
+  /* Lifts a previewed panel off the recessed example well. */
+  --doc-shadow-panel: 0 8px 22px -6px hsl(calc(var(--doc-hue-neutral) - 10) 34% 16% / 0.3);
+
+  --doc-font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --doc-font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --doc-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --doc-radius-sm: 8px;
+  --doc-radius-md: 14px;
+  --doc-radius-lg: 28px;
+  --doc-radius-xl: 40px;
+  --doc-radius-pill: 9999px;
+  --doc-sidebar-w: 210px;
+}
+
+/* ---- Dark (when the OS prefers it) ---- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --doc-bg: hsl(var(--doc-hue-neutral) 32% 18%);
+    --doc-surface: hsl(var(--doc-hue-neutral) 32% 15%);
+    --doc-surface-recessed: hsl(var(--doc-hue-neutral) 32% 16%);
+    --doc-heading: hsl(calc(var(--doc-hue-neutral) + 4) 24% 94%);
+    --doc-text: hsl(calc(var(--doc-hue-neutral) + 4) 24% 94%);
+    --doc-quiet: hsl(var(--doc-hue-neutral) 24% 66%);
+    --doc-accent: hsl(var(--doc-hue-accent) 66% 78%);
+    --doc-accent-hover: hsl(var(--doc-hue-accent) 68% 85%);
+    --doc-accent-dim: hsl(var(--doc-hue-accent) 44% 26%);
+    --doc-border: hsl(var(--doc-hue-neutral) 24% 24%);
+    --doc-border-quiet: hsl(var(--doc-hue-neutral) 24% 23%);
+    --doc-highlight: hsl(calc(var(--doc-hue-neutral) + 4) 24% 52%);
+    --doc-grad-light: hsl(var(--doc-hue-neutral) 32% 22%);
+    --doc-grad-dark: hsl(var(--doc-hue-neutral) 32% 16%);
+    --doc-example-grid: hsl(calc(var(--doc-hue-neutral) + 4) 46% 94% / 0.1);
+
+    --doc-shadow-inset:
+      inset 0 2px 4px hsl(var(--doc-hue-neutral) 45% 3% / 0.6),
+      inset 0 0 0 1px hsl(var(--doc-hue-neutral) 14% 48% / 0.14);
+    --doc-shadow-raised:
+      0 4px 14px 2px hsl(var(--doc-hue-neutral) 50% 2% / 0.2),
+      inset 0 2px 1px var(--doc-highlight);
+    --doc-shadow-panel: 0 10px 26px -6px hsl(var(--doc-hue-neutral) 55% 2% / 0.62);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  --webkit-user-select: none;
+}
+
+/* Only prose is selectable — headings and paragraphs. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  user-select: text;
+  --webkit-user-select: text;
+}
+
+::selection {
+  background: var(--doc-accent);
+  color: var(--doc-bg);
+}
+
+body {
+  margin: 0;
+  background: var(--doc-bg);
+  color: var(--doc-text);
+  font-family: var(--doc-font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.docs a {
+  text-decoration: none;
+  color: inherit;
+}
+.docs a:focus-visible {
+  outline: 2px solid var(--doc-accent);
+  outline-offset: 2px;
+  border-radius: var(--doc-radius-sm);
+}
+
+/* Shared capitalized caption treatment. */
+.nav-group-title,
+.doc-kicker,
+.doc-section h2,
+.props th {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: capitalize;
+  color: var(--doc-quiet);
+}
+
+/* ---- Shell layout ---- */
+.docs {
+  display: grid;
+  grid-template-columns: var(--doc-sidebar-w) 1fr;
+  min-height: 100vh;
+}
+/* Home page: no sidebar, so the content spans the full width. */
+.docs.is-home {
+  grid-template-columns: 1fr;
+}
+
+/* ---- Sidebar (transparent — no border, no fill) ---- */
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 28px 18px;
+  view-transition-name: doc-sidebar;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: fit-content;
+  padding: 6px 10px;
+  margin-bottom: 18px;
+  border-radius: var(--doc-radius-pill);
+  transition: background 120ms ease;
+}
+.brand:hover {
+  background: var(--doc-surface);
+}
+.brand-name {
+  font-family: var(--doc-font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--doc-heading);
+}
+.brand-badge {
+  font-family: var(--doc-font-mono);
+  font-size: 11px;
+  color: var(--doc-accent);
+}
+
+.nav-group {
+  margin-bottom: 20px;
+}
+.nav-group-title {
+  padding: 0 10px 8px;
+}
+.nav-link {
+  display: block;
+  width: fit-content;
+  padding: 7px 10px;
+  border-radius: var(--doc-radius-pill);
+  color: var(--doc-quiet);
+  font-size: 14px;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+.nav-link:hover {
+  background: var(--doc-surface);
+  color: var(--doc-text);
+}
+.nav-link:active {
+  transform: scale(0.95);
+}
+.nav-link.is-active {
+  background: var(--doc-accent-dim);
+  color: var(--doc-accent);
+  font-weight: 600;
+}
+
+/* ---- Drawer click-catcher (narrow only). No visible fill — opening the drawer
+   fades the main content instead (see `html.menu-open .content`). It just closes
+   the drawer when you tap outside it. ---- */
+.docs-scrim {
+  display: none; /* -> block on narrow */
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+.docs-scrim.is-open {
+  pointer-events: auto;
+}
+
+/* ---- Content ---- */
+.content {
+  padding: 64px 56px 112px;
+  transition: opacity 240ms ease;
+}
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+  /* Lift the page article into its own view-transition snapshot so it can slide
+     + scale independently, while the persistent sidebar just cross-fades. */
+  view-transition-name: doc-page;
+}
+
+/* ---- Page footer (repo link + version) ---- */
+.doc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 720px;
+  margin: 72px auto 0;
+  padding-top: 24px;
+  border-top: 2px solid var(--doc-border-quiet);
+  font-size: 14px;
+  color: var(--doc-quiet);
+}
+.doc-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -12px;
+  padding: 6px 12px;
+  border-radius: var(--doc-radius-pill);
+  color: var(--doc-quiet);
+  transition: background 120ms ease, color 120ms ease;
+}
+.doc-footer-link:hover {
+  background: var(--doc-surface);
+  color: var(--doc-text);
+}
+.doc-footer-link svg {
+  display: block;
+}
+.doc-footer-version {
+  font-family: var(--doc-font-mono);
+  font-size: 13px;
+}
+
+.doc-head {
+  padding-bottom: 32px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--doc-border-quiet);
+}
+.doc-kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--doc-accent);
+}
+.doc-head h1 {
+  margin: 0;
+  font-family: var(--doc-font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--doc-heading);
+}
+/* Component-page title as a rich path: [folder] Directory / Name. The name
+   keeps the display size; the directory is a smaller, linked prefix. */
+.doc-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+/* The parent-dir segment is the sidebar toggle. It only appears on narrow
+   screens (below, in the media query); on wide it's hidden since the sidebar is
+   always visible. Reset the <button> chrome so it reads as path text. */
+.doc-title-dir {
+  display: none; /* -> inline on narrow */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: clamp(2.25rem, 6.4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.doc-head .doc-title-dir {
+  color: var(--doc-quiet);
+}
+.doc-head .doc-title-dir:hover {
+  color: var(--doc-accent);
+}
+.doc-title-dir:focus {
+  outline: none;
+}
+.doc-title-dir:focus-visible {
+  outline: 2px solid var(--doc-accent);
+  outline-offset: 2px;
+  border-radius: var(--doc-radius-sm);
+}
+.doc-title-slash {
+  display: none; /* -> inline on narrow */
+  font-size: clamp(2.25rem, 6.4vw, 3rem);
+  font-weight: 400;
+  color: var(--doc-quiet);
+}
+.doc-title-name {
+  font-size: clamp(2.25rem, 6.4vw, 3rem);
+  color: var(--doc-heading);
+}
+.doc-summary {
+  margin: 16px 0 0;
+  max-width: 60ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--doc-quiet);
+}
+
+.doc-section {
+  margin-top: 48px;
+}
+.doc-section h2 {
+  margin: 0 0 18px;
+}
+
+/* ---- Live example frame (a recessed well) ---- */
+.doc-example {
+  display: flex;
+  justify-content: center;
+  padding: 48px 32px;
+  border: 2px solid var(--doc-border-quiet);
+  border-radius: var(--doc-radius-lg);
+  background:
+    radial-gradient(var(--doc-example-grid) 1px, transparent 1px) 0 0 / 18px 18px,
+    var(--doc-surface-recessed);
+  box-shadow: var(--doc-shadow-inset);
+}
+.doc-example .panel {
+  /* Set the width variable (not `width`) so a collapsed panel can still shrink
+     to `fit-content`. */
+  --panel-w: 340px;
+  box-shadow: var(--doc-shadow-panel);
+}
+
+.doc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Labelled control rows inside examples (these live inside a library Panel, so
+   they use the component tokens, not the page palette). */
+.doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+}
+.doc-row-label {
+  font-size: 13px;
+  color: var(--ctl-text);
+}
+.doc-note {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ctl-hint);
+}
+
+/* ---- Props table ----
+   A rounded surface card. `separate` (not `collapse`) so the table honors
+   border-radius; `overflow: hidden` clips the header + zebra rows to the
+   corners. */
+.props {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 2px solid var(--doc-border-quiet);
+  font-size: 14px;
+  background: var(--doc-surface);
+  border-radius: var(--doc-radius-md);
+  overflow: hidden;
+}
+.props th {
+  text-align: left;
+  padding: 14px 14px 12px;
+  border-bottom: 2px solid var(--doc-border-quiet);
+}
+.props td {
+  padding: 13px 14px;
+  vertical-align: top;
+  color: var(--doc-quiet);
+  line-height: 1.5;
+}
+/* Zebra: tint every other body row. A text-colored overlay adapts to both
+   themes — a faint darkening in light, a faint lightening in dark. */
+.props tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--doc-accent) 5%, transparent);
+}
+.props td:last-child {
+  color: var(--doc-accent);
+}
+.props code {
+  font-family: var(--doc-font-mono);
+  font-size: 12.5px;
+}
+.props td:first-child code {
+  color: var(--doc-heading);
+  font-weight: 500;
+}
+/* No capsule on the type column — long signatures wrap and a pill breaks
+   badly across lines. Render it as plain accent-colored monospace instead. */
+.props .type {
+  color: var(--doc-accent);
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+.props .req {
+  margin-left: 3px;
+  color: var(--doc-accent);
+}
+.props .muted {
+  color: var(--doc-quiet);
+}
+
+/* ---- Code blocks (recessed) ---- */
+.code {
+  margin: 0 0 12px;
+  padding: 16px 18px;
+  border-radius: var(--doc-radius-md);
+  background: var(--doc-surface-recessed);
+  box-shadow: var(--doc-shadow-inset);
+  overflow-x: auto;
+}
+.code code {
+  font-family: var(--doc-font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--doc-text);
+  white-space: pre;
+}
+:not(pre) > code {
+  padding: 2px 6px;
+  border-radius: var(--doc-radius-pill);
+  background: var(--doc-accent-dim);
+  font-family: var(--doc-font-mono);
+  font-size: 0.85em;
+  color: var(--doc-accent);
+}
+
+/* ============================================================
+   Home — "the page is the demo"
+   The hero is a poster plate: the stacked wordmark sits above a real pretty-panels
+   Inspector whose highlight toggle + angle slider light a warm inset rim on the
+   mark. Boldness lives here; everything below stays quiet.
+   ============================================================ */
+
+/* The home breaks out of the 720px article width so the catalog can breathe. */
+.home {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+/* The readout / silk-screened-label voice used across the instrument
+   (eyebrows, value readouts, part-codes). */
+.mono {
+  font-family: var(--doc-font-mono);
+  font-variant-ligatures: none;
+}
+
+/* ---- Hero poster (a centred display plate) ---- */
+.hero-poster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 540px;
+  margin: -25px auto;
+  padding: 32px 48px 40px;
+  border: 2px solid var(--doc-border);
+  border-radius: var(--doc-radius-lg);
+  background: linear-gradient(to bottom, var(--doc-grad-light), var(--doc-grad-dark));
+  box-shadow: var(--doc-shadow-raised);
+}
+
+/* The stacked monogram, lit by the Inspector. Its own box lets the inset
+   highlight spill past the glyphs without clipping. */
+.hero-mark {
+  display: flex;
+  justify-content: center;
+  width: min(360px, 100%);
+  margin: 14px 0 8px;
+}
+.hero-mark svg {
+  display: block;
+  width: 67%;
+  height: auto;
+  margin-bottom: 26px;
+  overflow: visible;
+  filter: drop-shadow(0 5px 4px hsl(270 78% 24% / 0.25));
+}
+
+/* The live Inspector — a real pretty-panels plate, lifted off the poster and
+   stretched to the card width. */
+.hero-poster .panel {
+  --panel-w: 100%;
+  margin-top: 16px;
+  box-shadow: var(--doc-shadow-panel), inset 0 1px 4px hsl(0 0% 100% / 0.85);
+}
+
+/* Tagline + supporting line, centred under the controls. */
+.hero-tagline {
+  max-width: 30ch;
+  margin: 30px 0 0;
+  font-family: var(--doc-font-display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--doc-heading);
+}
+.hero-sub {
+  max-width: 40ch;
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  text-align: center;
+  color: var(--doc-quiet);
+}
+
+/* Install CTA inside the poster: hug its content and centre, rather than the
+   full-width dock treatment the base rule below assumes. */
+.hero-poster .hero-cta {
+  width: auto;
+  margin-top: 26px;
+  padding: 13px 16px;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Primary CTA — copy the install command (styled as a recessed track). */
+.hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  border: 0;
+  border-radius: var(--doc-radius-md);
+  background: var(--doc-surface-recessed);
+  box-shadow: var(--doc-shadow-inset);
+  font-family: var(--doc-font-mono);
+  font-size: 13px;
+  color: var(--doc-text);
+  cursor: pointer;
+  transition: color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-cta:hover { color: var(--doc-accent); }
+.hero-cta:focus-visible {
+  outline: 2px solid var(--doc-accent);
+  outline-offset: 2px;
+}
+.hero-cta .cta-cmd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hero-cta .cta-prompt { color: var(--doc-accent); }
+.hero-cta .cta-copy {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--doc-quiet);
+  transition: color 120ms ease;
+}
+.hero-cta.is-copied .cta-copy { color: var(--doc-accent); }
+
+/* ---- Spec strip (a quiet nameplate at the foot of the poster) ---- */
+.hero-specs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-top: 26px;
+  font-family: var(--doc-font-mono);
+  font-size: 12.5px;
+  color: var(--doc-quiet);
+}
+.hero-specs b { color: var(--doc-heading); font-weight: 600; }
+.hero-specs .dot { color: var(--doc-border); }
+
+/* ---- Component index (a parts catalog, grouped by tier) ---- */
+.catalog { margin-top: 72px; }
+.catalog-group { margin-top: 44px; }
+.catalog-group:first-child { margin-top: 0; }
+.catalog-tier {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 6px;
+  font-family: var(--doc-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--doc-heading);
+}
+.catalog-tier .tier-code {
+  font-family: var(--doc-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--doc-quiet);
+}
+/* The tier's links as an auto-reflowing card grid. */
+.catalog-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* Each item is a grid cell; the card link stretches to fill it so every card in a
+   row shares one height regardless of how long its summary runs. */
+.catalog-list li {
+  display: flex;
+}
+
+/* ---- Component card (a raised plate, echoing the hero poster) ---- */
+.catalog-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "code go"
+    "name name"
+    "desc desc";
+  align-content: start;
+  gap: 6px 12px;
+  flex: 1;
+  padding: 18px 18px 20px;
+  border: 2px solid var(--doc-border);
+  border-radius: var(--doc-radius-lg);
+  background: linear-gradient(to bottom, var(--doc-grad-light), var(--doc-grad-dark));
+  box-shadow: var(--doc-shadow-raised);
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out),
+              border-color 120ms ease;
+}
+.catalog-row:hover {
+  transform: scale(1.02);
+  border-color: var(--doc-accent-dim);
+  box-shadow: var(--doc-shadow-panel), inset 0 2px 1px var(--doc-highlight);
+}
+.catalog-row:active {
+  transform: scale(0.98);
+}
+
+.catalog-code {
+  grid-area: code;
+  font-family: var(--doc-font-mono);
+  font-size: 12px;
+  color: var(--doc-accent);
+}
+.catalog-name {
+  grid-area: name;
+  font-family: var(--doc-font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--doc-heading);
+}
+.catalog-desc {
+  grid-area: desc;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--doc-quiet);
+}
+.catalog-go {
+  grid-area: go;
+  justify-self: end;
+  font-family: var(--doc-font-mono);
+  color: var(--doc-quiet);
+  transition: transform 180ms var(--ease-out), color 120ms ease;
+}
+.catalog-row:hover .catalog-go {
+  color: var(--doc-accent);
+  transform: translateX(3px);
+}
+
+/* ---- Quickstart (reuses the recessed .code blocks) ---- */
+.home-quickstart { margin-top: 64px; }
+.home-quickstart h2 {
+  margin: 0 0 18px;
+  font-family: var(--doc-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--doc-heading);
+}
+
+/* ---- Home: tighten the poster's padding on narrow screens. ---- */
+@media (max-width: 560px) {
+  .hero-poster {
+    padding: 40px 24px 32px;
+  }
+}
+
+/* The catalog is a self-reflowing card grid (auto-fill), so it collapses to
+   fewer columns on its own and needs no width-specific overrides here. */
+
+/* ---- Narrow screens ---- */
+@media (max-width: 720px) {
+  .docs {
+    grid-template-columns: 1fr;
+  }
+  /* The sidebar becomes an off-canvas drawer that slides in over the content;
+     the path bar's parent dir opens it and a scrim closes it. */
+  .doc-title-dir {
+    display: inline;
+  }
+  .doc-title-slash {
+    display: inline;
+  }
+  .docs-scrim {
+    display: block;
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    height: 100vh;
+    height: 100dvh;
+    width: min(78vw, 260px);
+    padding: 28px 18px 24px;
+    /* Page-bg fill on the left, fading to transparent toward the right edge so
+       the drawer melts into the faded content. */
+    background: linear-gradient(to right, var(--doc-bg), transparent);
+    transform: translateX(-100%);
+    transition: transform 240ms ease;
+  }
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+  /* Freeze page scroll behind the open drawer (only while it's an overlay)... */
+  html.menu-open {
+    overflow: hidden;
+  }
+  /* ...and fade the main content down so the transparent drawer reads clearly. */
+  html.menu-open .content {
+    opacity: 0.1;
+  }
+  .content {
+    padding: 40px 22px 80px;
+  }
+  .doc-head h1 {
+    font-size: 2.25rem;
+  }
+}
+
+/* ---- View transitions ----
+   <html> is tagged per navigation (see useHashSlug): `vt-home` for jumps
+   to/from the home page, and `vt-down` / `vt-up` for moving to a lower / higher
+   entry in the sidebar. */
+
+/* Kill the browser's default root cross-fade. It snapshots the whole page and
+   fades old over new, which registers as layout shift (CLS) during navigation.
+   We animate the sidebar and page groups explicitly, so root can hold still. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* To/from home: only the sidebar moves. Drop the page's own snapshot so the
+   content folds back into the (now static) root instead of morphing alongside
+   the sidebar. */
+html.vt-home .doc {
+  view-transition-name: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Sidebar slides in / out along its left edge. */
+  html.vt-home::view-transition-old(doc-sidebar) {
+    animation: doc-sidebar-out 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  html.vt-home::view-transition-new(doc-sidebar) {
+    animation: doc-sidebar-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  /* Page → page: slide vertically toward the target's position in the list. */
+  html.vt-down::view-transition-old(doc-page) {
+    animation: doc-page-out-up 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  html.vt-down::view-transition-new(doc-page) {
+    animation: doc-page-in-up 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  html.vt-up::view-transition-old(doc-page) {
+    animation: doc-page-out-down 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  html.vt-up::view-transition-new(doc-page) {
+    animation: doc-page-in-down 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+@keyframes doc-sidebar-out {
+  to { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes doc-sidebar-in {
+  from { transform: translateX(-100%); opacity: 0; }
+}
+
+/* Moving down the list: new page rises from below, old lifts out the top. */
+@keyframes doc-page-out-up {
+  to { opacity: 0; transform: translateY(-30px); }
+}
+@keyframes doc-page-in-up {
+  from { opacity: 0; transform: translateY(30px); }
+}
+/* Moving up the list: new page drops from above, old sinks out the bottom. */
+@keyframes doc-page-out-down {
+  to { opacity: 0; transform: translateY(30px); }
+}
+@keyframes doc-page-in-down {
+  from { opacity: 0; transform: translateY(-30px); }
+}

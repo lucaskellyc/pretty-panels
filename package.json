@@ -1,0 +1,55 @@
+{
+  "name": "pretty-panels",
+  "version": "0.1.0",
+  "description": "A tiny, themeable React component library of control-panel UI — grey plates, capsule tracks, collapsible sections. Ported from Totem Studio.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Kelly",
+  "keywords": [
+    "react",
+    "components",
+    "ui",
+    "design-system",
+    "control-panel",
+    "panels",
+    "slider",
+    "toggle"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/pretty-panels.cjs",
+  "module": "./dist/pretty-panels.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/pretty-panels.js",
+      "require": "./dist/pretty-panels.cjs"
+    },
+    "./styles.css": "./dist/pretty-panels.css"
+  },
+  "scripts": {
+    "dev": "vite --config vite.demo.config.ts",
+    "build": "vite build",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "preview": "vite preview --config vite.demo.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "vite-plugin-dts": "^4.3.0"
+  }
+}

@@ -1,0 +1,248 @@
+/* ============================================================
+   pretty-panels · Component layer
+   Grey plates, capsule tracks, white-on-track labels. Colors come exclusively
+   from the --ctl-* token set (colors.css), so every rule here is themeable.
+   ============================================================ */
+
+/* ---- Panel plate ---- */
+.panel {
+  width: var(--panel-w, 380px);
+  background: var(--ctl-panel);
+  border: var(--border-width-thick) solid var(--ctl-panel);
+  border-radius: var(--radius-lg);
+  /* Flat theme: no elevation shadow, just the gentle lit top edge. */
+  box-shadow: var(--shadow-inset);
+  overflow: hidden;
+}
+/* Collapsible plates animate between fixed pixel sizes (measured in JS and
+   exposed as --panel-collapsed-w / --panel-body-h), so the morph never reflows
+   the content — the plate/body just clip the fixed-width inner. `interpolate-size`
+   is inert for the normal px↔px case, and only rescues the `fit-content`/`auto`
+   fallbacks (pre-measurement) so the width/height still animate. */
+.panel.is-collapsible {
+  interpolate-size: allow-keywords;
+  transition: width var(--dur-slow) var(--ease-out),
+              border-radius var(--dur-slow) var(--ease-out);
+}
+/* Collapsed — the plate shrinks to hug just its header, as a capsule.
+   `fit-content` is the pre-measurement fallback for --panel-collapsed-w. */
+.panel.is-collapsed {
+  width: var(--panel-collapsed-w, fit-content);
+  border-radius: var(--radius-pill);
+}
+
+.panel-body {
+  /* Fill the plate without widening it (percent min-width + zero width don't
+     count toward the plate's intrinsic size), so the `fit-content` fallback hugs
+     the header instead of the body's content. */
+  width: 0;
+  min-width: 100%;
+  background: transparent;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+/* Only collapsible bodies get an explicit (animatable) height; ordinary panels
+   keep `auto` so unrelated content changes (e.g. a nested Section) don't animate. */
+.panel.is-collapsible .panel-body {
+  height: var(--panel-body-h, auto);
+  transition: height var(--dur-slow) var(--ease-out),
+              margin var(--dur-slow) var(--ease-out);
+}
+/* Body clips away as the plate folds to its header. */
+.panel.is-collapsed .panel-body {
+  height: 0;
+  margin-bottom: 0;
+}
+
+/* The content lives at a fixed width (= plate content width) so it never reflows
+   while the plate animates; the body simply clips it. */
+.panel-body-inner {
+  width: calc(var(--panel-w, 380px) - 2 * var(--border-width-thick));
+  padding: var(--space-2) var(--space-4);
+}
+
+.divider {
+  border: 0;
+  border-top: var(--border-width-thick) dashed var(--ctl-track);
+  margin: var(--space-4) 2px;
+}
+
+/* ---- Slider rows: label + value + track in one object ---- */
+.slider-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 32px;
+  padding: 0 var(--space-3);
+  margin: var(--space-2) 0;
+  background: var(--ctl-track);
+  border-radius: 50px;
+  overflow: hidden;
+  user-select: none;
+  --webkit-user-select: none;
+}
+.slider-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--fill, 50%);
+  background: var(--ctl-accent);
+  pointer-events: none;
+}
+.control-name {
+  position: relative;
+  font-size: var(--text-sm);
+  color: var(--ctl-on-track);
+  pointer-events: none;
+}
+.control-value {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ctl-on-track);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.slider-row:hover { background: var(--ctl-track-hover); }
+.slider-row:hover .slider-fill { background: var(--ctl-accent-hover); }
+.slider-row input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  opacity: 0;
+  cursor: ew-resize;
+  margin: 0;
+}
+.slider-row:focus-within { box-shadow: var(--focus-ring); }
+
+/* ---- Switch rows (Toggle) ---- */
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  user-select: none;
+  --webkit-user-select: none;
+}
+.switch-meta { display: flex; flex-direction: column; gap: 2px; }
+.switch-meta .control-name {
+  font-weight: var(--fw-bold);
+  color: var(--ctl-text);
+  pointer-events: none;
+}
+.switch-hint {
+  font-size: var(--text-sm);
+  color: var(--ctl-hint);
+}
+.switch {
+  position: relative;
+  width: 56px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.switch .track {
+  position: absolute;
+  inset: 0;
+  background: var(--ctl-switch-off);
+  border: none;
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+  pointer-events: none;
+}
+.switch .track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--ctl-knob-off);
+  transition: transform var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out);
+}
+.switch input:checked + .track { background: var(--ctl-accent); }
+.switch input:checked + .track::after {
+  transform: translateX(26px);
+  background: var(--ctl-knob-on);
+}
+.switch input:focus-visible + .track { box-shadow: var(--focus-ring); }
+.switch input:disabled { cursor: default; }
+.switch-row:hover .track { background: var(--ctl-switch-off-hover); }
+.switch-row:hover .track::after { background: var(--ctl-knob-off-hover); }
+.switch-row:hover input:checked + .track { background: var(--ctl-accent-hover); }
+.switch-row:hover input:checked + .track::after { background: var(--ctl-knob-on); }
+
+/* ---- Vector input (2–4 fused numeric fields) ---- */
+.vector {
+  display: flex;
+  gap: 2px;
+  height: 32px;
+  border-radius: 25px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.vector input {
+  width: 58px;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: var(--ctl-track);
+  color: var(--ctl-on-track);
+  font: var(--type-code);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: ns-resize;
+}
+.vector input:hover { background: var(--ctl-track-hover); }
+.vector input:focus,
+.vector input:focus-visible { outline: none; box-shadow: none; }
+.vector input::-webkit-outer-spin-button,
+.vector input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.vector input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.color-vector input { transition: background var(--dur-fast) var(--ease-out); }
+
+/* ---- Collapsible section ---- */
+.collapse-section {
+  background: var(--ctl-section);
+  border-radius: 16px;
+  padding: 0 var(--space-3);
+  margin: var(--space-2) 0;
+}
+.collapse-section .collapse-body { padding-bottom: var(--space-1); }
+.collapse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-2) 0;
+  border: none;
+  background: transparent;
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  color: var(--ctl-text);
+  cursor: pointer;
+  user-select: none;
+  --webkit-user-select: none;
+}
+.collapse-head .chevron { transition: transform var(--dur-base) var(--ease-out); }
+.collapse-head[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+.collapse-head:focus-visible { outline: none; box-shadow: var(--focus-ring); }
