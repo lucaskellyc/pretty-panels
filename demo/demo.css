@@ -161,9 +161,20 @@ body {
   align-self: start;
   height: 100vh;
   overflow-y: auto;
-  padding: 28px 18px;
   view-transition-name: doc-sidebar;
+  width: fit-content;
+  padding: 0;
 }
+.sidebar-container {
+  width: fit-content;
+  background: var(--doc-bg);
+  border-radius: var(--doc-radius-lg);
+  padding: 18px;
+}
+.sidebar nav {
+  width: fit-content;
+}
+
 
 .brand {
   display: flex;
@@ -219,9 +230,8 @@ body {
   font-weight: 600;
 }
 
-/* ---- Drawer click-catcher (narrow only). No visible fill — opening the drawer
-   fades the main content instead (see `html.menu-open .content`). It just closes
-   the drawer when you tap outside it. ---- */
+/* ---- Drawer click-catcher (narrow only). Transparent — it just closes the
+   drawer when you tap outside it. ---- */
 .docs-scrim {
   display: none; /* -> block on narrow */
   position: fixed;
@@ -241,7 +251,6 @@ body {
      the page's content. This keeps it stable and always within the viewport. */
   min-width: 0;
   padding: 64px 56px 112px;
-  transition: opacity 240ms ease;
 }
 .doc {
   max-width: var(--doc-content-w);
@@ -407,20 +416,22 @@ body {
    A rounded surface card. `separate` (not `collapse`) so the table honors
    border-radius; `overflow: hidden` clips the header + zebra rows to the
    corners. */
-.props {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 2px solid var(--doc-border-quiet);
-  font-size: 14px;
+/* Scroll the props table within its own box on narrow viewports, instead of
+   squeezing the columns or pushing the page wider. */
+.props-scroll {
   background: var(--doc-surface);
   border-radius: var(--doc-radius-md);
+  overflow-x: auto;
+}
+.props {
+  width: 100%;
+  min-width: 30rem;
+  font-size: 14px;
   overflow: hidden;
 }
 .props th {
   text-align: left;
   padding: 14px 14px 12px;
-  border-bottom: 2px solid var(--doc-border-quiet);
 }
 .props td {
   padding: 13px 14px;
@@ -445,8 +456,10 @@ body {
   font-weight: 500;
 }
 /* No capsule on the type column — long signatures wrap and a pill breaks
-   badly across lines. Render it as plain accent-colored monospace instead. */
+   badly across lines. Render it as plain accent-colored sans-serif instead
+   (overriding the monospace that `.props code` sets). */
 .props .type {
+  font-family: var(--doc-font-body);
   color: var(--doc-accent);
   padding: 0;
   border-radius: 0;
@@ -528,10 +541,11 @@ body {
   filter: drop-shadow(0 5px 4px hsl(270 78% 24% / 0.25));
 }
 
-/* The live Inspector — a real pretty-panels plate, lifted off the poster and
-   stretched to the card width. */
+/* The live Inspector — a real pretty-panels plate, lifted off the poster. Capped
+   at 340px but shrinks to fit so it never overflows a narrow poster (e.g. when
+   the effective viewport shrinks under browser zoom). */
 .hero-poster .panel {
-  --panel-w: 400px;
+  --panel-w: min(340px, 100%);
   margin-top: 16px;
   box-shadow: var(--doc-shadow-panel), inset 0 1px 4px hsl(0 0% 100% / 0.85);
 }
@@ -717,30 +731,42 @@ body {
     z-index: 50;
     height: 100vh;
     height: 100dvh;
-    width: min(78vw, 260px);
-    padding: 28px 18px 24px;
-    /* Page-bg fill on the left, fading to transparent toward the right edge so
-       the drawer melts into the faded content. */
-    background: linear-gradient(to right, var(--doc-bg), transparent);
+    width: fit-content;
+    padding: 0;
     transform: translateX(-100%);
     transition: transform 240ms ease;
+    /* The sidebar is a drawer here, not a sliding column, so keep it out of the
+       page-navigation view transition. Otherwise the `vt-home` slide animates the
+       full-height drawer's fill on/off screen during navigation, flashing over the
+       bottom safe area before it settles back off-screen. */
+    view-transition-name: none;
+  }
+  .sidebar-container {
+    border: 1px solid var(--doc-border-quiet);
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.2);
+    margin: 16px;
   }
   .sidebar.is-open {
     transform: translateX(0);
-  }
-  /* Freeze page scroll behind the open drawer (only while it's an overlay)... */
-  html.menu-open {
-    overflow: hidden;
-  }
-  /* ...and fade the main content down so the transparent drawer reads clearly. */
-  html.menu-open .content {
-    opacity: 0.1;
   }
   .content {
     padding: 40px 22px 80px;
   }
   .doc-head h1 {
     font-size: 2.25rem;
+  }
+}
+
+/* Phone screens: zoom the drawer's menu up so it reads larger and is easier to
+   tap. Scoped to the menu content (not the fixed .sidebar box) so the drawer's
+   full-height geometry, slide-in transform, and scrim all stay intact. */
+@media (max-width: 480px) {
+  .sidebar {
+    width: min(86vw, 300px);
+  }
+  .sidebar .brand,
+  .sidebar nav {
+    zoom: 1.1;
   }
 }
 

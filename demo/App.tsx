@@ -134,40 +134,42 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [menuOpen]);
 
-  // Freeze page scroll while the drawer overlay is open (CSS gates the actual
-  // lock to narrow widths, so a resize to desktop can't strand the layout).
-  useEffect(() => {
-    document.documentElement.classList.toggle('menu-open', menuOpen);
-    return () => document.documentElement.classList.remove('menu-open');
-  }, [menuOpen]);
-
   return (
     <div className={page ? 'docs' : 'docs is-home'}>
       {page && (
         <>
-          <aside className={`sidebar${menuOpen ? ' is-open' : ''}`}>
-            <a className="brand" href="#/">
-              <span className="brand-name">PrettyPanels</span>
-              <span className="brand-badge">alpha</span>
-            </a>
-            <nav>
-              {GROUPS.map((g) => (
-                <div className="nav-group" key={g.id}>
-                  <div className="nav-group-title">{g.label}</div>
-                  {pages
-                    .filter((p) => p.group === g.id)
-                    .map((p) => (
-                      <a
-                        key={p.slug}
-                        className={`nav-link${p.slug === slug ? ' is-active' : ''}`}
-                        href={`#/${p.group}/${p.slug}`}
-                      >
-                        {p.name}
-                      </a>
-                    ))}
-                </div>
-              ))}
-            </nav>
+          {/* Clicking the drawer's blue area (outside the menu card) light-dismisses
+              it, like the scrim; stopPropagation on the card keeps menu clicks from
+              closing it (nav links still close via the slug effect). */}
+          <aside
+            className={`sidebar${menuOpen ? ' is-open' : ''}`}
+            onClick={() => setMenuOpen(false)}
+          >
+            <div className="sidebar-container" onClick={(e) => e.stopPropagation()}>
+              <a className="brand" href="#/">
+                <span className="brand-name">PrettyPanels</span>
+                <span className="brand-badge">alpha</span>
+              </a>
+              <nav>
+                {GROUPS.map((g) => (
+                  <div className="nav-group" key={g.id}>
+                    <div className="nav-group-title">{g.label}</div>
+                    {pages
+                      .filter((p) => p.group === g.id)
+                      .map((p) => (
+                        <a
+                          key={p.slug}
+                          className={`nav-link${p.slug === slug ? ' is-active' : ''}`}
+                          href={`#/${p.group}/${p.slug}`}
+                        >
+                          {p.name}
+                        </a>
+                      ))}
+                  </div>
+                ))}
+              </nav>
+            </div>
+
           </aside>
           <div
             className={`docs-scrim${menuOpen ? ' is-open' : ''}`}
@@ -298,7 +300,7 @@ function HeroMark({
   const [r, g, b] = color;
   const dx = (Math.cos(rad) * HIGHLIGHT_AMOUNT).toFixed(2);
   const dy = (Math.sin(rad) * HIGHLIGHT_AMOUNT).toFixed(2);
-  const feather = Math.max(0.1, HIGHLIGHT_AMOUNT * 0.1).toFixed(1);
+  const feather = Math.max(0.2, HIGHLIGHT_AMOUNT * 0.2).toFixed(0.5);
   return (
     <div className="hero-mark">
       <svg viewBox="0 0 276 56" role="img" aria-label="pretty-panels">

@@ -30,35 +30,37 @@ export interface DocPage {
 /** Renders a component's props as a table. */
 export function PropsTable({ rows }: { rows: PropRow[] }) {
   return (
-    <table className="props">
-      <thead>
-        <tr>
-          <th>Prop</th>
-          <th>Type</th>
-          <th>Default</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.name}>
-            <td>
-              <code>{r.name}</code>
-              {r.required && (
-                <span className="req" title="required" aria-label="required">
-                  *
-                </span>
-              )}
-            </td>
-            <td>
-              <code className="type">{r.type}</code>
-            </td>
-            <td>{r.default ? <code>{r.default}</code> : <span className="muted">—</span>}</td>
-            <td>{r.description}</td>
+    <div className="props-scroll">
+      <table className="props">
+        <thead>
+          <tr>
+            <th>Prop</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.name}>
+              <td>
+                <code>{r.name}</code>
+                {r.required && (
+                  <span className="req" title="required" aria-label="required">
+                    *
+                  </span>
+                )}
+              </td>
+              <td>
+                <code className="type">{r.type}</code>
+              </td>
+              <td>{r.default ? <code>{r.default}</code> : <span className="muted">—</span>}</td>
+              <td>{r.description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
