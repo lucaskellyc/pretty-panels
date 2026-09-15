@@ -1,41 +1,118 @@
 /* ============================================================
    pretty-panels · Color tokens
-   The control-panel language: soft cool blue-gray plates, capsule tracks that
-   recess into them, and a warm gold accent. Everything the components paint with
-   comes from the --ctl-* set, so you can retheme by overriding these properties.
+   One theme: "mono" — a monochrome workbench. Every control surface is the same
+   hue and saturation at a different lightness, so the whole panel is dialled
+   from four knobs rather than hand-picked per token.
+
+     --mono-h    hue          0–360
+     --mono-s    saturation   0%–60% (0% is true grey)
+     --mono-l    lightness of the panel plate, 0–100 (unitless)
+     --mono-sgn  ramp direction, +1 light-on-dark-text, -1 dark-on-light-text
+
+   Most tokens are the plate lightness minus a fixed offset, times --mono-sgn.
+   The sign is what makes one ramp serve both polarities: on a light plate the
+   offsets step *down* into the surface, and once the plate goes dark they step
+   *up* instead, so sections stay recessed and text stays legible either way.
+   --mono-sgn derives itself from --mono-l (flipping at 50), so setting the
+   lightness alone is enough — override it only to force a polarity.
+
+   The capsule surfaces are the exception and are pinned to absolute lightnesses
+   — see the note above that block.
+
+   The knobs only take effect where the --ctl-* set is *declared*: a custom
+   property resolves on the element that declares it, and descendants inherit
+   the already-resolved colour. So re-running the ramp on a subtree needs the
+   whole block to apply there too — hence the [data-mono] selector. Put
+   data-mono on any element to dial that subtree independently; plain --ctl-*
+   overrides still inherit normally and need no marker.
    ============================================================ */
 
+/* The knobs live on :root alone. Kept out of the [data-mono] block below so a
+   scoped subtree that sets only one of them inherits the rest from its parent
+   instead of snapping the others back to these defaults. */
 :root {
-  /* accent (drives focus rings + the control accent) */
-  --accent:         #b17806;
-  --accent-hover:   #cd8b06;
+  --mono-h: 212;
+  --mono-s: 24%;
+  --mono-l: 87;
+}
 
-  /* semantic hues */
-  --success: #22E36C;
-  --danger:  #FF5F52;
-  --warning: #F6B93B;
-  --info:    #34D6CE;
+/* Follow the OS dark preference. Only the lightness moves — hue and saturation
+   are the same panel, and --mono-sgn re-polarises the whole ramp on its own
+   below 50, so this one number is the entire dark theme.
+
+   Consumers who set --mono-l themselves after this stylesheet win in both
+   schemes — an explicit lightness opts out of preference-following entirely. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mono-l: 5;
+  }
+}
+
+:root,
+[data-mono] {
+  /* clamp() as a comparator: the ×1000 saturates the ratio to ±1 either side of
+     the midpoint. The 49.5 offset keeps exactly 50 on the light side instead of
+     landing on 0, which would flatten every offset to the plate colour. */
+  --mono-sgn: clamp(-1, (var(--mono-l) - 49.5) * 1000, 1);
+  /* The accent is the one place saturation is allowed to rise above the ramp,
+     so it reads as a value you set rather than another plate. */
+  --mono-sa: calc(var(--mono-s) * 1.9);
 
   /* ---- Panel & control surfaces ----
-     Cool blue-tinted grays (hue ~214). Value ordering gives depth on a flat
-     (shadowless) theme: sections and the header bar sit a touch below the plate,
-     and capsule tracks recess furthest. The accent stays warm gold. */
-  --ctl-panel:            hsl(55 45% 90%);   /* panel plate                    */
-  --ctl-bar:              hsl(55 36% 72%);   /* header bar / menus / zebra rows */
-  --ctl-section:          hsl(55 36% 66%);   /* collapsible section plate       */
-  --ctl-row-hover:        hsl(45 25% 66%);   /* list row hover                  */
-  --ctl-track:            hsl(45 36% 62%);   /* slider / field / btn capsule    */
-  --ctl-track-hover:      hsl(45 25% 67%);
-  --ctl-deep-hover:       hsl(45 25% 62%);   /* hover inside recessed tracks    */
-  --ctl-accent:           var(--accent);
-  --ctl-accent-hover:     var(--accent-hover);
-  --ctl-text:             hsl(45 22% 15%);   /* text on panel plates            */
-  --ctl-hint:             hsl(45 12% 46%);   /* secondary hint text             */
-  --ctl-on-track:         hsl(45 22% 95%);   /* text/icons on track capsules    */
-  --ctl-switch-off:       hsl(45 16% 54%);   /* switch capsule, off             */
-  --ctl-switch-off-hover: hsl(45 15% 48%);
-  --ctl-knob-off:         hsl(45 13% 77%);   /* off knob reads against the track */
-  --ctl-knob-off-hover:   hsl(45 13% 82%);
-  --ctl-knob-on:          #FFFFFF;            /* on knob lights up white on gold  */
-  --ctl-meter-fill:       hsl(45 14% 75%);   /* read-only meter fill            */
+     Offsets are the whole design: 0 is the plate, bigger numbers sit deeper.
+     Sections and the header bar sit just below the plate, capsule tracks recess
+     furthest, and text is the far end of the ramp. */
+  --ctl-panel:            hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  0 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-bar:              hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  9 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-section:          hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  6 * var(--mono-sgn)) * 1%), 100%));
+  /* Tabs are navigation, not state, so the selected one goes to the deep end of
+     the ramp rather than gold — the accent stays reserved for values you set.
+     The idle capsule sits between the bar and a track, recessing into the
+     header a little. Tab labels are --ctl-text, which rides the ramp with them,
+     so these can stay plate-relative. */
+  --ctl-tab:              hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 18 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-tab-hover:        hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 13 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-tab-active:       hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 66 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-tab-active-text:  hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - -3 * var(--mono-sgn)) * 1%), 100%));
+
+  /* ---- Capsule surfaces (pinned, not plate-relative) ----
+     Everything here carries --ctl-on-track text, and that token is itself
+     pinned bright (see below) because white-on-track is the design language.
+     A pinned text colour cannot sit on a plate-relative ground: run the same
+     offsets off a light plate and a track lands mid-grey, where 12px white
+     labels fall to ~3.3:1 and a hover — which steps *toward* the plate, i.e.
+     toward white — takes them to 2.7:1. Pinning the grounds to the deep end
+     instead keeps every capsule at 4.8:1 or better in both polarities, and
+     makes hover mean the same thing either way: one step further in.
+
+     Hue and saturation still come from the knobs, so --mono-h / --mono-s
+     retint these exactly like the rest of the ramp; only lightness is fixed. */
+  --ctl-track:            hsl(var(--mono-h) var(--mono-s) 38%);
+  --ctl-track-hover:      hsl(var(--mono-h) var(--mono-s) 32%);
+  --ctl-deep-hover:       hsl(var(--mono-h) var(--mono-s) 26%);
+  --ctl-accent:           hsl(var(--mono-h) var(--mono-sa) 44%);
+  --ctl-accent-hover:     hsl(var(--mono-h) calc(var(--mono-sa) * 1.2) 38%);
+
+  --ctl-text:             hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 72 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-hint:             hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 50 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-switch-off:       hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 42 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-switch-off-hover: hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 59 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-knob-off:         hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 5 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-knob-off-hover:   hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  9 * var(--mono-sgn)) * 1%), 100%));
+  /* The gauge reads the other way round from a slider: its progress is the deep
+     end of the pair and the unswept ring is the shallow one, so a part-full dial
+     reads as a dark arc drawn onto a light band. */
+  --ctl-gauge-track:      hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 21 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-gauge-fill:       hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 33 * var(--mono-sgn)) * 1%), 100%));
+
+  /* These two sit *on* a capsule rather than in the plate ramp, so they stay
+     bright in both polarities instead of flipping with --mono-sgn. That is only
+     safe because the grounds they land on are pinned too — the pair is what the
+     capsule block above is protecting. */
+  --ctl-on-track:         hsl(var(--mono-h) var(--mono-s) 96%);
+  --ctl-knob-on:          hsl(var(--mono-h) calc(var(--mono-s) / 3) 99%);
+
+  /* The lit top edge on the panel plate. Always a step *lighter* than the
+     plate — a light comes from above whichever way the ramp runs. */
+  --ctl-edge:             hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) + 8) * 1%), 100%));
 }

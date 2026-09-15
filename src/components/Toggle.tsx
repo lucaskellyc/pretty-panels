@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ControlRow } from './ControlRow';
 
 export interface ToggleProps {
   checked: boolean;
@@ -16,13 +17,7 @@ export interface ToggleProps {
  */
 export function Toggle({ checked, onChange, label, hint, disabled }: ToggleProps) {
   return (
-    <label className="switch-row">
-      {(label != null || hint != null) && (
-        <span className="switch-meta">
-          {label != null && <span className="control-name">{label}</span>}
-          {hint != null && <span className="switch-hint">{hint}</span>}
-        </span>
-      )}
+    <ControlRow as="label" label={label} hint={hint}>
       <span className="switch">
         <input
           type="checkbox"
@@ -32,6 +27,6 @@ export function Toggle({ checked, onChange, label, hint, disabled }: ToggleProps
         />
         <span className="track" />
       </span>
-    </label>
+    </ControlRow>
   );
 }

@@ -44,12 +44,6 @@
   padding: var(--space-2) var(--space-4);
 }
 
-.divider {
-  border: 0;
-  border-top: var(--border-width-thick) dashed var(--ctl-track);
-  margin: var(--space-4) 2px;
-}
-
 /* ---- Slider rows: label + value + track in one object ---- */
 .slider-row {
   position: relative;
@@ -64,7 +58,6 @@
   border-radius: 50px;
   overflow: hidden;
   user-select: none;
-  --webkit-user-select: none;
 }
 .slider-fill {
   position: absolute;
@@ -104,6 +97,98 @@
 }
 .slider-row:focus-within { box-shadow: var(--focus-ring); }
 
+/* ---- Arc gauges (read-only 270° dials) ----
+   `--fill` is a unitless 0–100 number here, not the slider's percentage, because
+   the geometry multiplies it: 0.75% of the circle per unit sweeps the 270° arc,
+   and 2.7deg per unit walks the leading end-cap around that same arc. */
+.gauge-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: var(--space-2) 0;
+}
+.arc-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.arc {
+  /* Override this pair to resize the dial — the rest of the geometry derives
+     from it. */
+  --arc-size: 72px;
+  --arc-band: 9px;
+  /* The band's centre line, as a translate along -Y from the dial's centre. */
+  --arc-radius: calc((var(--arc-band) - var(--arc-size)) / 2);
+  position: relative;
+  width: var(--arc-size);
+  height: var(--arc-size);
+  border-radius: var(--radius-pill);
+  background: conic-gradient(from 225deg,
+    var(--ctl-gauge-fill) calc(var(--fill, 0) * 0.75%),
+    var(--ctl-gauge-track) calc(var(--fill, 0) * 0.75%) 75%,
+    transparent 75%);
+}
+.arc.is-accent {
+  background: conic-gradient(from 225deg,
+    var(--ctl-accent) calc(var(--fill, 0) * 0.75%),
+    var(--ctl-gauge-track) calc(var(--fill, 0) * 0.75%) 75%,
+    transparent 75%);
+}
+/* Punch the dial's centre back out to the plate colour, leaving the band. */
+.arc::before {
+  content: "";
+  position: absolute;
+  inset: var(--arc-band);
+  border-radius: var(--radius-pill);
+  background: var(--ctl-panel);
+}
+/* Rounded end-caps — one at each end of the track, one on the fill's leading
+   edge. All three ride the band's centre line and are the band's width. */
+.arc::after,
+.arc-value::before,
+.arc-value::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--arc-band);
+  height: var(--arc-band);
+  margin: calc(var(--arc-band) * -0.5) 0 0 calc(var(--arc-band) * -0.5);
+  border-radius: var(--radius-pill);
+  background: var(--ctl-gauge-fill);
+}
+/* start of the sweep (bottom-left of the gap) */
+.arc::after { transform: rotate(225deg) translateY(var(--arc-radius)); }
+/* far end of the track (bottom-right of the gap) */
+.arc-value::before {
+  background: var(--ctl-gauge-track);
+  transform: rotate(135deg) translateY(var(--arc-radius));
+}
+/* the fill's leading edge */
+.arc-value::after {
+  transform: rotate(calc(225deg + var(--fill, 0) * 2.7deg)) translateY(var(--arc-radius));
+}
+.arc.is-accent::after,
+.arc.is-accent .arc-value::after { background: var(--ctl-accent); }
+.arc-value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--ctl-text);
+}
+/* Tucked up into the arc's open bottom quarter so the caption reads as part of
+   the dial rather than a line under it. */
+.arc-label {
+  font: var(--type-label);
+  color: var(--ctl-text);
+  margin-top: -8px;
+}
+
 /* ---- Switch rows (Toggle) ---- */
 .switch-row {
   display: flex;
@@ -112,7 +197,6 @@
   gap: var(--space-4);
   padding: var(--space-2) 0;
   user-select: none;
-  --webkit-user-select: none;
 }
 .switch-meta { display: flex; flex-direction: column; gap: 2px; }
 .switch-meta .control-name {
@@ -171,13 +255,186 @@
 .switch-row:hover input:checked + .track { background: var(--ctl-accent-hover); }
 .switch-row:hover input:checked + .track::after { background: var(--ctl-knob-on); }
 
+/* ---- Stepper (−/+ around a readout) ---- */
+.stepper {
+  display: flex;
+  align-items: center;
+  height: var(--control-md);
+  padding: 0 var(--space-1);
+  background: var(--ctl-track);
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.stepper-btn {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ctl-on-track);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.stepper-btn svg { display: block; }
+/* Inside a recessed track, hover has to go *darker* than the track to read. */
+.stepper-btn:hover { background: var(--ctl-deep-hover); }
+.stepper-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.stepper-btn:disabled { opacity: 0.5; cursor: default; }
+.stepper-btn:disabled:hover { background: transparent; }
+.stepper-value {
+  min-width: 56px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--ctl-on-track);
+}
+/* The readout is also the way in — double-click it to type a value. The caret is
+   the only thing advertising that, so it is worth the cursor change. */
+.stepper-value.is-editable { cursor: text; }
+/* Typing into it keeps that class, so the metrics and the face are already
+   right and this only undoes what the browser adds on top of an <input>: a
+   border, a background, a width of its own, and — inherited from `.stepper` —
+   the `user-select: none` that would stop the text being selected. */
+.stepper-input {
+  width: 56px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.stepper-input:focus,
+.stepper-input:focus-visible { outline: none; box-shadow: none; }
+
+/* ---- Dropdown (Select) ----
+   The chevron is a real sibling <svg> rather than a background image, so it
+   inherits the capsule's color and retints with the --ctl-* tokens. */
+.dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--ctl-on-track);
+}
+.dropdown select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: var(--control-md);
+  padding: 0 var(--space-6) 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--ctl-track);
+  color: inherit;
+  font: var(--type-code);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+/* The popup list is drawn by the platform, on its own ground — repaint the
+   options for the plate rather than letting them inherit on-track white. */
+.dropdown option { background: var(--ctl-panel); color: var(--ctl-text); }
+.dropdown select:hover { background: var(--ctl-track-hover); }
+.dropdown select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.dropdown select:disabled { opacity: 0.5; cursor: default; }
+.dropdown-chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  display: block;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* ---- Radio group ---- */
+.radio-group {
+  display: flex;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.radio {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  color: var(--ctl-text);
+  cursor: pointer;
+}
+/* The native input stays in the layout (0×0, transparent) so it keeps focus,
+   arrow-key roving, and form semantics; the dot is what you see. */
+.radio input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+.radio-dot {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--ctl-track);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.radio:hover .radio-dot { background: var(--ctl-deep-hover); }
+.radio input:checked + .radio-dot { background: var(--ctl-accent); }
+.radio:hover input:checked + .radio-dot { background: var(--ctl-accent-hover); }
+.radio input:checked + .radio-dot::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--ctl-knob-on);
+}
+.radio input:focus-visible + .radio-dot { box-shadow: var(--focus-ring); }
+.radio:has(input:disabled) { opacity: 0.5; cursor: default; }
+.radio:has(input:disabled):hover .radio-dot { background: var(--ctl-track); }
+.radio:has(input:checked:disabled):hover .radio-dot { background: var(--ctl-accent); }
+
+/* ---- Text field ---- */
+.text-field {
+  width: 150px;
+  height: var(--control-md);
+  min-width: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-3);
+  background: var(--ctl-track);
+  color: var(--ctl-on-track);
+  font: var(--type-code);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
+  user-select: text;
+  -webkit-user-select: text;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.text-field::placeholder { color: var(--ctl-on-track); opacity: 0.55; }
+.text-field:hover { background: var(--ctl-track-hover); }
+.text-field:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.text-field:disabled { opacity: 0.5; cursor: default; }
+.text-field::selection { background: var(--ctl-accent); color: var(--ctl-knob-on); }
+
 /* ---- Vector input (2–4 fused numeric fields) ---- */
 .vector {
   display: flex;
   gap: 2px;
   height: 32px;
-  border-radius: 25px;
-  overflow: hidden;
+  /* Hug the fields — a stretched capsule would round its corners in the empty
+     space past the last field, leaving that field's square edge looking cut off. */
+  width: fit-content;
   flex-shrink: 0;
 }
 .vector input {
@@ -193,6 +450,16 @@
   font-variant-numeric: tabular-nums;
   text-align: center;
   cursor: ns-resize;
+}
+/* Round the outer ends so the fused fields read as one capsule; inner edges stay
+   square so the 2px gaps divide them. */
+.vector input:first-child {
+  border-top-left-radius: var(--radius-pill);
+  border-bottom-left-radius: var(--radius-pill);
+}
+.vector input:last-child {
+  border-top-right-radius: var(--radius-pill);
+  border-bottom-right-radius: var(--radius-pill);
 }
 .vector input:hover { background: var(--ctl-track-hover); }
 .vector input:focus,
@@ -224,7 +491,6 @@
   color: var(--ctl-text);
   cursor: pointer;
   user-select: none;
-  --webkit-user-select: none;
 }
 .collapse-head .chevron { transition: transform var(--dur-base) var(--ease-out); }
 .collapse-head[aria-expanded="true"] .chevron { transform: rotate(180deg); }

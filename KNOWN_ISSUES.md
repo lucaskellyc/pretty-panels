@@ -28,11 +28,11 @@ A running log of bugs and rough edges found in the codebase. File references are
    the `Highlight` toggle in the hero Inspector (it drives `setHighlight` again) and
    corrected the stale doc comment.
 
-5. **Dead committed assets.** `demo/hero_bg.jpg` and `demo/hero_logo.svg` are not
-   referenced anywhere (the hero uses inline SVG paths). They ship for nothing.
+5. ✅ **Resolved (v0.2.0-alpha).** ~~Dead committed assets.~~ `demo/hero_bg.jpg`
+   is gone and `demo/logo.svg` now has a use — it's the README banner.
 
-6. **Stray empty markup in the spec strip.** `demo/App.tsx:400-402` has blank
-   spans / whitespace inside `.hero-specs`.
+6. ✅ **Resolved (v0.2.0-alpha).** ~~Stray empty markup in the spec strip.~~ The
+   `.hero-specs` markup carries a component count and the version, both real.
 
 ## Consistency / drift
 
@@ -66,10 +66,9 @@ A running log of bugs and rough edges found in the codebase. File references are
     input (`src/components/Vector.tsx:83`), so you can't blank the field to retype;
     intermediate states like `-` or `1.` are rejected mid-entry.
 
-14. **Panel collapsed-width can go stale.** The collapsed hug width is measured
-    from the header, but the `ResizeObserver` only watches the body inner
-    (`src/components/Panel.tsx:97`). If the title changes width without a window
-    resize, `--panel-collapsed-w` won't update until the next resize.
+14. ✅ **Resolved (v0.2.0-alpha).** ~~Panel collapsed-width can go stale.~~ The
+    collapsed hug width was dropped along with `--panel-collapsed-w`; the plate
+    now keeps its full width while collapsed, so there is nothing to re-measure.
 
 ## Notes
 

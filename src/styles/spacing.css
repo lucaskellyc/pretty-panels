@@ -27,10 +27,8 @@
   /* control heights */
   --control-sm: 26px;
   --control-md: 32px;
-  --control-lg: 40px;
 
   /* borders */
-  --border-width: 1px;
   --border-width-thick: 2px;
 
   /* z-index */

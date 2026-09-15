@@ -1,8 +1,30 @@
 import { type FC, type ReactNode, useState } from 'react';
-import { IconButton, Panel, Platter, Section, Slider, TextButton, Toggle, Vector } from '../src';
+import {
+  IconButton,
+  Gauge,
+  GaugeRow,
+  Panel,
+  Platter,
+  RadioGroup,
+  Section,
+  Select,
+  Slider,
+  Stepper,
+  Tabs,
+  TextButton,
+  TextField,
+  Toggle,
+  Vector,
+} from '../src';
 
 /** Atomic level a component sits at — drives the sidebar grouping. */
 export type Group = 'atoms' | 'molecules' | 'organisms';
+
+/** Sub-heading within a tier. Atoms outnumber every other tier, so they file by
+ *  what the part actually does rather than sitting in one long list. Alphabetical,
+ *  like the components inside them. */
+export const FAMILIES = ['Buttons', 'Choices', 'Readouts', 'Values'] as const;
+export type Family = (typeof FAMILIES)[number];
 
 /** One row of a component's props table. */
 export interface PropRow {
@@ -18,6 +40,9 @@ export interface DocPage {
   slug: string;
   name: string;
   group: Group;
+  /** Sub-heading to file this page under within its tier. Tiers whose pages have
+   *  no family render as one flat list. */
+  family?: Family;
   summary: string;
   /** A self-contained, interactive demo of the component. Omit to hide the
    *  Example section on that page. */
@@ -167,6 +192,171 @@ function ToggleExample() {
   );
 }
 
+function TabsExample() {
+  const [tab, setTab] = useState('tab_a');
+  const [fov, setFov] = useState(90);
+  const [vsync, setVsync] = useState(true);
+  const [second, setSecond] = useState(false);
+  return (
+    <Panel
+      title={
+        <Tabs
+          label="Panel sections"
+          items={['tab_a', 'tab_b', { id: 'tab_c', disabled: true }]}
+          value={tab}
+          onChange={setTab}
+        />
+      }
+    >
+      {tab === 'tab_a' ? (
+        <>
+          <Slider
+            label="field_of_view"
+            value={fov}
+            min={30}
+            max={140}
+            step={1}
+            onChange={setFov}
+            format={(v) => `${v}°`}
+          />
+          <Toggle checked={vsync} onChange={setVsync} label="vsync" hint="sync to display refresh" />
+        </>
+      ) : (
+        <Toggle
+          checked={second}
+          onChange={setSecond}
+          label="second_option"
+          hint="lives on the second tab"
+        />
+      )}
+    </Panel>
+  );
+}
+
+const oneDecimal = (v: number) => v.toFixed(1);
+
+function GaugeExample() {
+  const [load, setLoad] = useState(60);
+  return (
+    <Panel title="Telemetry">
+      <GaugeRow>
+        <Gauge label="cpu" value={load} format={(v) => String(Math.round(v))} />
+        <Gauge label="latency" value={3.4} min={0} max={10} format={oneDecimal} />
+        <Gauge label="queue" value={8.2} min={0} max={10} format={oneDecimal} accent />
+      </GaugeRow>
+      <Slider
+        label="cpu_load"
+        value={load}
+        min={0}
+        max={100}
+        step={1}
+        onChange={setLoad}
+        format={(v) => `${v}%`}
+      />
+    </Panel>
+  );
+}
+
+function GaugeRowExample() {
+  return (
+    <Panel style={{ borderRadius: 75 }}>
+      <GaugeRow>
+        <Gauge label="metric_one" value={60} />
+        <Gauge label="metric_two" value={3.4} min={0} max={10} format={oneDecimal} />
+        <Gauge label="metric_three" value={8.2} min={0} max={10} format={oneDecimal} accent />
+      </GaugeRow>
+    </Panel>
+  );
+}
+
+function StepperExample() {
+  const [size, setSize] = useState(256);
+  const [samples, setSamples] = useState(8);
+  const [bias, setBias] = useState(0);
+  return (
+    <Panel title="Render">
+      <Stepper
+        label="Texture size"
+        hint="Power-of-two increments"
+        value={size}
+        min={64}
+        max={512}
+        step={64}
+        onChange={setSize}
+        format={(v) => `${v}px`}
+      />
+      <Stepper label="Samples" hint="Rays per pixel" value={samples} min={1} max={16} onChange={setSamples} />
+      <Stepper label="Bias" hint="No bounds — steps forever" value={bias} step={0.25} onChange={setBias} />
+    </Panel>
+  );
+}
+
+function SelectExample() {
+  const [shading, setShading] = useState('rendered');
+  const [format, setFormat] = useState('png');
+  return (
+    <Panel title="Viewport">
+      <Select
+        label="Shading"
+        hint="How the viewport draws"
+        value={shading}
+        options={['wireframe', 'solid', 'material', 'rendered']}
+        onChange={setShading}
+      />
+      <Select
+        label="Still format"
+        hint="Objects add their own label"
+        value={format}
+        options={[
+          { value: 'png', label: 'PNG' },
+          { value: 'jpg', label: 'JPEG' },
+          { value: 'exr', label: 'OpenEXR' },
+          { value: 'tiff', label: 'TIFF (soon)', disabled: true },
+        ]}
+        onChange={setFormat}
+      />
+    </Panel>
+  );
+}
+
+function RadioGroupExample() {
+  const [axis, setAxis] = useState('y');
+  const [quality, setQuality] = useState('med');
+  return (
+    <Panel title="Transform">
+      <RadioGroup
+        label="Up axis"
+        hint="Exclusive choice"
+        value={axis}
+        options={['x', 'y', 'z']}
+        onChange={setAxis}
+      />
+      <RadioGroup
+        label="Preview"
+        hint="One option is disabled"
+        value={quality}
+        options={[
+          { value: 'low', label: 'lo' },
+          { value: 'med', label: 'md' },
+          { value: 'high', label: 'hi', disabled: true },
+        ]}
+        onChange={setQuality}
+      />
+    </Panel>
+  );
+}
+
+function TextFieldExample() {
+  const [name, setName] = useState('untitled_01');
+  const [tag, setTag] = useState('');
+  return (
+    <Panel title="Document">
+      <TextField label="Name" hint="Free-form entry" value={name} onChange={setName} />
+      <TextField label="Tag" hint="Placeholder when empty" value={tag} placeholder="none" onChange={setTag} />
+    </Panel>
+  );
+}
+
 function IconButtonExample() {
   const [playing, setPlaying] = useState(false);
   const [rec, setRec] = useState(false);
@@ -293,39 +483,37 @@ function SectionExample() {
 
 export const pages: DocPage[] = [
   {
-    slug: 'slider',
-    name: 'Slider',
+    slug: 'gauge',
+    name: 'Gauge',
     group: 'atoms',
-    summary: 'Label + value + capsule track in one object. Pointer-capture drag, keyboard arrows, optional value formatting.',
-    Example: SliderExample,
+    family: 'Readouts',
+    summary: 'A read-only 270° dial with a rounded fill, a tabular readout, and a caption. The range and the displayed number are independent, so 3.4-out-of-10 reads "3.4" on a 34%-full arc.',
+    Example: GaugeExample,
     props: [
-      { name: 'label', type: 'string', required: true, description: 'Text shown on the left of the track.' },
-      { name: 'value', type: 'number', required: true, description: 'Current value (fully controlled).' },
-      { name: 'min', type: 'number', required: true, description: 'Lowest value.' },
-      { name: 'max', type: 'number', required: true, description: 'Highest value.' },
-      { name: 'step', type: 'number', required: true, description: 'Increment / snap grid.' },
-      { name: 'onChange', type: '(v: number) => void', required: true, description: 'Called with the new value on drag or keypress.' },
-      { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
+      { name: 'value', type: 'number', required: true, description: 'Current reading.' },
+      { name: 'min', type: 'number', default: '0', description: 'Bottom of the swept range.' },
+      { name: 'max', type: 'number', default: '100', description: 'Top of the swept range.' },
+      { name: 'label', type: 'ReactNode', description: 'Caption under the dial.' },
+      { name: 'format', type: '(v: number) => string', description: 'Format the number in the middle; the arc still fills from value.' },
+      { name: 'accent', type: 'boolean', default: 'false', description: 'Paint the fill with the accent instead of the muted gauge fill.' },
     ],
   },
   {
-    slug: 'toggle',
-    name: 'Toggle',
-    group: 'atoms',
-    summary: 'A capsule on/off switch, optionally paired with a bold label and a hint line. The whole row is the click target.',
-    Example: ToggleExample,
+    slug: 'gauge-row',
+    name: 'Gauge Row',
+    group: 'molecules',
+    summary: 'The strip a set of Gauge dials sits in — spaced evenly across the plate and hung from a common top edge so their captions line up.',
+    Example: GaugeRowExample,
     props: [
-      { name: 'checked', type: 'boolean', required: true, description: 'On/off state (controlled).' },
-      { name: 'onChange', type: '(checked: boolean) => void', required: true, description: 'Called with the next state.' },
-      { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
-      { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
-      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the switch and block interaction.' },
+      { name: 'children', type: 'ReactNode', required: true, description: 'The gauges — usually two to four Gauges.' },
+      { name: 'className', type: 'string', description: 'Extra class names on the row.' },
     ],
   },
   {
     slug: 'icon-button',
     name: 'Icon Button',
     group: 'atoms',
+    family: 'Buttons',
     summary: 'A round icon button on a panel-plate ground. Supply your own icon; the active state paints the accent.',
     Example: IconButtonExample,
     props: [
@@ -335,50 +523,6 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'string', description: 'Accessible name + tooltip.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the button and block interaction.' },
       { name: 'className', type: 'string', description: 'Extra class names on the button.' },
-    ],
-  },
-  {
-    slug: 'text-button',
-    name: 'Text Button',
-    group: 'atoms',
-    summary: "IconButton's text-label sibling: a capsule that hugs its label on a panel-plate ground, with an optional leading icon. The active state paints the accent.",
-    Example: TextButtonExample,
-    props: [
-      { name: 'children', type: 'ReactNode', required: true, description: 'The button label.' },
-      { name: 'onClick', type: '() => void', description: 'Click handler.' },
-      { name: 'icon', type: 'ReactNode', description: 'Optional leading icon (e.g. an inline <svg>), placed before the label.' },
-      { name: 'active', type: 'boolean', default: 'false', description: 'Render the accent (pressed) state and set aria-pressed.' },
-      { name: 'label', type: 'string', description: 'Tooltip + accessible-name override. Defaults to the visible label.' },
-      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the button and block interaction.' },
-      { name: 'className', type: 'string', description: 'Extra class names on the button.' },
-    ],
-  },
-  {
-    slug: 'platter',
-    name: 'Platter',
-    group: 'molecules',
-    summary: 'A recessed capsule tray holding a row or column of icon and text buttons. Mix segment types freely; each lights up on hover and paints the accent when active.',
-    Example: PlatterExample,
-    props: [
-      { name: 'items', type: 'PlatterItem[]', required: true, description: 'The segments. Each has an optional icon and/or text, plus onClick, active, disabled, and an a11y label.' },
-      { name: 'orientation', type: "'horizontal' | 'vertical'", default: "'horizontal'", description: 'Lay the segments in a row or a column.' },
-      { name: 'label', type: 'string', description: "Accessible name for the group (the toolbar's aria-label)." },
-      { name: 'className', type: 'string', description: 'Extra class names on the tray.' },
-    ],
-  },
-  {
-    slug: 'vector',
-    name: 'Vector',
-    group: 'atoms',
-    summary: 'A segmented capsule with 2, 3, or 4 numeric fields. Drag a field vertically to scrub or type a value; color mode paints each field with its live rgb.',
-    Example: VectorExample,
-    props: [
-      { name: 'value', type: 'number[]', required: true, description: 'The field values. The capsule renders one field per entry — use 2, 3, or 4.' },
-      { name: 'onChange', type: '(axis: number, v: number) => void', required: true, description: 'Called with the changed field index and its new value.' },
-      { name: 'step', type: 'number', default: '0.5', description: 'Scrub / type increment.' },
-      { name: 'min', type: 'number', description: 'Clamp values to this minimum.' },
-      { name: 'max', type: 'number', description: 'Clamp values to this maximum.' },
-      { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value (expects three 0–255 components).' },
     ],
   },
   {
@@ -399,6 +543,36 @@ export const pages: DocPage[] = [
     ],
   },
   {
+    slug: 'platter',
+    name: 'Platter',
+    group: 'molecules',
+    summary: 'A recessed capsule tray holding a row or column of icon and text buttons. Mix segment types freely; each lights up on hover and paints the accent when active.',
+    Example: PlatterExample,
+    props: [
+      { name: 'items', type: 'PlatterItem[]', required: true, description: 'The segments. Each has an optional icon and/or text, plus onClick, active, disabled, and an a11y label.' },
+      { name: 'orientation', type: "'horizontal' | 'vertical'", default: "'horizontal'", description: 'Lay the segments in a row or a column.' },
+      { name: 'label', type: 'string', description: "Accessible name for the group (the toolbar's aria-label)." },
+      { name: 'className', type: 'string', description: 'Extra class names on the tray.' },
+    ],
+  },
+  {
+    slug: 'radio-group',
+    name: 'Radio Group',
+    group: 'atoms',
+    family: 'Choices',
+    summary: 'A row of dot-and-label choices over real radio inputs, so arrow-key roving and form semantics come from the platform. Reach for it over a Select when the options are few and short.',
+    Example: RadioGroupExample,
+    props: [
+      { name: 'value', type: 'string', required: true, description: 'Currently selected value (controlled).' },
+      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the newly selected value.' },
+      { name: 'options', type: '(string | RadioOption)[]', required: true, description: 'The choices. A bare string is shorthand for { value: theString }; an object adds label and disabled.' },
+      { name: 'name', type: 'string', description: 'Shared name for the underlying radios. Generated when omitted — pass one only to join a wider native group.' },
+      { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
+      { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Disable every choice in the group.' },
+    ],
+  },
+  {
     slug: 'section',
     name: 'Section',
     group: 'molecules',
@@ -410,4 +584,148 @@ export const pages: DocPage[] = [
       { name: 'defaultOpen', type: 'boolean', default: 'true', description: 'Whether the section starts expanded.' },
     ],
   },
+  {
+    slug: 'select',
+    name: 'Select',
+    group: 'atoms',
+    family: 'Choices',
+    summary: 'A native select restyled as a track capsule. The chevron is a real sibling element, so it retints with the rest of the control.',
+    Example: SelectExample,
+    props: [
+      { name: 'value', type: 'string', required: true, description: 'Currently selected value (controlled).' },
+      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the newly selected value.' },
+      { name: 'options', type: '(string | SelectOption)[]', required: true, description: 'The choices. A bare string is shorthand for { value: theString }; an object adds label and disabled.' },
+      { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
+      { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the capsule and block interaction.' },
+    ],
+  },
+  {
+    slug: 'slider',
+    name: 'Slider',
+    group: 'atoms',
+    family: 'Values',
+    summary: 'Label + value + capsule track in one object. Pointer-capture drag, keyboard arrows, optional value formatting.',
+    Example: SliderExample,
+    props: [
+      { name: 'label', type: 'string', required: true, description: 'Text shown on the left of the track.' },
+      { name: 'value', type: 'number', required: true, description: 'Current value (fully controlled).' },
+      { name: 'min', type: 'number', required: true, description: 'Lowest value.' },
+      { name: 'max', type: 'number', required: true, description: 'Highest value.' },
+      { name: 'step', type: 'number', required: true, description: 'Increment / snap grid.' },
+      { name: 'onChange', type: '(v: number) => void', required: true, description: 'Called with the new value on drag or keypress.' },
+      { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
+    ],
+  },
+  {
+    slug: 'stepper',
+    name: 'Stepper',
+    group: 'atoms',
+    family: 'Values',
+    summary: 'A recessed capsule holding −/+ buttons around a tabular readout. For values that move in discrete increments; the buttons disable at the bounds.',
+    Example: StepperExample,
+    props: [
+      { name: 'value', type: 'number', required: true, description: 'Current value (fully controlled).' },
+      { name: 'onChange', type: '(v: number) => void', required: true, description: 'Called with the new value on each press.' },
+      { name: 'step', type: 'number', default: '1', description: 'Amount one press moves the value.' },
+      { name: 'min', type: 'number', description: 'Clamp to this minimum; the − button disables once the value reaches it.' },
+      { name: 'max', type: 'number', description: 'Clamp to this maximum; the + button disables once the value reaches it.' },
+      { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
+      { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
+      { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim both buttons and block interaction.' },
+    ],
+  },
+  {
+    slug: 'tabs',
+    name: 'Tabs',
+    group: 'molecules',
+    summary: "A capsule tab strip. Hand it to a Panel's title and it becomes the plate's flush header; drop it anywhere else and it's a self-contained bar. It renders only the strip — which body to show is yours to switch on value.",
+    Example: TabsExample,
+    props: [
+      { name: 'items', type: '(string | TabItem)[]', required: true, description: 'The tabs, left to right. A bare string is shorthand for { id: theString }; an object adds label and disabled.' },
+      { name: 'value', type: 'string', required: true, description: 'Active tab id (fully controlled).' },
+      { name: 'onChange', type: '(id: string) => void', required: true, description: 'Called with the newly selected tab id, on click or arrow key.' },
+      { name: 'label', type: 'string', description: "Accessible name for the strip (the tablist's aria-label)." },
+      { name: 'className', type: 'string', description: 'Extra class names on the strip.' },
+    ],
+  },
+  {
+    slug: 'text-button',
+    name: 'Text Button',
+    group: 'atoms',
+    family: 'Buttons',
+    summary: "IconButton's text-label sibling: a capsule that hugs its label on a panel-plate ground, with an optional leading icon. The active state paints the accent.",
+    Example: TextButtonExample,
+    props: [
+      { name: 'children', type: 'ReactNode', required: true, description: 'The button label.' },
+      { name: 'onClick', type: '() => void', description: 'Click handler.' },
+      { name: 'icon', type: 'ReactNode', description: 'Optional leading icon (e.g. an inline <svg>), placed before the label.' },
+      { name: 'active', type: 'boolean', default: 'false', description: 'Render the accent (pressed) state and set aria-pressed.' },
+      { name: 'label', type: 'string', description: 'Tooltip + accessible-name override. Defaults to the visible label.' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the button and block interaction.' },
+      { name: 'className', type: 'string', description: 'Extra class names on the button.' },
+    ],
+  },
+  {
+    slug: 'text-field',
+    name: 'Text Field',
+    group: 'atoms',
+    family: 'Values',
+    summary: 'A track capsule for free-form entry, set in the mono face so typed identifiers line up with the numeric readouts around them.',
+    Example: TextFieldExample,
+    props: [
+      { name: 'value', type: 'string', required: true, description: 'Current text (fully controlled).' },
+      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the new text on every keystroke.' },
+      { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
+      { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
+      { name: 'placeholder', type: 'string', description: 'Shown while the field is empty.' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the capsule and block interaction.' },
+      { name: 'spellCheck', type: 'boolean', default: 'false', description: 'Native spellcheck. Off by default — these fields usually hold identifiers rather than prose.' },
+    ],
+  },
+  {
+    slug: 'toggle',
+    name: 'Toggle',
+    group: 'atoms',
+    family: 'Choices',
+    summary: 'A capsule on/off switch, optionally paired with a bold label and a hint line. The whole row is the click target.',
+    Example: ToggleExample,
+    props: [
+      { name: 'checked', type: 'boolean', required: true, description: 'On/off state (controlled).' },
+      { name: 'onChange', type: '(checked: boolean) => void', required: true, description: 'Called with the next state.' },
+      { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
+      { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the switch and block interaction.' },
+    ],
+  },
+  {
+    slug: 'vector',
+    name: 'Vector',
+    group: 'atoms',
+    family: 'Values',
+    summary: 'A segmented capsule with 2, 3, or 4 numeric fields. Drag a field vertically to scrub or type a value; color mode paints each field with its live rgb.',
+    Example: VectorExample,
+    props: [
+      { name: 'value', type: 'number[]', required: true, description: 'The field values. The capsule renders one field per entry — use 2, 3, or 4.' },
+      { name: 'onChange', type: '(axis: number, v: number) => void', required: true, description: 'Called with the changed field index and its new value.' },
+      { name: 'step', type: 'number', default: '0.5', description: 'Scrub / type increment.' },
+      { name: 'min', type: 'number', description: 'Clamp values to this minimum.' },
+      { name: 'max', type: 'number', description: 'Clamp values to this maximum.' },
+      { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value (expects three 0–255 components).' },
+    ],
+  },
 ];
+
+/** The families inside one tier, in display order, each holding its pages.
+ *  A tier whose pages carry no family comes back as a single unlabelled section,
+ *  so callers can render every tier the same way. */
+export function familiesOf(group: Group): { label?: Family; items: DocPage[] }[] {
+  const tier = pages.filter((p) => p.group === group);
+  const named = FAMILIES.map((label) => ({
+    label,
+    items: tier.filter((p) => p.family === label),
+  })).filter((f) => f.items.length > 0);
+  const loose = tier.filter((p) => p.family == null);
+  return loose.length > 0 ? [...named, { items: loose }] : named;
+}

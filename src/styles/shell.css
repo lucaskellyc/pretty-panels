@@ -12,7 +12,6 @@
   gap: var(--space-4);
   padding: 10px var(--space-3);
   user-select: none;
-  --webkit-user-select: none;
 }
 .panel-head b {
   font: var(--type-label);
@@ -38,40 +37,77 @@
   transition: background var(--dur-fast) var(--ease-out);
 }
 .panel-collapse-btn:hover { background: var(--ctl-bar); }
-.panel-collapse-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.panel-collapse-btn svg { display: block; }
 
-/* ---- Round icon button (IconButton) ---- */
+/* ---- Tab bar (Tabs) ----
+   Standalone it is a self-contained bar. Handed to Panel's `title` slot it *is*
+   the header, so the head drops its padding and lets the strip bleed out to the
+   plate's rounded edges (which `.panel` already clips). */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  background: var(--ctl-panel);
+  user-select: none;
+}
+.panel-head:has(> .tab-bar) { padding: 0; background: var(--ctl-bar); }
+.panel-head > .tab-bar { flex: 1; min-width: 0; }
+/* Panel's collapse toggle shares the strip when both are used — keep it off the
+   plate's edge. */
+.panel-head:has(> .tab-bar) > .panel-collapse-btn { margin-right: var(--space-2); }
+
+.tab {
+  flex: 1;
+  min-width: 0;
+  font: var(--type-label);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  color: var(--ctl-text);
+  background: var(--ctl-tab);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-3);
+  min-height: var(--control-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+.tab:hover { background: var(--ctl-tab-hover); }
+/* The selected tab is where you already are, so it also doesn't light up under
+   the pointer: this rule follows `.tab:hover` at equal specificity, which is
+   what holds the selected colour through a hover. */
+.tab[aria-selected="true"] {
+  background: var(--ctl-tab-active);
+  color: var(--ctl-tab-active-text);
+}
+.tab:disabled:hover { background: var(--ctl-tab); }
+
+/* ---- Round icon button (IconButton) + text button (TextButton) ----
+   Two shapes of the same part: a capsule on the plate ground that lights up on
+   hover and paints the accent when active. The round one is a fixed square
+   plate around an icon; the text one hugs its label (with an optional leading
+   icon). */
 .pp-round-btn {
   width: 34px;
   height: 34px;
   display: grid;
   place-items: center;
   padding: 0;
-  border: var(--border-width-thick) solid var(--ctl-panel);
+  border: none;
   border-radius: 50%;
-  background: var(--ctl-panel);
-  color: var(--ctl-text);
+  background: var(--ctl-track);
+  color: white;
   cursor: pointer;
   user-select: none;
-  --webkit-user-select: none;
   transition: background var(--dur-fast) var(--ease-out),
               color var(--dur-fast) var(--ease-out);
 }
-.pp-round-btn:hover { background: var(--ctl-bar); }
-.pp-round-btn svg { display: block; }
-.pp-round-btn.is-active {
-  background: var(--ctl-accent);
-  border-color: var(--ctl-accent);
-  color: var(--ctl-on-track);
-}
-.pp-round-btn.is-active:hover { background: var(--ctl-accent-hover); border-color: var(--ctl-accent-hover); }
-.pp-round-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.pp-round-btn:disabled { opacity: 0.5; cursor: default; }
+.pp-round-btn:hover { background: var(--ctl-track-hover); }
 
-/* ---- Text button (TextButton) ----
-   IconButton's text-label sibling: a capsule that hugs its label on the same
-   plate ground, lighting up on hover and painting the accent when active. */
 .pp-text-btn {
   display: inline-flex;
   align-items: center;
@@ -79,39 +115,35 @@
   gap: var(--space-2);
   height: var(--control-md);
   padding: 0 var(--space-4);
-  border: var(--border-width-thick) solid var(--ctl-panel);
   border-radius: var(--radius-pill);
-  background: var(--ctl-panel);
-  color: var(--ctl-text);
+  border: none;
+  background: var(--ctl-track);
+  color: white;
   font: var(--type-ui);
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  --webkit-user-select: none;
   transition: background var(--dur-fast) var(--ease-out),
-              color var(--dur-fast) var(--ease-out),
-              border-color var(--dur-fast) var(--ease-out);
+              color var(--dur-fast) var(--ease-out);
 }
-.pp-text-btn svg { display: block; }
-.pp-text-btn:hover { background: var(--ctl-bar); border-color: var(--ctl-bar); }
+.pp-text-btn:hover { background: var(--ctl-track-hover); }
+
+/* After the `:hover` rules above, at equal specificity — that order is what
+   keeps an active button on the accent while the pointer is over it. */
+.pp-round-btn.is-active,
 .pp-text-btn.is-active {
   background: var(--ctl-accent);
-  border-color: var(--ctl-accent);
   color: var(--ctl-on-track);
 }
-.pp-text-btn.is-active:hover {
-  background: var(--ctl-accent-hover);
-  border-color: var(--ctl-accent-hover);
-}
-.pp-text-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.pp-text-btn:disabled { opacity: 0.5; cursor: default; }
+.pp-round-btn.is-active:hover,
+.pp-text-btn.is-active:hover { background: var(--ctl-accent-hover); }
 
 /* ---- Button platter (Platter) ----
    A recessed capsule tray holding a row or column of icon / text segments.
-   The tray sinks like a slider track; segments sit flush, lighten toward the
-   bar on hover, and paint the accent when active. */
+   The tray sinks like a slider track; segments sit flush, sink further on
+   hover, and paint the accent when active. */
 .pp-platter {
   display: inline-flex;
   gap: var(--space-1);
@@ -120,7 +152,6 @@
   border-radius: var(--radius-pill);
   width: fit-content;
   user-select: none;
-  --webkit-user-select: none;
 }
 /* Horizontal, the pill radius resolves to half the tray height — already
    concentric with the item pills (item radius + padding). Vertical, a pill
@@ -154,13 +185,41 @@
 /* Text segments hug their label with a little breathing room; icon-only ones
    stay square via `min-width`. */
 .pp-platter-btn.has-text { padding: 0 var(--space-3); }
-.pp-platter-btn svg { display: block; }
-.pp-platter-btn:hover { background: var(--ctl-bar); }
+/* Inside a recessed tray, hover goes *deeper* than the tray rather than toward
+   the plate — the same logic as `.stepper-btn`, and it keeps the segment's
+   on-track label legible instead of washing it out. */
+.pp-platter-btn:hover { background: var(--ctl-deep-hover); }
 .pp-platter-btn.is-active { background: var(--ctl-accent); }
 .pp-platter-btn.is-active:hover { background: var(--ctl-accent-hover); }
-.pp-platter-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.pp-platter-btn:disabled { opacity: 0.5; cursor: default; }
+/* Last, so a disabled segment stays flat even when it is also active. */
 .pp-platter-btn:disabled:hover { background: transparent; }
+
+/* ---- Shared button chrome ----
+   The focus ring, the disabled treatment and the icon reset are the same part
+   on every button in this layer, so they are declared once here rather than
+   copied into each section above. All three are order-insensitive: none of them
+   touches a property a component rule also sets. */
+.panel-collapse-btn:focus-visible,
+.tab:focus-visible,
+.pp-round-btn:focus-visible,
+.pp-text-btn:focus-visible,
+.pp-platter-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.tab:disabled,
+.pp-round-btn:disabled,
+.pp-text-btn:disabled,
+.pp-platter-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.panel-collapse-btn svg,
+.pp-round-btn svg,
+.pp-text-btn svg,
+.pp-platter-btn svg {
+  display: block;
+}
 
 /* ---- Slide-collapse (Section body) ----
    Folds a body open<->closed without measuring its height, by animating the

@@ -2,17 +2,18 @@
 
 /* Docs-site chrome only — not part of the published library. The look is ported
    from ../my-design-system (surface/shadow treatments), retinted pink, with a
-   Plus Jakarta Sans display face over Inter body. It skins the PAGE only — the
-   pretty-panels components keep their own fixed look. Light and dark palettes
-   follow the OS `prefers-color-scheme`. */
+   Plus Jakarta Sans display face over Inter body. It skins the PAGE only; the
+   pretty-panels components bring their own colours. Both follow the OS
+   `prefers-color-scheme` — the chrome via the --doc-* palettes below, the
+   panels via a single --mono-l switch in the library (src/styles/colors.css). */
 
 /* ---- Light (the default) ---- */
 :root {
   color-scheme: light;
 
   /* Retint the whole chrome by moving these two hues. Currently a soft pink. */
-  --doc-hue-neutral: 280;
-  --doc-hue-accent: 300;
+  --doc-hue-neutral: 260;
+  --doc-hue-accent: 240;
 
   /* A deeper canvas under brighter cards and darker text — wider value range
      than the design-system's soft pastel, so elevation and copy read clearly. */
@@ -23,7 +24,6 @@
   --doc-text: hsl(calc(var(--doc-hue-neutral) - 10) 40% 14%);
   --doc-quiet: hsl(calc(var(--doc-hue-neutral) - 10) 24% 40%);
   --doc-accent: hsl(var(--doc-hue-accent) 58% 43%);
-  --doc-accent-hover: hsl(var(--doc-hue-accent) 60% 51%);
   --doc-accent-dim: hsl(calc(var(--doc-hue-accent) + 2) 56% 78%);
   --doc-border: hsl(var(--doc-hue-neutral) 30% 67%);
   --doc-border-quiet: hsl(var(--doc-hue-neutral) 32% 79%);
@@ -48,7 +48,6 @@
   --doc-radius-sm: 8px;
   --doc-radius-md: 14px;
   --doc-radius-lg: 28px;
-  --doc-radius-xl: 40px;
   --doc-radius-pill: 9999px;
   --doc-sidebar-w: 210px;
   /* One source of truth for the readable column width, shared by every page
@@ -69,7 +68,6 @@
     --doc-text: hsl(calc(var(--doc-hue-neutral) + 4) 24% 94%);
     --doc-quiet: hsl(var(--doc-hue-neutral) 24% 66%);
     --doc-accent: hsl(var(--doc-hue-accent) 66% 78%);
-    --doc-accent-hover: hsl(var(--doc-hue-accent) 68% 85%);
     --doc-accent-dim: hsl(var(--doc-hue-accent) 44% 26%);
     --doc-border: hsl(var(--doc-hue-neutral) 24% 24%);
     --doc-border-quiet: hsl(var(--doc-hue-neutral) 24% 23%);
@@ -91,7 +89,6 @@
 * {
   box-sizing: border-box;
   user-select: none;
-  --webkit-user-select: none;
 }
 
 /* Only prose is selectable — headings and paragraphs. */
@@ -103,7 +100,6 @@ h5,
 h6,
 p {
   user-select: text;
-  --webkit-user-select: text;
 }
 
 ::selection {
@@ -126,7 +122,9 @@ body {
   text-decoration: none;
   color: inherit;
 }
-.docs a:focus-visible {
+/* One focus ring for every keyboard-reachable thing in the chrome. */
+.docs a:focus-visible,
+.doc-title-dir:focus-visible {
   outline: 2px solid var(--doc-accent);
   outline-offset: 2px;
   border-radius: var(--doc-radius-sm);
@@ -167,7 +165,8 @@ body {
 }
 .sidebar-container {
   width: fit-content;
-  background: var(--doc-bg);
+  background: color-mix(in srgb, var(--doc-bg) 90%, transparent);
+  backdrop-filter: blur(16px);
   border-radius: var(--doc-radius-lg);
   padding: 18px;
 }
@@ -207,6 +206,20 @@ body {
 }
 .nav-group-title {
   padding: 0 10px 8px;
+}
+/* Family sub-heading: quieter and smaller than the tier above it, so the tier
+   still reads as the primary division. */
+.nav-family + .nav-family {
+  margin-top: 12px;
+}
+.nav-family-title {
+  padding: 0 10px 4px;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: capitalize;
+  color: var(--doc-quiet);
+  opacity: 0.75;
 }
 .nav-link {
   display: block;
@@ -340,13 +353,10 @@ body {
 .doc-head .doc-title-dir:hover {
   color: var(--doc-accent);
 }
-.doc-title-dir:focus {
+/* Suppress the UA ring on pointer focus only — the shared `:focus-visible` rule
+   above owns the keyboard one, and matching `:focus` alone here would outrank it. */
+.doc-title-dir:focus:not(:focus-visible) {
   outline: none;
-}
-.doc-title-dir:focus-visible {
-  outline: 2px solid var(--doc-accent);
-  outline-offset: 2px;
-  border-radius: var(--doc-radius-sm);
 }
 .doc-title-slash {
   display: none; /* -> inline on narrow */
@@ -419,7 +429,7 @@ body {
 /* Scroll the props table within its own box on narrow viewports, instead of
    squeezing the columns or pushing the page wider. */
 .props-scroll {
-  background: var(--doc-surface);
+  background: var(--doc-border-quiet);
   border-radius: var(--doc-radius-md);
   overflow-x: auto;
 }
@@ -428,6 +438,7 @@ body {
   min-width: 30rem;
   font-size: 14px;
   overflow: hidden;
+  border-spacing: 0;
 }
 .props th {
   text-align: left;
@@ -441,8 +452,11 @@ body {
 }
 /* Zebra: tint every other body row. A text-colored overlay adapts to both
    themes — a faint darkening in light, a faint lightening in dark. */
+.props tbody tr:nth-child(odd) td {
+  background: var(--doc-surface);
+}
 .props tbody tr:nth-child(even) td {
-  background: color-mix(in srgb, var(--doc-accent) 5%, transparent);
+  background: var(--doc-surface-recessed);
 }
 .props td:last-child {
   color: var(--doc-accent);
@@ -500,9 +514,9 @@ body {
 
 /* ============================================================
    Home — "the page is the demo"
-   The hero is a poster plate: the stacked wordmark sits above a real pretty-panels
-   Inspector whose highlight toggle + angle slider light a warm inset rim on the
-   mark. Boldness lives here; everything below stays quiet.
+   The hero is a motion bench: two Lottie stages share one posterized clock, and
+   the transport driving them is real pretty-panels hardware. Boldness lives
+   here; everything below stays quiet.
    ============================================================ */
 
 /* Home shares the same readable width as the component pages. */
@@ -524,30 +538,60 @@ body {
   padding: 32px 48px 40px;
 }
 
-/* The stacked monogram, lit by the Inspector. Its own box lets the inset
-   highlight spill past the glyphs without clipping. */
-.hero-mark {
+/* The two Lottie stages, side by side on wide posters and stacked once they
+   can't hold their minimum. The aspect-ratio reserves each stage's box before
+   the JSON lands, so the poster doesn't jolt taller when lottie injects its
+   SVG. */
+.hero-stages {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  width: min(440px, 100%);
-  margin: 14px 0 8px;
-}
-.hero-mark svg {
-  display: block;
+  gap: 0;
   width: 100%;
-  height: auto;
-  margin-bottom: 26px;
-  overflow: visible;
-  filter: drop-shadow(0 5px 4px hsl(270 78% 24% / 0.25));
+  margin: 14px 0 24px;
+}
+.hero-stage {
+  flex: 1 1 180px;
+  min-width: 120px;
+  max-width: 320px;
+  aspect-ratio: 750 / 400;
+  margin-top: -24px;
+}
+.hero-stage svg {
+  display: block;
 }
 
-/* The live Inspector — a real pretty-panels plate, lifted off the poster. Capped
-   at 340px but shrinks to fit so it never overflows a narrow poster (e.g. when
-   the effective viewport shrinks under browser zoom). */
-.hero-poster .panel {
-  --panel-w: min(340px, 100%);
-  margin-top: 16px;
-  box-shadow: var(--doc-shadow-panel), inset 0 1px 4px hsl(0 0% 100% / 0.85);
+/* The transport — real library controls in a row. The Slider takes the slack;
+   the button and stepper hug their content. Both children are reaching into
+   component internals (`.slider-row`, `.switch-row`) purely to undo the
+   vertical rhythm they carry for stacking inside a Panel, which is wrong for a
+   single horizontal strip. */
+.hero-transport {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  max-width: 520px;
+  margin-top: 4px;
+}
+/* The seeker's wrapper exists to catch pointerdown/up around the Slider (it
+   pauses playback for the length of a drag), so it's the flex child now and
+   has to pass its own sizing through to the track inside it. */
+.hero-seek {
+  flex: 1;
+  min-width: 0;
+}
+.hero-seek > .slider-row {
+  margin: 0;
+}
+.hero-transport > .switch-row {
+  flex: none;
+  padding: 0;
+}
+/* The round play button is a fixed 34px plate — keep flex from squeezing it
+   when the seeker beside it asks for room. */
+.hero-transport > .pp-round-btn {
+  flex: none;
 }
 
 /* Tagline + supporting line, centred under the controls. */
@@ -583,10 +627,10 @@ body {
   color: var(--doc-quiet);
 }
 .hero-specs span {
-    background: var(--doc-bg);
-    padding: 4px 8px;
-    border-radius: var(--doc-radius-lg);
-    box-shadow: var(--doc-shadow);
+  background: var(--doc-bg);
+  padding: 4px 8px;
+  border-radius: var(--doc-radius-lg);
+  box-shadow: var(--doc-shadow-inset);
 }
 .hero-specs b { color: var(--doc-heading); font-weight: 600; }
 
@@ -613,33 +657,35 @@ body {
   text-transform: uppercase;
   color: var(--doc-quiet);
 }
-/* The tier's links as an auto-reflowing card grid. */
+/* Family band inside a tier — the heading sits above its own card grid. */
+.catalog-family + .catalog-family {
+  margin-top: 28px;
+}
+.catalog-family-title {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: capitalize;
+  color: var(--doc-quiet);
+}
+/* The tier's links as a wrapping row: each card hugs its own label rather than
+   sitting in a fixed-width column, so the run reflows on its own at any width. */
 .catalog-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-/* Each item is a grid cell; the card link stretches to fill it so every card in a
-   row shares one height regardless of how long its summary runs. */
-.catalog-list li {
-  display: flex;
-}
 
 /* ---- Component card (a raised plate, echoing the hero poster) ---- */
 .catalog-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "code go"
-    "name name"
-    "desc desc";
-  align-content: start;
-  gap: 6px 12px;
-  flex: 1;
-  padding: 18px 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
   border: 2px solid var(--doc-border);
   border-radius: var(--doc-radius-lg);
   background: linear-gradient(to bottom, var(--doc-grad-light), var(--doc-grad-dark));
@@ -657,34 +703,16 @@ body {
 }
 
 .catalog-code {
-  grid-area: code;
   font-family: var(--doc-font-mono);
   font-size: 12px;
   color: var(--doc-accent);
 }
 .catalog-name {
-  grid-area: name;
   font-family: var(--doc-font-display);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--doc-heading);
-}
-.catalog-desc {
-  grid-area: desc;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--doc-quiet);
-}
-.catalog-go {
-  grid-area: go;
-  justify-self: end;
-  font-family: var(--doc-font-mono);
-  color: var(--doc-quiet);
-  transition: transform 180ms var(--ease-out), color 120ms ease;
-}
-.catalog-row:hover .catalog-go {
-  color: var(--doc-accent);
-  transform: translateX(3px);
+  white-space: nowrap;
 }
 
 /* ---- Quickstart (reuses the recessed .code blocks) ---- */
@@ -705,8 +733,8 @@ body {
   }
 }
 
-/* The catalog is a self-reflowing card grid (auto-fill), so it collapses to
-   fewer columns on its own and needs no width-specific overrides here. */
+/* The catalog is a wrapping flex run, so it reflows to fewer cards per line on
+   its own and needs no width-specific overrides here. */
 
 /* ---- Narrow screens ---- */
 @media (max-width: 720px) {
@@ -732,7 +760,18 @@ body {
     height: 100vh;
     height: 100dvh;
     width: fit-content;
-    padding: 0;
+    /* The inset that used to be the card's margin. As padding on the fixed box
+       it becomes part of the drawer's height budget, so the card below can cap
+       itself at 100% and still clear the top and bottom edges. */
+    padding: 16px;
+    /* Column flex so the card fills the drawer's width (as it did when it was a
+       plain block) but is free to shrink vertically instead of running off the
+       bottom of the screen. */
+    display: flex;
+    flex-direction: column;
+    /* The card scrolls, not the drawer box — otherwise a tall menu scrolls the
+       whole card, dragging its rounded corners and shadow past the viewport. */
+    overflow: hidden;
     transform: translateX(-100%);
     transition: transform 240ms ease;
     /* The sidebar is a drawer here, not a sliding column, so keep it out of the
@@ -744,7 +783,14 @@ body {
   .sidebar-container {
     border: 1px solid var(--doc-border-quiet);
     box-shadow: 0 0 16px rgba(0, 0, 0, 0.2);
-    margin: 16px;
+    margin: 0;
+    /* min-height: 0 lets the flex item shrink below its content height, so a
+       menu taller than the screen gets capped at the drawer's height and
+       scrolls inside the card. A short menu still sizes to its content. */
+    min-height: 0;
+    overflow-y: auto;
+    /* Don't hand the scroll off to the page behind the drawer at either end. */
+    overscroll-behavior: contain;
   }
   .sidebar.is-open {
     transform: translateX(0);
