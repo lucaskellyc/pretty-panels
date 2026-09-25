@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="pretty-panels — a tiny, themeable React control-panel component library." />
+    <!-- Safari tints its titlebar from theme-color, and with none declared it
+         falls back to near-white — which reads lighter than this page, whose
+         canvas is a deliberately deeper grey-blue. These are --doc-bg from
+         demo.css resolved to hex (a meta can't read a custom property), light
+         first so the first matching one wins. Retint --doc-hue-neutral there and
+         these two have to follow by hand.
+
+         macOS Safari paints its toolbar as this colour under a translucent
+         light material, so the chrome still lands a shade lighter than the
+         canvas. That is Safari's, not ours: the honest colour is declared here
+         and the small step is left alone rather than papered over with a
+         pre-darkened value that would be wrong everywhere theme-color is
+         applied literally. -->
+    <meta name="theme-color" content="#C7D6E6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1F2E3D" media="(prefers-color-scheme: dark)" />
     <title>PrettyPanels</title>
   </head>
   <body>

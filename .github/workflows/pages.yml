@@ -2,13 +2,18 @@ name: Deploy demo to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # The published docs site tracks the blessed channel only — `unstable` gets
+    # CI (see ci.yml) but must not redeploy the page out from under consumers.
+    branches: [stable]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  # deploy-pages resolves the build job's artifact by id, which reads the
+  # Actions API. Documented as required since deploy-pages@v4.
+  actions: read
 
 concurrency:
   group: pages
@@ -18,14 +23,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
       - run: npm ci
       - run: npm run build:demo
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist-demo
 
@@ -37,4 +42,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

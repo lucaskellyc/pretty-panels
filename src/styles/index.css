@@ -2,9 +2,17 @@
    pretty-panels · Stylesheet entry point
    Consumers link THIS file (published as `pretty-panels/styles.css`).
    Tokens first, then the base reset, then the component + shell layers.
+
+   `fonts.css` is deliberately NOT imported here. Vite's library mode inlines
+   every asset a stylesheet references, with no way to opt out, so an @import
+   would base64 all eleven woff2 files into this bundle — ~19 kB of CSS
+   becoming ~330 kB, paid by every consumer. The published stylesheet gets the
+   @font-face rules prepended at build time instead (see the `vendor-fonts`
+   plugin in vite.config.ts), with the files emitted beside it under fonts/.
+   Anything consuming these sources directly — the demo site does — imports
+   ./fonts.css itself.
    ============================================================ */
 
-@import url("./fonts.css");
 @import url("./colors.css");
 @import url("./spacing.css");
 @import url("./typography.css");

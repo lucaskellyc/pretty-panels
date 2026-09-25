@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { clamp, cx, decimalsOf } from './util';
 
 export interface VectorProps {
   /** The field values. The capsule renders one field per entry — use 2, 3, or 4. */
@@ -28,12 +29,6 @@ export function Vector({ value, onChange, step = 0.5, min, max, colorMode = fals
     dragging: boolean;
   } | null>(null);
 
-  const clamp = (v: number) => {
-    if (min != null) v = Math.max(min, v);
-    if (max != null) v = Math.min(max, v);
-    return v;
-  };
-
   const onPointerDown = (axis: number) => (e: React.PointerEvent<HTMLInputElement>) => {
     state.current = { startY: e.clientY, startVal: value[axis], axis, dragging: false };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -51,22 +46,22 @@ export function Vector({ value, onChange, step = 0.5, min, max, colorMode = fals
     if (!s.dragging && Math.abs(dy) < 3) return;
     s.dragging = true;
     (e.target as HTMLInputElement).blur();
-    const decimals = (String(step).split('.')[1] || '').length;
+    const decimals = decimalsOf(step);
     const raw = s.startVal + (dy / 4) * step;
-    onChange(s.axis, clamp(Number((Math.round(raw / step) * step).toFixed(decimals))));
+    onChange(s.axis, clamp(Number((Math.round(raw / step) * step).toFixed(decimals)), min, max));
   };
   const onPointerUp = () => (state.current = null);
 
   let bg: string | undefined;
   let fg: string | undefined;
   if (colorMode) {
-    const [r, g, b] = value.map((v) => Math.min(255, Math.max(0, Math.round(v))));
+    const [r, g, b] = value.map((v) => clamp(Math.round(v), 0, 255));
     bg = `rgb(${r},${g},${b})`;
     fg = readContrast(r, g, b);
   }
 
   return (
-    <span className={colorMode ? 'vector color-vector' : 'vector'}>
+    <span className={cx('vector', colorMode && 'color-vector')}>
       {value.map((v, axis) => (
         <input
           key={axis}
@@ -81,7 +76,7 @@ export function Vector({ value, onChange, step = 0.5, min, max, colorMode = fals
           onLostPointerCapture={onPointerUp}
           onChange={(e) => {
             const parsed = parseFloat(e.target.value);
-            if (!Number.isNaN(parsed)) onChange(axis, clamp(parsed));
+            if (!Number.isNaN(parsed)) onChange(axis, clamp(parsed, min, max));
           }}
         />
       ))}

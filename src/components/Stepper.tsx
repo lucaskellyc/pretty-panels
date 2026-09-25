@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { ControlRow } from './ControlRow';
+import { clamp, cx, decimalsOf } from './util';
 
 export interface StepperProps {
   value: number;
@@ -59,7 +60,7 @@ export function Stepper({
 }: StepperProps) {
   const id = useId();
   const labelId = label != null ? id : undefined;
-  const decimals = (String(step).split('.')[1] || '').length;
+  const decimals = decimalsOf(step);
 
   /** `null` while the readout is showing; the in-progress text while it is being
    *  typed into. Held as a **string**, so the half-finished states every number
@@ -82,15 +83,9 @@ export function Stepper({
     field.current?.select();
   }, [editing]);
 
-  const clamp = (v: number) => {
-    if (min != null) v = Math.max(min, v);
-    if (max != null) v = Math.min(max, v);
-    return v;
-  };
-
   /** A **pressed** value: clamped, then put back on the step's own precision, or
    *  a `step` of 0.05 walks off into 0.15000000000000002 within a few presses. */
-  const settle = (v: number) => Number(clamp(v).toFixed(decimals));
+  const settle = (v: number) => Number(clamp(v, min, max).toFixed(decimals));
 
   const nudge = (dir: 1 | -1) => onChange(settle(value + dir * step));
 
@@ -108,7 +103,7 @@ export function Stepper({
     // value the presses cannot is most of why the field is here. A caller that
     // needs the grid enforced enforces it in `onChange`, where the rest of its
     // rules already live.
-    const next = Number.isNaN(parsed) ? value : clamp(parsed);
+    const next = Number.isNaN(parsed) ? value : clamp(parsed, min, max);
     // Nothing that isn't a number, and nothing that settles back to where the
     // value already was: a caller that keys, tags an undo step or marks a file
     // dirty on every `onChange` should not be handed one for typing `3` over `3`.
@@ -130,7 +125,7 @@ export function Stepper({
         </button>
         {draft === null ? (
           <span
-            className={disabled ? 'stepper-value' : 'stepper-value is-editable'}
+            className={cx('stepper-value', !disabled && 'is-editable')}
             onDoubleClick={open}
           >
             {format ? format(value) : value}

@@ -75,6 +75,31 @@
   --ctl-tab-active:       hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 66 * var(--mono-sgn)) * 1%), 100%));
   --ctl-tab-active-text:  hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - -3 * var(--mono-sgn)) * 1%), 100%));
 
+  /* List and Tree rows. A row is something you read down a column of, not a
+     control you aim at, so it rests just off the plate rather than recessing to
+     a capsule track. Being plate-relative it carries --ctl-text — the pinned
+     on-track white cannot sit on a ground this shallow (see the capsule note
+     below for why the two never mix). A Tree node with children takes one more
+     step down, and that gap is the entire hierarchy cue, so it stays small
+     enough to read as a tint rather than a second kind of row. Picked up goes
+     deeper still, past a tab, since this set builds elevation out of depth. */
+  --ctl-row:              hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  5 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-row-parent:       hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 12 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-row-raised:       hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 22 * var(--mono-sgn)) * 1%), 100%));
+
+  /* A standalone button at rest (IconButton, TextButton). Plate-relative, so it
+     carries --ctl-text and reads light-with-dark-ink on a light plate and the
+     other way round on a dark one — the pinned capsule grounds below are
+     reserved for the two lit states, a prominent action and a toggle that is
+     on. Being the quiet tier is what lets those two mean something.
+
+     It steps deeper than a row deliberately. A List row is something you read
+     down a column of; a button is something you aim at, and one that landed on
+     the row ground would borrow its stillness. Hover goes one step further in,
+     the direction every hover in this set travels. */
+  --ctl-btn:              hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 16 * var(--mono-sgn)) * 1%), 100%));
+  --ctl-btn-hover:        hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 24 * var(--mono-sgn)) * 1%), 100%));
+
   /* ---- Capsule surfaces (pinned, not plate-relative) ----
      Everything here carries --ctl-on-track text, and that token is itself
      pinned bright (see below) because white-on-track is the design language.

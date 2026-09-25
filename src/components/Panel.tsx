@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { cx } from './util';
 
 export interface PanelProps {
   /** Optional header bar. A string renders bold; pass a node for custom markup. */
@@ -94,14 +95,7 @@ export function Panel({
     onCollapsedChange?.(next);
   };
 
-  const cls = [
-    'panel',
-    collapsible ? 'is-collapsible' : '',
-    isCollapsed ? 'is-collapsed' : '',
-    className ?? '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const cls = cx('panel', collapsible && 'is-collapsible', isCollapsed && 'is-collapsed', className);
   // Drive the plate width through a custom property so a stylesheet can theme it
   // (an inline `width` couldn't be beaten by a class). Collapsing leaves the
   // width untouched — only the body folds away.
