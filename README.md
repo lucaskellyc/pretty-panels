@@ -194,7 +194,9 @@ npm run typecheck    # tsc --noEmit
 ```
 
 The demo under `demo/` doubles as the documentation site and is deployed to
-GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
+GitHub Pages by `.github/workflows/pages.yml` on every push to `stable`.
+Work lands on `unstable`, which runs CI but deliberately does not redeploy
+the site; `stable` is merged forward at each release.
 
 ## License
 
