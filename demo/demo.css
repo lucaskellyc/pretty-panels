@@ -12,11 +12,13 @@
   color-scheme: light;
 
   /* Retint the whole chrome by moving these two hues. Currently a soft pink. */
-  --doc-hue-neutral: 260;
+  --doc-hue-neutral: 220;
   --doc-hue-accent: 240;
 
   /* A deeper canvas under brighter cards and darker text — wider value range
-     than the design-system's soft pastel, so elevation and copy read clearly. */
+     than the design-system's soft pastel, so elevation and copy read clearly.
+     Mirrored as a hex <meta name="theme-color"> in index.html, which is what
+     Safari tints its titlebar with; move this and move that too. */
   --doc-bg: hsl(var(--doc-hue-neutral) 38% 84%);
   --doc-surface: hsl(calc(var(--doc-hue-neutral) + 2) 54% 92%);
   --doc-surface-recessed: hsl(calc(var(--doc-hue-neutral) - 2) 32% 80%);
@@ -49,11 +51,25 @@
   --doc-radius-md: 14px;
   --doc-radius-lg: 28px;
   --doc-radius-pill: 9999px;
-  --doc-sidebar-w: 210px;
+
+  /* Scrollbars — see the Scrollbars section for how these three combine. */
+  --sb-gutter: 11px; /* the channel the bar rides in */
+  --sb-inset: 3px; /* how far the thumb is held off the wall */
+  --sb-corner: 0px; /* track end margin; a rounded box sets its own radius */
+
   /* One source of truth for the readable column width, shared by every page
      (home + component docs). It's a cap — content always shrinks to fit a
      narrower viewport. */
   --doc-content-w: 720px;
+
+  /* The rail's width, fixed rather than content-sized. The active link is
+     600-weight, so letting the track size to its contents made the whole rail
+     (and the content column beside it) jump ~3px the moment the longest name —
+     "Window Controls" — became active. Pinned just above that bolded maximum
+     (244.5px measured), so the pills still hug their labels but the rail never
+     moves. A longer component name than that one is the only thing that would
+     need this number raised. */
+  --doc-sidebar-w: 252px;
 }
 
 /* ---- Dark (when the OS prefers it) ---- */
@@ -61,7 +77,8 @@
   :root {
     color-scheme: dark;
 
-    --doc-bg: hsl(var(--doc-hue-neutral) 32% 18%);
+    /* Also mirrored in index.html's dark theme-color — see the light note. */
+    --doc-bg: hsl(var(--doc-hue-neutral) 24% 12%);
     --doc-surface: hsl(var(--doc-hue-neutral) 32% 15%);
     --doc-surface-recessed: hsl(var(--doc-hue-neutral) 32% 16%);
     --doc-heading: hsl(calc(var(--doc-hue-neutral) + 4) 24% 94%);
@@ -71,7 +88,7 @@
     --doc-accent-dim: hsl(var(--doc-hue-accent) 44% 26%);
     --doc-border: hsl(var(--doc-hue-neutral) 24% 24%);
     --doc-border-quiet: hsl(var(--doc-hue-neutral) 24% 23%);
-    --doc-highlight: hsl(calc(var(--doc-hue-neutral) + 4) 24% 52%);
+    --doc-highlight: rgba(255 255 255 / 0.4);
     --doc-grad-light: hsl(var(--doc-hue-neutral) 32% 22%);
     --doc-grad-dark: hsl(var(--doc-hue-neutral) 32% 16%);
     --doc-example-grid: hsl(calc(var(--doc-hue-neutral) + 4) 46% 94% / 0.1);
@@ -118,6 +135,52 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ---- Scrollbars ----
+   One bar for the whole site: the page, the sidebar, the props table, the code
+   blocks. It's sunk into whatever it scrolls rather than bolted to the edge —
+   the thumb's transparent border, clipped to its padding box, holds it
+   --sb-inset off the wall inside an --sb-gutter channel.
+   --sb-corner is the track's end margin. A rounded box sets it to its own
+   radius, which is exactly where that edge stops curving (for a rounded rect
+   inset by any amount, the straight run starts at the original radius), so the
+   thumb's caps come to rest tangent to the corner arc instead of cutting across
+   it. Square boxes — the page itself — leave it at 0 and the track runs end to
+   end. */
+::-webkit-scrollbar {
+  width: var(--sb-gutter);
+  height: var(--sb-gutter);
+}
+/* Orientation picks which pair of ends the corner inset belongs on. */
+::-webkit-scrollbar-track:vertical {
+  background: transparent;
+  margin: var(--sb-corner) 0;
+}
+::-webkit-scrollbar-track:horizontal {
+  background: transparent;
+  margin: 0 var(--sb-corner);
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--doc-quiet) 15%, transparent);
+  background-clip: padding-box;
+  border: var(--sb-inset) solid transparent;
+  border-radius: var(--doc-radius-pill);
+  transition: background-color 150ms ease;
+}
+/* Barely there until the pointer is in the thing it scrolls, then present
+   without being loud. */
+:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--doc-quiet) 30%, transparent);
+}
+/* Firefox, which has no box model for the thumb — colour only, and no corner
+   inset. Kept behind the feature query because Chrome drops every
+   ::-webkit-scrollbar rule above the moment the standard properties are set. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--doc-quiet) 15%, transparent) transparent;
+  }
+}
+
 .docs a {
   text-decoration: none;
   color: inherit;
@@ -129,9 +192,13 @@ body {
   outline-offset: 2px;
   border-radius: var(--doc-radius-sm);
 }
+/* ...except the nav pills, which already have a shape of their own — the shared
+   radius above would square off their fill for as long as they held focus. */
+.docs .nav-link:focus-visible {
+  border-radius: var(--doc-radius-pill);
+}
 
 /* Shared capitalized caption treatment. */
-.nav-group-title,
 .doc-section h2,
 .props th {
   font-size: 0.72rem;
@@ -144,7 +211,9 @@ body {
 /* ---- Shell layout ---- */
 .docs {
   display: grid;
-  grid-template-columns: var(--doc-sidebar-w) 1fr;
+  /* The rail's track sizes to the floating card rather than to a fixed number,
+     so a longer component name widens the card instead of overflowing it. */
+  grid-template-columns: auto 1fr;
   min-height: 100vh;
 }
 /* Home page: no sidebar, so the content spans the full width. */
@@ -152,23 +221,60 @@ body {
   grid-template-columns: 1fr;
 }
 
-/* ---- Sidebar (transparent — no border, no fill) ---- */
+/* ---- Sidebar ----
+   A floating card at every width: the box insets it with its own padding, and
+   the card inside carries the fill, border, shadow and scroll. Narrow screens
+   take the same card off-canvas as a drawer (see the media query) — only how
+   it's positioned changes, never how it looks. */
 .sidebar {
   position: sticky;
   top: 0;
   align-self: start;
   height: 100vh;
-  overflow-y: auto;
+  height: 100dvh;
+  width: var(--doc-sidebar-w);
+  /* The card's inset. As padding on the box it's part of the height budget, so
+     the card below can cap itself at 100% and still clear the top and bottom
+     edges. */
+  padding: 16px;
+  /* Column flex so the card fills the box's width but is free to shrink
+     vertically instead of running off the bottom of the screen. */
+  display: flex;
+  flex-direction: column;
+  /* The card scrolls, not the box — otherwise a tall menu scrolls the whole
+     card, dragging its rounded corners and shadow past the viewport. */
+  overflow: hidden;
   view-transition-name: doc-sidebar;
-  width: fit-content;
-  padding: 0;
 }
 .sidebar-container {
-  width: fit-content;
-  background: color-mix(in srgb, var(--doc-bg) 90%, transparent);
+  /* Its edge stops curving one border-width inside the radius; see --sb-corner. */
+  --sb-corner: calc(var(--doc-radius-lg) - 1px);
+
+  width: 100%;
+  background: color-mix(in srgb, var(--doc-border) 15%, transparent);
   backdrop-filter: blur(16px);
+  border: 1px solid var(--doc-border-quiet);
   border-radius: var(--doc-radius-lg);
+  box-shadow: none;
   padding: 18px;
+  padding-right: calc(18px - var(--sb-gutter));
+  /* min-height: 0 lets the flex item shrink below its content height, so a menu
+     taller than the screen is capped at the box's height and scrolls inside the
+     card. A short menu still sizes to its content. */
+  min-height: 0;
+  overflow-y: auto;
+  /* Reserved whether or not the menu overflows, so nothing shifts sideways the
+     moment it starts to scroll. */
+  scrollbar-gutter: stable;
+  /* Don't hand the scroll off to the page behind the card at either end. */
+  overscroll-behavior: contain;
+}
+
+.sidebar-container {
+  @media (max-width: 720px) {
+    background: color-mix(in srgb, var(--doc-bg) 75%, transparent);
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.2);
+  }
 }
 .sidebar nav {
   width: fit-content;
@@ -178,7 +284,7 @@ body {
 .brand {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px;
   width: fit-content;
   padding: 6px 10px;
   margin-bottom: 18px;
@@ -197,23 +303,33 @@ body {
 }
 .brand-badge {
   font-family: var(--doc-font-mono);
-  font-size: 11px;
+  font-size: 8px;
   color: var(--doc-accent);
 }
 
+/* Tiers carry no heading here — each link prints its part code in the tier's
+   own ink (A1 / M2 / O1), the same pair the catalog cards use — so the division
+   reads by colour and code rather than by a repeated "Atoms / Molecules /
+   Organisms" caption. */
 .nav-group {
   margin-bottom: 20px;
 }
-.nav-group-title {
-  padding: 0 10px 8px;
+/* Column so the pills stretch to one common width instead of each hugging its
+   own label — a ragged right edge reads as noise once every row carries a fill.
+   The gap is the only thing separating them, so the family title drops its own
+   bottom padding. */
+.nav-family {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-/* Family sub-heading: quieter and smaller than the tier above it, so the tier
-   still reads as the primary division. */
+/* Family sub-heading: quieter and smaller than the links under it, so it reads
+   as a caption rather than a row. */
 .nav-family + .nav-family {
   margin-top: 12px;
 }
 .nav-family-title {
-  padding: 0 10px 4px;
+  padding: 0 12px;
   font-size: 0.66rem;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -221,26 +337,53 @@ body {
   color: var(--doc-quiet);
   opacity: 0.75;
 }
+/* Each link is a chip of its tier: the plate takes the tier's light tint and
+   both the code and the name take its ink, so a row's type reads from across
+   the rail. The border is present-but-transparent at rest so hover and the
+   active state can colour it without nudging the layout. */
 .nav-link {
-  display: block;
-  width: fit-content;
-  padding: 7px 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1.5px solid transparent;
   border-radius: var(--doc-radius-pill);
-  color: var(--doc-quiet);
+  background: transparent;
+
   font-size: 14px;
-  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
+/* The ink needs the extra class to land: `.docs a { color: inherit }` above
+   outranks a bare `.nav-link`, so on one class the labels quietly fell back to
+   the body colour. */
+
+/* Part code, dimmed against the name it shares an ink with. min-width holds a
+   two-digit code (A10) so the names still line up down the column. */
+.nav-code {
+  flex: none;
+  min-width: 2.1em;
+  font-family: var(--doc-font-mono);
+  font-size: 11.5px;
+  opacity: 0.72;
+}
+.nav-name {
+  white-space: nowrap;
+}
+/* Hover deepens the plate into the catalog card's own gradient and picks up the
+   tier border; the active page goes one further and inks the border. */
 .nav-link:hover {
-  background: var(--doc-surface);
-  color: var(--doc-text);
+  background: rgb(from var(--tier-ink) r g b / 15%);
 }
 .nav-link:active {
   transform: scale(0.95);
 }
 .nav-link.is-active {
-  background: var(--doc-accent-dim);
-  color: var(--doc-accent);
+  background: linear-gradient(to bottom, var(--tier-grad-light), var(--tier-grad-dark));
+  border-color: var(--tier-ink);
   font-weight: 600;
+}
+.nav-link.is-active .nav-code {
+  opacity: 1;
 }
 
 /* ---- Drawer click-catcher (narrow only). Transparent — it just closes the
@@ -429,8 +572,10 @@ body {
 /* Scroll the props table within its own box on narrow viewports, instead of
    squeezing the columns or pushing the page wider. */
 .props-scroll {
-  background: var(--doc-border-quiet);
+  --sb-corner: var(--doc-radius-md);
+  background: rgb(from var(--doc-surface) r g b / 0.2);
   border-radius: var(--doc-radius-md);
+  border: 1px solid var(--doc-surface-recessed);
   overflow-x: auto;
 }
 .props {
@@ -444,23 +589,25 @@ body {
   text-align: left;
   padding: 14px 14px 12px;
 }
+
 .props td {
   padding: 13px 14px;
   vertical-align: top;
   color: var(--doc-quiet);
   line-height: 1.5;
+  border-top: 1px solid var(--doc-surface-recessed);
 }
 /* Zebra: tint every other body row. A text-colored overlay adapts to both
    themes — a faint darkening in light, a faint lightening in dark. */
-.props tbody tr:nth-child(odd) td {
+/*.props tbody tr:nth-child(odd) td {
   background: var(--doc-surface);
 }
 .props tbody tr:nth-child(even) td {
   background: var(--doc-surface-recessed);
-}
-.props td:last-child {
-  color: var(--doc-accent);
-}
+}*/
+/*.props td:last-child {
+  background: var(--doc-surface-recessed);
+}*/
 .props code {
   font-family: var(--doc-font-mono);
   font-size: 12.5px;
@@ -489,20 +636,24 @@ body {
 
 /* ---- Code blocks (recessed) ---- */
 .code {
+  --sb-corner: var(--doc-radius-md);
   margin: 0 0 12px;
   padding: 16px 18px;
   border-radius: var(--doc-radius-md);
   background: var(--doc-surface-recessed);
-  box-shadow: var(--doc-shadow-inset);
   overflow-x: auto;
 }
 .code code {
   font-family: var(--doc-font-mono);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--doc-text);
   white-space: pre;
 }
+/* `clone` is what keeps a wrapped capsule a capsule: by default an inline box
+   that breaks across lines is one box sliced in two, so the break edges lose
+   their radius and padding and each fragment ends up half-squared. Cloning
+   redraws the full decoration on every fragment instead. */
 :not(pre) > code {
   padding: 2px 6px;
   border-radius: var(--doc-radius-pill);
@@ -510,6 +661,8 @@ body {
   font-family: var(--doc-font-mono);
   font-size: 0.85em;
   color: var(--doc-accent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* ============================================================
@@ -630,54 +783,105 @@ body {
   background: var(--doc-bg);
   padding: 4px 8px;
   border-radius: var(--doc-radius-lg);
-  box-shadow: var(--doc-shadow-inset);
 }
 .hero-specs b { color: var(--doc-heading); font-weight: 600; }
 
-/* ---- Component index (a parts catalog, grouped by tier) ---- */
-.catalog { margin-top: 72px; }
-.catalog-group { margin-top: 44px; }
-.catalog-group:first-child { margin-top: 0; }
-.catalog-tier {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 0 6px;
-  font-family: var(--doc-font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--doc-heading);
+/* ---- Component index (a parts catalog, one cell per component class) ----
+   The catalog is a grid of classes — Buttons, Choices, Values … — rather than
+   three stacked tier bands. Each cell is a recessed well holding that class's
+   cards, so the plates read as parts sitting in a labelled tray. `auto-fill`
+   sizes the run to the content column: three cells at full width, folding to
+   two and then one as it narrows, with no width-specific overrides. */
+.catalog {
+  margin-top: 72px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  /* Cells hug their own contents — a class with two parts stays short instead
+     of stretching to match the six-part cell beside it. */
+  align-items: start;
 }
-.catalog-tier .tier-code {
-  font-family: var(--doc-font-mono);
-  font-size: 12px;
+/* Radius is concentric with the cards inside: 28px here against their 14px at
+   13px of padding (28 ≈ 14 + 13), so the well's curve runs parallel to the
+   plates' rather than cutting across them. */
+.catalog-cell {
+  padding: 13px 13px 15px;
+}
+/* The class name, inked in its tier's colour — the same hue the cards below it
+   carry, so the cell reads as one tier's tray at a glance. */
+.catalog-cell-title {
+  margin: 0 0 11px;
+  padding-left: 2px;
+  font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--doc-quiet);
+  letter-spacing: 0.1em;
 }
-/* Family band inside a tier — the heading sits above its own card grid. */
-.catalog-family + .catalog-family {
-  margin-top: 28px;
-}
-.catalog-family-title {
-  margin: 0 0 12px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: capitalize;
-  color: var(--doc-quiet);
-}
-/* The tier's links as a wrapping row: each card hugs its own label rather than
-   sitting in a fixed-width column, so the run reflows on its own at any width. */
+/* Inside a cell the cards run inline and wrap, each hugging its own label, so a
+   class reads as a run of parts rather than a column of equal-width bars. */
 .catalog-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+/* ---- Tier tints ----
+   Each atomic level owns a hue, so a card's (or nav link's) tier reads before
+   its name does: atoms pink, molecules teal, organisms a warm yellow. Only the
+   plate is tinted — its gradient, border, and part-code ink — while the
+   component name stays on --doc-heading, so the tint never costs label
+   contrast. The hue is a second read of the A/M/O part code each card already
+   prints, not the only carrier of the grouping. Tiers fall back to the neutral
+   chrome palette, so an unrecognised `data-tier` just renders the old card.
+   The attribute sits on each tier group — in the catalog and in the sidebar —
+   so cards and nav links draw from the same four tokens. */
+[data-tier] {
+  --tier-grad-light: var(--doc-grad-light);
+  --tier-grad-dark: var(--doc-grad-dark);
+  --tier-border: var(--doc-border);
+  --tier-ink: var(--doc-accent);
+}
+[data-tier='atoms'] {
+  --tier-grad-light: hsl(342 80% 97%);
+  --tier-grad-dark: hsl(342 56% 90%);
+  --tier-border: hsl(342 57% 76%);
+  --tier-ink: hsl(342 60% 42%);
+}
+[data-tier='molecules'] {
+  --tier-grad-light: hsl(176 62% 95%);
+  --tier-grad-dark: hsl(176 40% 86%);
+  --tier-border: hsl(176 32% 68%);
+  --tier-ink: hsl(180 64% 28%);
+}
+[data-tier='organisms'] {
+  --tier-grad-light: hsl(44 90% 94%);
+  --tier-grad-dark: hsl(41 70% 84%);
+  --tier-border: hsl(40 52% 68%);
+  --tier-ink: hsl(34 70% 32%);
+}
+/* Dark keeps the same hues but inverts their job: the plate darkens toward the
+   tier colour and the ink brightens to it. */
+@media (prefers-color-scheme: dark) {
+  [data-tier='atoms'] {
+    --tier-grad-light: hsl(342 30% 24%);
+    --tier-grad-dark: hsl(342 30% 17%);
+    --tier-border: hsl(342 26% 33%);
+    --tier-ink: hsl(342 72% 80%);
+  }
+  [data-tier='molecules'] {
+    --tier-grad-light: hsl(200 26% 21%);
+    --tier-grad-dark: hsl(200 26% 15%);
+    --tier-border: hsl(200 22% 30%);
+    --tier-ink: hsl(200 58% 72%);
+  }
+  [data-tier='organisms'] {
+    --tier-grad-light: hsl(42 26% 22%);
+    --tier-grad-dark: hsl(42 26% 16%);
+    --tier-border: hsl(42 24% 32%);
+    --tier-ink: hsl(42 78% 74%);
+  }
 }
 
 /* ---- Component card (a raised plate, echoing the hero poster) ---- */
@@ -685,18 +889,20 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 14px;
-  border: 2px solid var(--doc-border);
-  border-radius: var(--doc-radius-lg);
-  background: linear-gradient(to bottom, var(--doc-grad-light), var(--doc-grad-dark));
-  box-shadow: var(--doc-shadow-raised);
+  padding: 10px 13px;
+  border: 2px solid var(--tier-border);
+  border-radius: var(--doc-radius-pill);
+  background: linear-gradient(to bottom, var(--tier-grad-light), var(--tier-grad-dark));
+  box-shadow: var(--doc-shadow-panel);
   transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out),
               border-color 120ms ease;
 }
+/* Hover pulls the border up to the tier's own ink rather than the chrome accent,
+   so the card lights up in its own colour. */
 .catalog-row:hover {
-  transform: scale(1.02);
-  border-color: var(--doc-accent-dim);
-  box-shadow: var(--doc-shadow-panel), inset 0 2px 1px var(--doc-highlight);
+  border-color: var(--tier-ink);
+  box-shadow: var(--doc-shadow-panel);
+  /*box-shadow: var(--doc-shadow-panel), inset 0 2px 1px var(--doc-highlight);*/
 }
 .catalog-row:active {
   transform: scale(0.98);
@@ -705,25 +911,17 @@ body {
 .catalog-code {
   font-family: var(--doc-font-mono);
   font-size: 12px;
-  color: var(--doc-accent);
+  color: var(--tier-ink);
+  /* Never squeezed by the name beside it — the card sizes to both. */
+  flex: none;
 }
 .catalog-name {
   font-family: var(--doc-font-display);
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--doc-heading);
+  /* The card hugs the name, so it never needs to break across lines. */
   white-space: nowrap;
-}
-
-/* ---- Quickstart (reuses the recessed .code blocks) ---- */
-.home-quickstart { margin-top: 64px; }
-.home-quickstart h2 {
-  margin: 0 0 18px;
-  font-family: var(--doc-font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--doc-heading);
 }
 
 /* ---- Home: tighten the poster's padding on narrow screens. ---- */
@@ -733,8 +931,8 @@ body {
   }
 }
 
-/* The catalog is a wrapping flex run, so it reflows to fewer cards per line on
-   its own and needs no width-specific overrides here. */
+/* The catalog's `auto-fill` track sizing drops it from three cells to two to one
+   on its own, so it needs no width-specific overrides here. */
 
 /* ---- Narrow screens ---- */
 @media (max-width: 720px) {
@@ -752,26 +950,13 @@ body {
   .docs-scrim {
     display: block;
   }
+  /* Same floating card as on wide screens — it just leaves the flow and parks
+     off-canvas until the path bar's parent dir slides it in. */
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     z-index: 50;
-    height: 100vh;
-    height: 100dvh;
-    width: fit-content;
-    /* The inset that used to be the card's margin. As padding on the fixed box
-       it becomes part of the drawer's height budget, so the card below can cap
-       itself at 100% and still clear the top and bottom edges. */
-    padding: 16px;
-    /* Column flex so the card fills the drawer's width (as it did when it was a
-       plain block) but is free to shrink vertically instead of running off the
-       bottom of the screen. */
-    display: flex;
-    flex-direction: column;
-    /* The card scrolls, not the drawer box — otherwise a tall menu scrolls the
-       whole card, dragging its rounded corners and shadow past the viewport. */
-    overflow: hidden;
     transform: translateX(-100%);
     transition: transform 240ms ease;
     /* The sidebar is a drawer here, not a sliding column, so keep it out of the
@@ -779,18 +964,6 @@ body {
        full-height drawer's fill on/off screen during navigation, flashing over the
        bottom safe area before it settles back off-screen. */
     view-transition-name: none;
-  }
-  .sidebar-container {
-    border: 1px solid var(--doc-border-quiet);
-    box-shadow: 0 0 16px rgba(0, 0, 0, 0.2);
-    margin: 0;
-    /* min-height: 0 lets the flex item shrink below its content height, so a
-       menu taller than the screen gets capped at the drawer's height and
-       scrolls inside the card. A short menu still sizes to its content. */
-    min-height: 0;
-    overflow-y: auto;
-    /* Don't hand the scroll off to the page behind the drawer at either end. */
-    overscroll-behavior: contain;
   }
   .sidebar.is-open {
     transform: translateX(0);
@@ -829,14 +1002,34 @@ body {
   animation: none;
 }
 
-/* To/from home: only the sidebar moves. Drop the page's own snapshot so the
-   content folds back into the (now static) root instead of morphing alongside
-   the sidebar. */
-html.vt-home .doc {
+/* To/from home the content column changes width in a single frame — the rail
+   takes a ~245px grid track on a component page and none on the home page — so
+   the article has to appear at its new width immediately. The article keeps its
+   own snapshot here (it has no counterpart on the other side, so there's nothing
+   to morph into, only a fade) and that fade runs the length of the rail's slide.
+   Without it the content cut straight to its narrow width while the rail was
+   still off-screen, and the narrowing read as an unexplained flash. */
+/* Page → page the rail is unchanged apart from which pill is lit, so it doesn't
+   want a snapshot at all: capturing it cross-fades the outgoing active pill
+   against the incoming one, and for ~250ms two capsules are lit at once. The
+   further apart they sit the less that reads as a hand-off and the more it
+   reads as a fault — worst jumping to an entry at the far end of the list.
+   Dropping the name here leaves the live rail on screen and lets the active
+   pill simply cut over. Only `vt-home`, where the rail genuinely arrives or
+   leaves, still needs it. */
+html.vt-down .sidebar,
+html.vt-up .sidebar {
   view-transition-name: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  html.vt-home::view-transition-new(doc-page) {
+    animation: doc-page-fade 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  html.vt-home::view-transition-old(doc-page) {
+    animation: doc-page-fade 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both reverse;
+  }
+
   /* Sidebar slides in / out along its left edge. */
   html.vt-home::view-transition-old(doc-sidebar) {
     animation: doc-sidebar-out 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -867,6 +1060,12 @@ html.vt-home .doc {
   from { transform: translateX(-100%); opacity: 0; }
 }
 
+/* To/from home. Run forwards for the arriving page, `reverse` for the leaving
+   one — no transform, so the article never stretches between its two widths. */
+@keyframes doc-page-fade {
+  from { opacity: 0; }
+}
+
 /* Moving down the list: new page rises from below, old lifts out the top. */
 @keyframes doc-page-out-up {
   to { opacity: 0; transform: translateY(-30px); }
@@ -880,4 +1079,23 @@ html.vt-home .doc {
 }
 @keyframes doc-page-in-down {
   from { opacity: 0; transform: translateY(-30px); }
+}
+
+/* A scrap of window for the chrome demos to float over. It has to be a real
+   stage, not a frame: the capsules are glass, so a demo on the page's flat
+   ground would show the one thing the material never does. Hence the shell's
+   own ground and dotted backdrop — and `position: relative`, because the
+   titlebar is absolute and this is what it pins to. */
+.doc-chrome {
+  position: relative;
+  /* The example well centres its children, so without this the stage would
+     shrink to its content and the trailing capsule — pushed to the far end,
+     which is the whole point of it — would be cropped off the right. */
+  width: 100%;
+  border-radius: calc(var(--radius-lg) - var(--radius-sm));
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--ctl-section);
+  background-color: var(--stage-bg);
+  /*background-image: var(--grid-dots);*/
+  background-size: var(--grid-dots-size);
 }

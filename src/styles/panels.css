@@ -44,6 +44,47 @@
   padding: var(--space-2) var(--space-4);
 }
 
+/* ---- Toolbar: a layout row, not a surface ----
+   Unglazed on purpose. The bar paints nothing — no ground, no edge, no lit top
+   — so the only chrome in a toolbar is the controls themselves, platters and
+   readouts floating directly on whatever is behind them.
+
+   Being surfaceless is what frees it from the grounds problem a plate would
+   have forced: it has no ground of its own to be shallower than, so it can go
+   anywhere, a Panel body included, without stacking one surface on an identical
+   one. The trade is that its children recess against the *parent's* ground
+   instead. A Readout (--ctl-row) and a Platter (--ctl-btn) read as recessed on
+   a plate and as floating on the darker stage — both legible, but different
+   looks, so the bar takes its character from wherever you put it.
+
+   No padding either: an invisible box has no edge to inset from, and a mystery
+   inset here would knock the controls out of alignment with the grid the parent
+   already sets. Spacing between the bar and its neighbours belongs to the
+   parent; `gap` is the only spacing this rule owns. */
+.pp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+/* A tool palette down the side of a view. Stretch rather than centre, so a
+   platter in a column fills the width instead of drifting to the middle. */
+.pp-toolbar.is-vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+/* Takes the slack and carries itself to the trailing edge, so the leading group
+   stays put however wide the bar is asked to be. */
+.pp-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+.pp-toolbar.is-vertical > .pp-toolbar-end {
+  margin-left: 0;
+  margin-top: auto;
+}
+
 /* ---- Slider rows: label + value + track in one object ---- */
 .slider-row {
   position: relative;
@@ -188,6 +229,45 @@
   color: var(--ctl-text);
   margin-top: -8px;
 }
+
+/* ---- Readout (a capsule that only states a value) ----
+   Not a track: that recessed surface is the language of controls you aim at, so
+   a passive readout rests just off the plate instead and carries --ctl-text.
+   Hugs its content so it can sit inline anywhere a number needs a frame. */
+.pp-readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: fit-content;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--ctl-row);
+  color: var(--ctl-text);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+}
+.pp-readout-label {
+  color: var(--ctl-hint);
+  font-size: var(--text-xs);
+}
+/* One mono treatment for every value this set reports, so the standalone
+   capsule, the trailing value on a List / Tree row, and a Table's numeric
+   column cannot drift apart. */
+.pp-readout-value,
+.pp-list-meta,
+.pp-table-cell.is-numeric {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+/* Accent is the sanctioned pairing from the capsule block in colors.css: the
+   pinned accent ground with on-track text. Painting the digits accent instead
+   would drop them to ~3.5:1 against a dark plate. */
+.pp-readout.is-accent {
+  background: var(--ctl-accent);
+  color: var(--ctl-on-track);
+}
+.pp-readout.is-accent .pp-readout-label { color: var(--ctl-on-track); opacity: 0.75; }
 
 /* ---- Switch rows (Toggle) ---- */
 .switch-row {
@@ -468,6 +548,265 @@
 .vector input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .vector input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .color-vector input { transition: background var(--dur-fast) var(--ease-out); }
+
+/* ---- List (stacked rows) ----
+   A capsule shape at a slider row's height, but a far quieter ground: rows are
+   read as a column, so they rest just off the plate instead of recessing to a
+   track, and carry --ctl-text rather than on-track white. An optional leading
+   icon, a label that takes the slack, a mono readout pinned right. Rows are a
+   fixed height on purpose — the reorder drag measures one pitch at pointerdown
+   and treats every hop as a multiple of it. */
+.pp-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pp-list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--ctl-row);
+  color: var(--ctl-text);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+/* The grip lives inside the row's left padding, so give that edge back the
+   space the glyph takes and every label stays on one rule. */
+.pp-list.is-reorderable .pp-list-row { padding-left: var(--space-2); }
+
+/* Only while a drag is live: the pushed rows glide, the carried one doesn't
+   (it has to land on the pointer, not chase it). */
+.pp-list.is-dragging .pp-list-row {
+  transition: transform var(--dur-base) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.pp-list.is-dragging .pp-list-row.is-carried {
+  transition: background var(--dur-fast) var(--ease-out);
+  /* Picked up steps past even a parent's tint, so the carried row is never
+     mistaken for one — this set builds elevation out of depth, not shadow. */
+  background: var(--ctl-row-raised);
+  position: relative;
+  z-index: var(--z-raised);
+}
+.pp-list-row.is-disabled { opacity: 0.5; }
+
+.pp-list-grip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-1);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  opacity: 0.45;
+  cursor: grab;
+  /* The drag owns the gesture; without this a touch drag scrolls the page. */
+  touch-action: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.pp-list-row:hover .pp-list-grip,
+.pp-list-grip:focus-visible { opacity: 1; }
+.pp-list-row.is-carried .pp-list-grip { opacity: 1; cursor: grabbing; }
+.pp-list-grip.is-locked { cursor: default; }
+.pp-list-grip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.pp-list-grip svg { display: block; }
+
+/* The grip's mirror on the right edge: same quiet-until-hovered treatment, so
+   the two affordances read as a pair bracketing the row. Sits after `meta`, and
+   eats the row's right padding the way the grip eats the left. */
+.pp-list-more {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-1);
+  margin-right: calc(var(--space-1) * -1);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+/* Unlike the grip this one stays out of sight until the row is under the
+   pointer — a menu you have not opened yet is not information. */
+.pp-list-row:hover .pp-list-more,
+.pp-list-row:focus-visible .pp-list-more,
+.pp-list-more:focus-visible { opacity: 1; }
+.pp-list-more:hover { opacity: 1; }
+.pp-list-more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.pp-list-more svg { display: block; }
+/* A branch has no button, but still reserves its width so `meta` on every row
+   stops on the same rule. */
+.pp-list-more.is-spacer { width: 20px; cursor: default; }
+
+.pp-list-icon { flex: none; display: flex; }
+.pp-list-icon svg { display: block; }
+/* The label takes the slack so `meta` stays pinned right. Long names clip
+   instead of wrapping — that is what keeps every row exactly one pitch tall. */
+.pp-list-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Type comes from the shared rule up in the Readout section; a row's trailing
+   value only adds the dimming that keeps it behind the label. */
+.pp-list-meta {
+  flex: none;
+  opacity: 0.8;
+}
+
+/* ---- Tree (a List indented by depth) ----
+   Same capsule rows, stepped right one --tree-indent per level. The step is
+   declared here rather than in TS because the drag reads it back off the list
+   to project the depth axis — CSS stays the source of truth for it. */
+.pp-tree {
+  --tree-indent: 16px;
+}
+.pp-tree .pp-list-row {
+  margin-left: calc(var(--depth, 0) * var(--tree-indent));
+  /* The row is what takes focus in a tree, so the ring goes on the capsule. */
+  outline: none;
+}
+.pp-tree .pp-list-row:focus-visible { box-shadow: var(--focus-ring); }
+/* The only row that is tinted at all: a node holding others sits one step
+   deeper than its children, so a branch reads before you reach its chevron.
+   A carried row keeps its own deeper ground — that rule carries one more class
+   and outranks this one however the two are ordered. */
+.pp-tree .pp-list-row.has-children { background: var(--ctl-row-parent); }
+/* Indent changes are part of the drop, so they settle with the push. */
+.pp-tree.is-dragging .pp-list-row { transition: transform var(--dur-base) var(--ease-out); }
+.pp-tree.is-dragging .pp-list-row.is-carried { transition: none; }
+
+.pp-tree-chevron {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 100%;
+  margin-right: calc(var(--space-1) * -1);
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out),
+              opacity var(--dur-fast) var(--ease-out);
+}
+.pp-tree-chevron.is-open { transform: rotate(90deg); }
+.pp-tree-chevron:hover { opacity: 1; }
+/* A leaf keeps the chevron's width and nothing else, so every label in a level
+   starts on the same rule whether or not the node branches. */
+.pp-tree-chevron.is-leaf { cursor: default; }
+.pp-tree-chevron svg { display: block; }
+
+/* ---- Table (a List arranged by column) ----
+   The same capsule row at the same height, cut into cells. `border-collapse:
+   separate` with a vertical `border-spacing` is what keeps the stack's rhythm:
+   a collapsed table has no way to put --space-1 between rows, and the capsule
+   is painted per *cell* because a `<tr>` cannot take a background in every
+   engine. The row's rounded ends are therefore the first and last cell's outer
+   corners. */
+.pp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 var(--space-1);
+  /* The cell padding is the row's, so a table dropped on a plate lines its
+     first column up with a List's labels rather than sitting a few pixels in. */
+  margin: calc(var(--space-1) * -1) 0;
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  color: var(--ctl-text);
+}
+.pp-table-cell {
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  text-align: start;
+  font-weight: inherit;
+  /* Cells hold one line, like a row's label: a wrapping cell would break the
+     fixed pitch every other row-shaped part in this set keeps. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-table-cell.is-end { text-align: end; }
+/* Joins the shared mono treatment up in the Readout section rather than
+   restating it — see the note there. */
+
+.pp-table-row > .pp-table-cell { background: var(--ctl-row); }
+.pp-table-row > .pp-table-cell:first-child {
+  border-top-left-radius: var(--radius-pill);
+  border-bottom-left-radius: var(--radius-pill);
+}
+.pp-table-row > .pp-table-cell:last-child {
+  border-top-right-radius: var(--radius-pill);
+  border-bottom-right-radius: var(--radius-pill);
+}
+.pp-table-row.is-disabled { opacity: 0.5; }
+/* Nothing to state about an empty table but the fact of it. */
+.pp-table-row.is-empty > .pp-table-cell {
+  color: var(--ctl-hint);
+  text-align: center;
+}
+
+/* Headings are not capsules. A column label is furniture — it names the cells
+   under it and then gets out of the way — so it carries no ground at all and
+   drops to the hint ink, the same call `Readout` makes for its own label. */
+.pp-table-head {
+  height: auto;
+  padding-bottom: var(--space-1);
+  font: var(--type-label);
+  color: var(--ctl-hint);
+}
+
+/* The pressable heading fills its cell so the whole column label is the
+   target, and inherits its type rather than restating it. */
+.pp-table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.pp-table-sort:hover { color: var(--ctl-text); }
+.pp-table-sort:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* An end-aligned column hangs its caret on the left, so the label still ends
+   on the column's rule and the arrow never pushes the digits off it. */
+.pp-table-cell.is-end .pp-table-sort { flex-direction: row-reverse; }
+
+/* Drawn on every sortable heading and revealed by state: sorting a column for
+   the first time must not change its width, or the whole table shifts under
+   the press that did it. */
+.pp-table-caret {
+  display: flex;
+  opacity: 0;
+  /* The shared chevron points right at rest; a sort arrow points up or down. */
+  transform: rotate(-90deg);
+  transition: opacity var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.pp-table-sort:hover .pp-table-caret { opacity: 0.4; }
+.pp-table-sort.is-asc .pp-table-caret,
+.pp-table-sort.is-desc .pp-table-caret { opacity: 1; }
+.pp-table-sort.is-desc .pp-table-caret { transform: rotate(90deg); }
+.pp-table-caret svg { display: block; }
 
 /* ---- Collapsible section ---- */
 .collapse-section {

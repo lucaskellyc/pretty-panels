@@ -4,7 +4,7 @@ A lightweight, themeable React component library for control-panel UIs.
 
 **[Full documentation →](https://lucaskellyc.github.io/pretty-panels/)**
 
-- **15 components**, 0 runtime dependencies (React is a peer dep).
+- **20 components**, 0 runtime dependencies (React is a peer dep).
 - **Fully controlled** — you own the state; every component is a pure function of props.
 - Ships an ESM + CJS bundle, TypeScript types, and one stylesheet.
 
@@ -85,6 +85,16 @@ hue, same saturation, lower plate:
 Setting `--mono-l` yourself in a stylesheet that loads after this one wins in
 both schemes, which is how you opt out and pin a single fixed appearance.
 
+### Fonts
+
+The stylesheet ships its own IBM Plex Sans and JetBrains Mono (latin subsets,
+upright, only the weights the tokens name) and loads them from `dist/fonts/`
+beside it. Nothing is fetched at runtime — a hosted `@import` fails silently
+under a desktop app's `default-src 'self'` CSP and offline, and the only symptom
+is that every label quietly renders in the system face. Every token stack still
+falls back to system fonts, so dropping the faces costs you nothing but the
+brand.
+
 ### Scoping
 
 The knobs resolve where the `--ctl-*` set is *declared*, so re-dialling a
@@ -107,15 +117,16 @@ override one on any subtree, no marker needed:
 
 ## Components
 
-Grouped by kind, mirroring the documentation site. Atoms are filed by what the
-part does; everything is alphabetical within its group.
+Grouped by tier and family, mirroring the documentation site — atoms are single
+controls, molecules are closed sets of peers, organisms host content of yours.
+Alphabetical within each family.
 
 **Atoms · Buttons**
 
 | Component    | What it is                                                           |
 | ------------ | -------------------------------------------------------------------- |
-| `IconButton` | Round icon button with an accent `active` state.                     |
-| `TextButton` | Capsule text button with an optional leading icon + accent `active`. |
+| `IconButton` | Round icon button. An action, or `mode="toggle"` for an on/off state. |
+| `TextButton` | Capsule text button with an optional leading icon; same two modes.   |
 
 **Atoms · Choices**
 
@@ -125,11 +136,12 @@ part does; everything is alphabetical within its group.
 | `Select`     | Native `<select>` restyled as a track capsule.       |
 | `Toggle`     | Capsule on/off switch with optional label + hint.    |
 
-**Atoms · Readouts**
+**Atoms · Monitors**
 
 | Component | What it is                                                   |
 | --------- | ------------------------------------------------------------ |
 | `Gauge`   | Read-only 270° arc gauge with a tabular readout and caption. |
+| `Readout` | Capsule that states a value and nothing else — nothing to touch. |
 
 **Atoms · Values**
 
@@ -140,20 +152,34 @@ part does; everything is alphabetical within its group.
 | `TextField` | Track capsule for free-form entry, set in the mono face.              |
 | `Vector`    | 2–4 fused numeric fields; drag-to-scrub, optional color mode.         |
 
-**Molecules**
+**Molecules · Structures**
+
+| Component | What it is                                                              |
+| --------- | ----------------------------------------------------------------------- |
+| `List`    | Stack of capsule rows with a mono readout pinned right; optionally reorderable. |
+| `Table`   | `List`'s rows arranged by column; opt-in sortable headings, mono numeric columns. |
+| `Tree`    | `List`'s rows arranged by depth; a drag picks both the gap and the depth. |
+
+**Molecules · Groups**
+
+| Component        | What it is                                                          |
+| ---------------- | ------------------------------------------------------------------- |
+| `GaugeRow`       | Evenly-spaced strip of `Gauge` dials.                               |
+| `Platter`        | Capsule tray of icon / text buttons, row or column. `mode="select"` makes it one choice instead of many. |
+
+**Molecules · Layout**
 
 | Component  | What it is                                                   |
 | ---------- | ------------------------------------------------------------ |
-| `GaugeRow` | Evenly-spaced strip of `Gauge` dials.                        |
-| `Platter`  | Capsule tray of icon / text buttons, row or column.          |
 | `Section`  | Collapsible titled section (smooth wipe).                    |
 | `Tabs`     | Capsule tab strip; flush plate header via `Panel`'s `title`. |
 
-**Organisms**
+**Organisms · Surfaces**
 
 | Component | What it is                                                                 |
 | --------- | -------------------------------------------------------------------------- |
 | `Panel`   | Plate with optional header + padded body; collapsibly folds its body away. |
+| `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. |
 
 All prop types are exported (e.g. `SliderProps`, `PanelProps`).
 
@@ -168,7 +194,9 @@ npm run typecheck    # tsc --noEmit
 ```
 
 The demo under `demo/` doubles as the documentation site and is deployed to
-GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
+GitHub Pages by `.github/workflows/pages.yml` on every push to `stable`.
+Work lands on `unstable`, which runs CI but deliberately does not redeploy
+the site; `stable` is merged forward at each release.
 
 ## License
 

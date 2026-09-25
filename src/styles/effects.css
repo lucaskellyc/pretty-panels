@@ -4,8 +4,8 @@
    ring reserved for focus.
    ============================================================ */
 
-/* These two resolve against the mono ramp, so they have to re-run wherever the
-   ramp does — same [data-mono] scoping as the --ctl-* set (colors.css). */
+/* These resolve against the mono ramp, so they have to re-run wherever the ramp
+   does — same [data-mono] scoping as the --ctl-* set (colors.css). */
 :root,
 [data-mono] {
   /* Gentle lit top edge on the panel plate (flat theme's "faint inner light").
@@ -15,13 +15,16 @@
 
   /* Inner gap matches the plate so the accent ring floats clear of the control. */
   --focus-ring: 0 0 0 2px var(--ctl-panel), 0 0 0 3px var(--ctl-accent);
+
+  /* A faint dotted backdrop for the ground an app floats its panels on (the
+     shell's stage). Rides the ramp through --ctl-text, so the dots are light on
+     a dark ground and ink on a light one, and the alpha keeps them a texture
+     rather than a grid you read. */
+  --grid-dots: radial-gradient(color-mix(in srgb, var(--ctl-text) 22%, transparent) 1px, transparent 1px);
+  --grid-dots-size: 22px 22px;
 }
 
 :root {
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-
   /* motion — snappy, mechanical, no bounce */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 90ms;

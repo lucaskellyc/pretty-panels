@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react';
+import { cx } from './util';
 
 export interface SectionProps {
   title: string;
@@ -18,7 +19,7 @@ export function Section({ title, defaultOpen = true, children }: SectionProps) {
           <path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" />
         </svg>
       </button>
-      <div className={`collapsible${open ? '' : ' is-collapsed'}`}>
+      <div className={cx('collapsible', !open && 'is-collapsed')}>
         <div className="collapsible-clip">
           <div className="collapse-body">{children}</div>
         </div>

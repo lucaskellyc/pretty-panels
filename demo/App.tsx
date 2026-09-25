@@ -3,7 +3,8 @@ import { flushSync } from 'react-dom';
 // The SVG-only player, as the design canvas used — the default entry also
 // carries the canvas/html renderers, which this page never asks for.
 import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
-import { familiesOf, pages, PropsTable, type DocPage, type Group } from './pages';
+import { familiesOf, pages, type DocPage, type Group } from './catalog';
+import { PropsTable } from './pages';
 import { IconButton, Slider, Stepper } from '../src';
 import { version } from '../package.json';
 // Imported as URLs, not as modules: these two compositions are ~340KB of JSON
@@ -63,6 +64,18 @@ GROUPS.forEach((g) => {
     f.items.forEach((p) => PART_CODE.set(p.slug, `${TIER_CODE[g.id]}${++n}`)),
   );
 });
+
+/** The home catalog's cells — one per component class, in sidebar order. A class
+ *  is a tier's family (Buttons, Choices, Groups …), and every page carries one, so
+ *  the grid labels by family alone and never falls back to a tier name. */
+const CLASSES = GROUPS.flatMap((g) =>
+  familiesOf(g.id).map((f) => ({
+    key: `${g.id}:${f.label}`,
+    tier: g.id,
+    label: f.label,
+    items: f.items,
+  })),
+);
 
 /** Track the active component slug from the URL hash (`#/atoms/slider`),
  *  animating swaps with a View Transition. <html> is tagged per navigation so
@@ -134,7 +147,13 @@ function useHashSlug() {
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+    // `sidebarOrder` is a real dependency, not a formality: the handler reads it
+    // to decide direction. Declaring it is also what makes the listener survive
+    // a hot update — a re-executed module builds a fresh array, the identity
+    // changes, and the effect re-binds. With `[]` the listener kept the array
+    // from first mount, so a page added mid-session looked like index -1 and
+    // navigated with the home transition instead of the page slide.
+  }, [sidebarOrder]);
 
   return slug;
 }
@@ -174,18 +193,22 @@ export function App() {
               </a>
               <nav>
                 {GROUPS.map((g) => (
-                  <div className="nav-group" key={g.id}>
-                    <div className="nav-group-title">{g.label}</div>
-                    {familiesOf(g.id).map((f, i) => (
-                      <div className="nav-family" key={f.label ?? i}>
-                        {f.label && <div className="nav-family-title">{f.label}</div>}
+                  // No tier caption here — `data-tier` inks each link's part code
+                  // (A1 / M2 / O1) in the tier's own hue, the same code-and-colour
+                  // pair the home catalog prints, so the grouping reads without
+                  // repeating "Atoms / Molecules / Organisms" down the rail.
+                  <div className="nav-group" data-tier={g.id} key={g.id}>
+                    {familiesOf(g.id).map((f) => (
+                      <div className="nav-family" key={f.label}>
+                        <div className="nav-family-title">{f.label}</div>
                         {f.items.map((p) => (
                           <a
                             key={p.slug}
                             className={`nav-link${p.slug === slug ? ' is-active' : ''}`}
                             href={`#/${p.group}/${p.slug}`}
                           >
-                            {p.name}
+                            <span className="nav-code">{PART_CODE.get(p.slug)}</span>
+                            <span className="nav-name">{p.name}</span>
                           </a>
                         ))}
                       </div>
@@ -229,7 +252,7 @@ function DocPageView({
   menuOpen: boolean;
   onToggleMenu: () => void;
 }) {
-  const { Example } = page;
+  const { Example, Guide } = page;
   const dir = GROUPS.find((g) => g.id === page.group)?.label ?? page.group;
   return (
     <article className="doc">
@@ -263,6 +286,8 @@ function DocPageView({
         </section>
       )}
 
+      {Guide && <Guide />}
+
       <section className="doc-section">
         <h2>Props</h2>
         <PropsTable rows={page.props} />
@@ -271,15 +296,13 @@ function DocPageView({
       <section className="doc-section">
         <h2>Import</h2>
         <pre className="code">
-          <code>{`import { ${page.name} } from 'pretty-panels';`}</code>
+          {/* The display name carries a space ("Title Bar"); the export doesn't. */}
+          <code>{`import { ${page.name.replace(/\s/g, '')} } from '${page.importFrom ?? 'pretty-panels'}';`}</code>
         </pre>
       </section>
     </article>
   );
 }
-
-/** The install command, shown in the "Get started" section. */
-const INSTALL_CMD = 'npm install github:lucaskellyc/pretty-panels';
 
 /** Both Lottie compositions are 270 frames at 60fps — 4.5s — so one clock can
  *  drive the pair and keep them locked to each other. */
@@ -417,8 +440,9 @@ function HeroBench() {
         {/* The glyph is the only thing naming this control now, so `label`
             carries the whole accessible name (and the tooltip). */}
         <IconButton
+          mode="toggle"
           active={playing}
-          onClick={() => setPlaying((p) => !p)}
+          onChange={setPlaying}
           label={playing ? 'Pause' : 'Play'}
         >
           {playing ? PAUSE_ICON : PLAY_ICON}
@@ -451,10 +475,9 @@ function HeroBench() {
         />
       </div>
 
-      <p className="hero-tagline">Control-panel UI in a handful of parts.</p>
+      <p className="hero-tagline">A compact, stylish component library</p>
       <p className="hero-sub">
-        Panel plates, capsule tracks, collapsible sections. Fully controlled, zero
-        runtime dependencies.
+        Quickly assemble sophisticated control-panel UIs with an intuitive set of components.
       </p>
 
       <div className="hero-specs">
@@ -471,46 +494,25 @@ function Overview() {
   return (
     <article className="home">
       <HeroBench />
-      <section className="catalog" id="components">
-        {GROUPS.map((g) => {
-          const families = familiesOf(g.id);
-          const count = families.reduce((n, f) => n + f.items.length, 0);
-          return (
-            <div className="catalog-group" key={g.id}>
-              <h2 className="catalog-tier">
-                {g.label}
-                <span className="tier-code">
-                  {TIER_CODE[g.id]} · {count}
-                </span>
-              </h2>
-              {families.map((f, i) => (
-                <div className="catalog-family" key={f.label ?? i}>
-                  {f.label && <h3 className="catalog-family-title">{f.label}</h3>}
-                  <ul className="catalog-list">
-                    {f.items.map((p) => (
-                      <li key={p.slug}>
-                        <a className="catalog-row" href={`#/${p.group}/${p.slug}`}>
-                          <span className="catalog-code">{PART_CODE.get(p.slug)}</span>
-                          <span className="catalog-name">{p.name}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+      <section className="catalog">
+        {CLASSES.map((c) => (
+          // `data-tier` tints the cell and every card inside it: pink / teal /
+          // warm yellow per atomic level. It's a second read of the part code
+          // each card already prints (A1 / M2 / O1), never the only one.
+          <div className="catalog-cell" data-tier={c.tier} key={c.key}>
+            <h3 className="catalog-cell-title">{c.label}</h3>
+            <ul className="catalog-list">
+              {c.items.map((p) => (
+                <li key={p.slug}>
+                  <a className="catalog-row" href={`#/${p.group}/${p.slug}`}>
+                    <span className="catalog-code">{PART_CODE.get(p.slug)}</span>
+                    <span className="catalog-name">{p.name}</span>
+                  </a>
+                </li>
               ))}
-            </div>
-          );
-        })}
-      </section>
-
-      <section className="home-quickstart">
-        <h2>Get started</h2>
-        <pre className="code">
-          <code>{INSTALL_CMD}</code>
-        </pre>
-        <pre className="code">
-          <code>{`import 'pretty-panels/styles.css';\nimport { Panel, Slider } from 'pretty-panels';`}</code>
-        </pre>
+            </ul>
+          </div>
+        ))}
       </section>
     </article>
   );

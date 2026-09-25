@@ -87,10 +87,26 @@
 .tab:disabled:hover { background: var(--ctl-tab); }
 
 /* ---- Round icon button (IconButton) + text button (TextButton) ----
-   Two shapes of the same part: a capsule on the plate ground that lights up on
-   hover and paints the accent when active. The round one is a fixed square
-   plate around an icon; the text one hugs its label (with an optional leading
-   icon). */
+   Two shapes of the same part: the round one is a fixed square plate around an
+   icon, the text one hugs its label (with an optional leading icon).
+
+   Three tiers, and the `mode` prop is what picks between them:
+
+   - **standard** — the quiet default. A plate-relative ground carrying
+     --ctl-text: light with dark ink on a light plate, and the reverse once the
+     plate is dialled dark. Most buttons are this, which is what lets the other
+     two read as louder than it.
+   - **prominent** — `active` on a `mode="standard"` action, the `Apply` beside a
+     `Cancel`. The pinned capsule track with on-track text: the look every
+     button in this set used to wear at rest.
+   - **on** — `active` on a `mode="toggle"`. The accent, which is this kit's
+     paint for a value someone set, the same as a checked switch or a slider's
+     fill.
+
+   The two lit tiers are told apart by `aria-pressed`: only a toggle carries the
+   attribute, so its presence *is* the mode. Styling off it rather than a second
+   class is deliberate — the tier a button shows and the semantics it announces
+   then cannot disagree, and it is the same trick `.tab[aria-selected]` uses. */
 .pp-round-btn {
   width: 34px;
   height: 34px;
@@ -99,14 +115,13 @@
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: var(--ctl-track);
-  color: white;
+  background: var(--ctl-btn);
+  color: var(--ctl-text);
   cursor: pointer;
   user-select: none;
   transition: background var(--dur-fast) var(--ease-out),
               color var(--dur-fast) var(--ease-out);
 }
-.pp-round-btn:hover { background: var(--ctl-track-hover); }
 
 .pp-text-btn {
   display: inline-flex;
@@ -117,8 +132,8 @@
   padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
   border: none;
-  background: var(--ctl-track);
-  color: white;
+  background: var(--ctl-btn);
+  color: var(--ctl-text);
   font: var(--type-ui);
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
@@ -128,27 +143,66 @@
   transition: background var(--dur-fast) var(--ease-out),
               color var(--dur-fast) var(--ease-out);
 }
-.pp-text-btn:hover { background: var(--ctl-track-hover); }
 
-/* After the `:hover` rules above, at equal specificity — that order is what
-   keeps an active button on the accent while the pointer is over it. */
-.pp-round-btn.is-active,
-.pp-text-btn.is-active {
+/* Hover is excluded on a disabled button rather than reset afterwards: a
+   disabled one is dimmed but still hoverable (it keeps its tooltip), and a
+   reset would have to be written once per tier to put the right ground back. */
+.pp-round-btn:hover:not(:disabled) { background: var(--ctl-btn-hover); }
+.pp-text-btn:hover:not(:disabled) { background: var(--ctl-btn-hover); }
+
+/* Prominent — an accented action. `:not([aria-pressed])` is exactly "not a
+   toggle". It ties the standard hover above on specificity and is declared
+   after it, so a hovered prominent button holds the track rather than falling
+   back to the quiet ground; the rule under it then takes the hover one step
+   deeper, the way every hover here does. */
+.pp-round-btn.is-active:not([aria-pressed]),
+.pp-text-btn.is-active:not([aria-pressed]) {
+  background: var(--ctl-track);
+  color: var(--ctl-on-track);
+}
+.pp-round-btn.is-active:not([aria-pressed]):hover:not(:disabled),
+.pp-text-btn.is-active:not([aria-pressed]):hover:not(:disabled) {
+  background: var(--ctl-track-hover);
+}
+
+/* On — a toggle carrying its state. This one is *less* specific than the
+   standard hover above (an attribute against a pseudo-class pair), so order
+   cannot hold it: the paired rule below is the only thing keeping an on toggle
+   on the accent under the pointer. Drop that rule and a hover would wash it
+   back to the quiet ground. */
+.pp-round-btn[aria-pressed="true"],
+.pp-text-btn[aria-pressed="true"] {
   background: var(--ctl-accent);
   color: var(--ctl-on-track);
 }
-.pp-round-btn.is-active:hover,
-.pp-text-btn.is-active:hover { background: var(--ctl-accent-hover); }
+.pp-round-btn[aria-pressed="true"]:hover:not(:disabled),
+.pp-text-btn[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--ctl-accent-hover);
+}
 
 /* ---- Button platter (Platter) ----
-   A recessed capsule tray holding a row or column of icon / text segments.
-   The tray sinks like a slider track; segments sit flush, sink further on
-   hover, and paint the accent when active. */
+   A capsule tray holding a row or column of icon / text segments. The tray is
+   the same quiet ground a standalone button rests on — a platter is a tray of
+   buttons, so it starts where they start: light with dark ink on a light plate,
+   and the reverse once the plate is dialled dark. Segments sit flush and
+   transparent on it, step one deeper on hover, and paint the accent when
+   selected.
+
+   It uses two of the three button tiers, not all three. The capsule track —
+   "prominent" on a standalone button — is deliberately absent: it marks the one
+   action in a cluster worth pressing, and a platter is a closed set of peers
+   with no primary among them.
+
+   One shape, two modes: `standard` fills the tray with independent <button>s,
+   `select` with <label>s over real radios. The segment rules below are written
+   against `.pp-platter-btn`, which both carry, so the two modes cannot drift
+   apart — only the state selectors differ, because a label has no `:disabled`
+   and no pressed state of its own to match on. */
 .pp-platter {
   display: inline-flex;
   gap: var(--space-1);
   padding: var(--space-1);
-  background: var(--ctl-track);
+  background: var(--ctl-btn);
   border-radius: var(--radius-pill);
   width: fit-content;
   user-select: none;
@@ -173,7 +227,7 @@
   border: none;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--ctl-on-track);
+  color: var(--ctl-text);
   font: var(--type-ui);
   font-size: var(--text-sm);
   font-weight: var(--fw-medium);
@@ -185,14 +239,45 @@
 /* Text segments hug their label with a little breathing room; icon-only ones
    stay square via `min-width`. */
 .pp-platter-btn.has-text { padding: 0 var(--space-3); }
-/* Inside a recessed tray, hover goes *deeper* than the tray rather than toward
-   the plate — the same logic as `.stepper-btn`, and it keeps the segment's
-   on-track label legible instead of washing it out. */
-.pp-platter-btn:hover { background: var(--ctl-deep-hover); }
-.pp-platter-btn.is-active { background: var(--ctl-accent); }
+/* Hover goes one step deeper than the tray, the direction every hover in this
+   set travels — and the same step a standalone button takes, since the tray and
+   the button share a resting ground. */
+.pp-platter-btn:hover { background: var(--ctl-btn-hover); }
+/* Lit — a standard-mode toggle that is on. The accent carries on-track text, so
+   the label flips bright with the ground rather than staying plate ink on it. */
+.pp-platter-btn.is-active {
+  background: var(--ctl-accent);
+  color: var(--ctl-on-track);
+}
 .pp-platter-btn.is-active:hover { background: var(--ctl-accent-hover); }
 /* Last, so a disabled segment stays flat even when it is also active. */
 .pp-platter-btn:disabled:hover { background: transparent; }
+
+/* Select mode — the selected segment is whichever radio is checked, so the
+   accent is painted off `:has(input:checked)` rather than a class. Each of
+   these lands one step more specific than the `.pp-platter-btn` rule it mirrors
+   (the `:has()` argument counts), which is what keeps the pair in step however
+   they are ordered. */
+.pp-platter-seg { position: relative; }
+/* The radio stays in the layout (0×0, transparent) so it keeps focus, the
+   platform's arrow-key roving and form semantics — the same trick `.radio`
+   uses. Hiding it with `display: none` would give all three up. */
+.pp-platter-seg input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+.pp-platter-seg:has(input:checked) {
+  background: var(--ctl-accent);
+  color: var(--ctl-on-track);
+}
+.pp-platter-seg:hover:has(input:checked) { background: var(--ctl-accent-hover); }
+/* A disabled segment stays flat under the pointer, and a disabled *selected*
+   one keeps its accent rather than dropping to the tray. */
+.pp-platter-seg:has(input:disabled):hover { background: transparent; }
+.pp-platter-seg:has(input:checked:disabled):hover { background: var(--ctl-accent); }
 
 /* ---- Shared button chrome ----
    The focus ring, the disabled treatment and the icon reset are the same part
@@ -203,14 +288,18 @@
 .tab:focus-visible,
 .pp-round-btn:focus-visible,
 .pp-text-btn:focus-visible,
-.pp-platter-btn:focus-visible {
+.pp-platter-btn:focus-visible,
+/* The ring belongs on the segment you can see, but the focus is on the radio
+   inside it. */
+.pp-platter-seg:has(input:focus-visible) {
   outline: none;
   box-shadow: var(--focus-ring);
 }
 .tab:disabled,
 .pp-round-btn:disabled,
 .pp-text-btn:disabled,
-.pp-platter-btn:disabled {
+.pp-platter-btn:disabled,
+.pp-platter-seg:has(input:disabled) {
   opacity: 0.5;
   cursor: default;
 }

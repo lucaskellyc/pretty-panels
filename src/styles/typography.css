@@ -9,10 +9,6 @@
                'Roboto Mono', Menlo, Consolas, monospace;
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  --font-ui: var(--font-sans);
-  --font-body: var(--font-sans);
-  --font-code: var(--font-mono);
-
   /* weights */
   --fw-regular: 400;
   --fw-medium: 500;
@@ -41,12 +37,10 @@
   --ls-wide: 0.04em;
   --ls-wider: 0.12em;
 
-  /* semantic roles */
-  --type-h1: var(--fw-bold) var(--text-3xl)/var(--lh-tight) var(--font-sans);
-  --type-h2: var(--fw-bold) var(--text-2xl)/var(--lh-snug) var(--font-sans);
-  --type-h3: var(--fw-medium) var(--text-xl)/var(--lh-snug) var(--font-sans);
+  /* semantic roles — the three the kit's own controls are set in. Headings and
+     body copy belong to the app around them, which has its own scale; the raw
+     --text-* / --lh-* steps above are there to build one from. */
   --type-label: var(--fw-medium) var(--text-xs)/var(--lh-normal) var(--font-sans);
   --type-ui: var(--fw-regular) var(--text-md)/var(--lh-normal) var(--font-sans);
   --type-code: var(--fw-regular) var(--text-md)/var(--lh-normal) var(--font-mono);
-  --type-body: var(--fw-regular) var(--text-md)/var(--lh-relaxed) var(--font-sans);
 }

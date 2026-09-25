@@ -1,0 +1,76 @@
+{
+  "pkg": "pretty-panels",
+  "globalName": "PrettyPanels",
+  "shape": "package",
+  "buildCmd": "npm run build",
+  "cssEntry": "dist/pretty-panels.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "docsMap": {
+    "IconButton": ".design-sync/groups/IconButton.md",
+    "TextButton": ".design-sync/groups/TextButton.md",
+    "Platter": ".design-sync/groups/Platter.md",
+    "RadioGroup": ".design-sync/groups/RadioGroup.md",
+    "Select": ".design-sync/groups/Select.md",
+    "Toggle": ".design-sync/groups/Toggle.md",
+    "Slider": ".design-sync/groups/Slider.md",
+    "Stepper": ".design-sync/groups/Stepper.md",
+    "TextField": ".design-sync/groups/TextField.md",
+    "Vector": ".design-sync/groups/Vector.md",
+    "Gauge": ".design-sync/groups/Gauge.md",
+    "GaugeRow": ".design-sync/groups/GaugeRow.md",
+    "Panel": ".design-sync/groups/Panel.md",
+    "Section": ".design-sync/groups/Section.md",
+    "Tabs": ".design-sync/groups/Tabs.md",
+    "Toolbar": ".design-sync/groups/Toolbar.md"
+  },
+  "overrides": {
+    "IconButton": {
+      "cardMode": "column"
+    },
+    "TextButton": {
+      "cardMode": "column"
+    },
+    "Platter": {
+      "cardMode": "column"
+    },
+    "RadioGroup": {
+      "cardMode": "column"
+    },
+    "Select": {
+      "cardMode": "column"
+    },
+    "Toggle": {
+      "cardMode": "column"
+    },
+    "Slider": {
+      "cardMode": "column"
+    },
+    "Stepper": {
+      "cardMode": "column"
+    },
+    "TextField": {
+      "cardMode": "column"
+    },
+    "Vector": {
+      "cardMode": "column"
+    },
+    "Gauge": {
+      "cardMode": "column"
+    },
+    "GaugeRow": {
+      "cardMode": "column"
+    },
+    "Panel": {
+      "cardMode": "column"
+    },
+    "Section": {
+      "cardMode": "column"
+    },
+    "Tabs": {
+      "cardMode": "column"
+    },
+    "Toolbar": {
+      "cardMode": "column"
+    }
+  }
+}
