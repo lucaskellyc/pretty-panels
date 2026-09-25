@@ -720,6 +720,13 @@
    corners. */
 .pp-table {
   width: 100%;
+  /* Fixed layout is what makes that `width` a limit rather than a preference.
+     Under `auto` a column can never be narrower than its own content, and these
+     cells are `nowrap`, so a table of long names simply grows past the plate and
+     the panel clips the rows' outer corners off — while the ellipsis below never
+     fires, because nothing ever asks a cell to shrink. This is the table's
+     `min-width: 0`: the same job the flex rule does for a List's label. */
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0 var(--space-1);
   /* The cell padding is the row's, so a table dropped on a plate lines its

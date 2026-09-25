@@ -564,7 +564,9 @@ export function TableExample() {
   });
 
   return (
-    <Panel title="Render queue">
+    /* Four columns want more plate than the 340px the examples default to; the
+       min() still lets it give way on a narrow viewport. */
+    <Panel title="Render queue" width="min(460px, 100%)">
       <Table
         label="Render queue"
         sort={sort}

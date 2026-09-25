@@ -87,14 +87,14 @@
     --doc-accent: hsl(var(--doc-hue-accent) 66% 78%);
     --doc-accent-dim: hsl(var(--doc-hue-accent) 44% 26%);
     --doc-border: hsl(var(--doc-hue-neutral) 24% 24%);
-    --doc-border-quiet: hsl(var(--doc-hue-neutral) 24% 23%);
+    --doc-border-quiet: hsl(var(--doc-hue-neutral) 24% 16%);
     --doc-highlight: rgba(255 255 255 / 0.4);
     --doc-grad-light: hsl(var(--doc-hue-neutral) 32% 22%);
     --doc-grad-dark: hsl(var(--doc-hue-neutral) 32% 16%);
     --doc-example-grid: hsl(calc(var(--doc-hue-neutral) + 4) 46% 94% / 0.1);
 
     --doc-shadow-inset:
-      inset 0 2px 4px hsl(var(--doc-hue-neutral) 45% 3% / 0.6),
+      inset 0 4px 12px hsl(var(--doc-hue-neutral) 45% 3% / 0.6),
       inset 0 0 0 1px hsl(var(--doc-hue-neutral) 14% 48% / 0.14);
     --doc-shadow-raised:
       0 4px 14px 2px hsl(var(--doc-hue-neutral) 50% 2% / 0.2),
@@ -454,7 +454,6 @@ body {
 .doc-head {
   padding-bottom: 32px;
   margin-bottom: 8px;
-  border-bottom: 2px solid var(--doc-border-quiet);
 }
 .doc-head h1 {
   margin: 0;
@@ -531,12 +530,12 @@ body {
   display: flex;
   justify-content: center;
   padding: 48px 32px;
-  border: 2px solid var(--doc-border-quiet);
   border-radius: var(--doc-radius-lg);
   background:
     radial-gradient(var(--doc-example-grid) 1px, transparent 1px) 0 0 / 18px 18px,
     var(--doc-surface-recessed);
   box-shadow: var(--doc-shadow-inset);
+  margin-top: 24px;
 }
 .doc-example .panel {
   /* Cap the plate at the well width via the width *variable* (not `width`) so it
@@ -596,6 +595,17 @@ body {
   color: var(--doc-quiet);
   line-height: 1.5;
   border-top: 1px solid var(--doc-surface-recessed);
+  text-wrap: balance;
+}
+/* The description column sets the table's width instead of absorbing whatever
+   the other three leave behind. Squeezed into the remainder of a 720px well it
+   wrapped the longer entries to six and seven lines; held at a readable measure
+   it keeps almost all of them inside three, and the table takes the extra width
+   rather than the row taking extra height. `.props-scroll` is already there to
+   carry the overflow, so the cost is a little sideways scroll on the widest
+   pages. One number to tune: raise it to trade scroll for shorter rows. */
+.props td:nth-child(4) {
+  min-width: 40ch;
 }
 /* Zebra: tint every other body row. A text-colored overlay adapts to both
    themes — a faint darkening in light, a faint lightening in dark. */
@@ -682,6 +692,7 @@ body {
 .hero-poster {
   background: radial-gradient(var(--doc-example-grid) 1px, transparent 1px) 0 0 / 18px 18px,
   var(--doc-surface-recessed);
+  border: 2px solid var(--doc-border-quiet);
   border-radius: 45px;
   box-shadow: var(--doc-shadow-inset);
   display: flex;
@@ -935,7 +946,7 @@ body {
    on its own, so it needs no width-specific overrides here. */
 
 /* ---- Narrow screens ---- */
-@media (max-width: 720px) {
+@media (max-width: 820px) {
   .docs {
     grid-template-columns: 1fr;
   }

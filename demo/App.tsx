@@ -275,21 +275,19 @@ function DocPageView({
           <span className="doc-title-name">{page.name}</span>
         </h1>
         <p className="doc-summary">{page.summary}</p>
-      </header>
-
-      {Example && (
-        <section className="doc-section">
-          <h2>Example</h2>
+        {/* Optional per page — Panel has no example, so this must not render
+            an undefined component. */}
+        {Example && (
           <div className="doc-example">
             <Example />
           </div>
-        </section>
-      )}
+        )}
+      </header>
 
       {Guide && <Guide />}
 
       <section className="doc-section">
-        <h2>Props</h2>
+        <h2>Properties</h2>
         <PropsTable rows={page.props} />
       </section>
 
