@@ -1,0 +1,14 @@
+/* The window, not a page.
+ *
+ * `AppShell` fills the viewport and gives its stage the only scrollbar, which
+ * a browser's default 8px body margin quietly defeats: the shell ends up inset
+ * on every side and its status strip falls off the bottom. The library will not
+ * do this for you — `base.css` keeps its reset off the host document on purpose
+ * — so a desktop app says it here, once. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}

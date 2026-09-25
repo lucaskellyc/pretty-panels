@@ -1,0 +1,543 @@
+/* ============================================================
+   pretty-panels · Window layer
+   Chrome for a frameless desktop window: a strip of frosted capsules floating
+   over the app, the window controls inside one of them, and the shell that
+   holds the whole window.
+
+   The strip reserves nothing. It is an overlay over a full-bleed stage, which
+   is what earns the material — glass over a reserved opaque band would be a bar
+   with extra steps. Everything here is inert in a browser (`-webkit-app-region`
+   is only honoured by a frameless Electron window), so the same markup renders
+   either way and the docs site can show it.
+   ============================================================ */
+
+:root,
+[data-mono] {
+  /* The strip's height. Named because it is not only the strip's own
+     measurement: anything that has to start clear of the capsules — a stage's
+     content, a floating meter — reads this, and the two must agree. */
+  --titlebar-h: 44px;
+  /* Space held for the OS's own buttons under `controls="native"`. The macOS
+     default matches a stock traffic-light cluster; the wider one below is
+     Electron's Windows/Linux `titleBarOverlay`. */
+  --titlebar-inset: 78px;
+
+  /* ---- The glass ----
+     A veil over whatever is behind the capsule, plus the ink that has to stay
+     legible on top. Both ride the mono ramp, so the material turns over with
+     the theme instead of needing a scheme of its own: `--mono-sgn` is +1 on a
+     light plate and -1 on a dark one, and every expression below is written to
+     read correctly from that alone.
+
+     The veil goes *away* from the plate rather than deeper into it — the one
+     place in this kit that does — because glass is not a recessed surface. It
+     is the window's own light: near-black over a dark app, near-white over a
+     light one. */
+  --chrome-veil: hsl(var(--mono-h) var(--mono-s)
+                 clamp(0%, calc((var(--mono-l) + 8 * var(--mono-sgn)) * 1%), 100%)
+                 / calc(0.35 + 0.15 * var(--mono-sgn)));
+  /* A wide blur so the capsule carries a *wash* of what is under it rather than
+     a recognisable smear, then brightness in the direction the scheme wants:
+     0.6 knocks a dark ground back, 1.25 lifts a light one. The arithmetic is
+     the switch — sgn -1 and +1 land on exactly those two numbers. */
+  --chrome-blur: 124px;
+  --chrome-filter: blur(var(--chrome-blur))
+                   saturate(calc(1.45 - 0.05 * var(--mono-sgn)))
+                   brightness(calc(0.925 + 0.325 * var(--mono-sgn)));
+  /* Further along the ramp than --ctl-text: this sits on glass over live
+     content, not on a settled plate. */
+  --chrome-text: hsl(var(--mono-h) var(--mono-s)
+                 clamp(0%, calc((var(--mono-l) - 82 * var(--mono-sgn)) * 1%), 100%));
+
+  /* The window buttons: a ring at rest, filled on hover, with the glyph punched
+     out of the fill — so the ink is the veil's own colour, not the text's. */
+  --chrome-btn-ring: hsl(var(--mono-h) var(--mono-s)
+                     clamp(0%, calc((var(--mono-l) - 82 * var(--mono-sgn)) * 1%), 100%)
+                     / calc(0.36 - 0.04 * var(--mono-sgn)));
+  --chrome-btn-fill: var(--chrome-btn-ring);
+  --chrome-btn-ink: hsl(var(--mono-h) var(--mono-s)
+                    clamp(0%, calc((var(--mono-l) + 60 * var(--mono-sgn)) * 1%), 100%));
+
+  /* Windows' close red. The one value in this kit that is a platform constant
+     rather than a point on the mono ramp — it is the same colour in both
+     schemes on Windows itself, so it does not take --mono-sgn. White glyph over
+     it clears 5:1. */
+  --chrome-close: #c42b1c;
+
+  /* macOS' traffic lights. Platform constants for the same reason the close red
+     above is one: the system paints these three the same in light and dark, so
+     they sit off the mono ramp and take no --mono-sgn.
+
+     One ink for all three rather than a dark tint per light. The glyph is a
+     2.4-weight stroke in a 12px circle — a graphical object, which wants 3:1 —
+     and black at 0.56 clears that on every one of them: 3.4:1 on the red,
+     3.9:1 on the green, 4.2:1 on the amber. A lighter ink fails the red first,
+     since it is the darkest of the three. */
+  --chrome-light-close: #ff5f57;
+  --chrome-light-minimize: #febc2e;
+  --chrome-light-zoom: #28c840;
+  --chrome-light-ink: hsl(0 0% 0% / 0.56);
+
+  /* The ground the app floats on — deeper than any plate, and the only surface
+     the capsules ever have behind them. Same direction as the veil. */
+  --stage-bg: hsl(var(--mono-h) var(--mono-s)
+              clamp(0%, calc((var(--mono-l) + 6 * var(--mono-sgn)) * 1%), 100%));
+}
+
+/* ---- Drag regions ----
+   The strip is the handle; every capsule opts back out. A control inside a drag
+   region never receives its click, so this pairing is not a nicety — a titlebar
+   button without `no-drag` is simply dead. */
+.pp-titlebar {
+  -webkit-app-region: drag;
+}
+.pp-no-drag,
+.pp-titlebar button,
+.pp-titlebar input,
+.pp-titlebar select,
+.pp-titlebar a {
+  -webkit-app-region: no-drag;
+}
+
+/* ---- The material ----
+   One class for every floating capsule, so the strip's parts cannot drift apart
+   from each other the way three copies of three properties would. */
+.pp-chrome {
+  background: var(--chrome-veil);
+  backdrop-filter: var(--chrome-filter);
+  -webkit-backdrop-filter: var(--chrome-filter);
+  border-radius: var(--radius-pill);
+  color: var(--chrome-text);
+}
+
+/* ---- Titlebar ---- */
+.pp-titlebar {
+  /* Absolute, not a row in the layout: the window runs full-bleed to its top
+     edge and these capsules float over it. `AppShell` is the positioned
+     ancestor; standalone, this resolves against the viewport, which for a
+     frameless window is the same thing. */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--titlebar-h);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  background: transparent;
+  user-select: none;
+}
+/* An unfocused window steps back — the glass stays, its contents recede. */
+.pp-titlebar[data-inactive] > * { opacity: 0.62; }
+
+/* Window Controls Overlay: the OS publishes the rectangle it left for us, inset
+   by however much of the strip it drew over. Honour it rather than guessing at
+   `--titlebar-inset`. */
+.pp-titlebar[data-overlay] {
+  height: env(titlebar-area-height, var(--titlebar-h));
+  left: env(titlebar-area-x, 0px);
+  width: env(titlebar-area-width, auto);
+}
+
+/* Space held for the OS's buttons (`controls="native"`). Windows and Linux draw
+   a wider cluster than macOS. */
+.pp-titlebar-inset {
+  flex-shrink: 0;
+  width: var(--titlebar-inset);
+}
+.pp-titlebar[data-platform="win"] .pp-titlebar-inset,
+.pp-titlebar[data-platform="linux"] .pp-titlebar-inset { width: 138px; }
+
+/* Your own chrome, in a capsule of the same material. */
+.pp-titlebar-slot {
+  display: flex;
+  background: transparent;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  font: var(--type-label);
+}
+/* The trailing capsule belongs at the far end. It needs saying because the
+   title is a hugging pill rather than a stretching row, so without this the two
+   would sit shoulder to shoulder behind the controls. */
+.pp-titlebar-trail { margin-left: auto; }
+
+/* A slot holding a Readout is already carrying a capsule — the Readout paints
+   its own --ctl-row pill — so the veil behind it plates the same content twice.
+   Step the material off and let the Readout be the capsule, the call
+   `.pp-titlebar-content` already makes for whatever `children` brings. The blur
+   goes with the ground: a backdrop-filter with no veil over it reads as a
+   smeared patch hanging in the strip. The padding goes too, so the readouts
+   sit against the strip's own gutter rather than a step inboard of it, lining
+   up with the controls cluster at the other end. */
+.pp-titlebar-slot:has(.pp-readout) {
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+
+/* `children` takes the middle and may grow (a Tabs strip fills the strip). It
+   is deliberately unglazed: whatever goes in brings its own surface. */
+.pp-titlebar-content {
+  flex: 1;
+  /* A floor at the content's own minimum rather than 0. Collapse is decided by
+     whether the row genuinely overflows, and a slot that shrinks to nothing
+     would let the capsules crush a Tabs strip to a sliver while the strip went
+     on reporting that everything fits. At the natural width this changes
+     nothing — flex: 1 hands it more than min-content anyway. */
+  min-width: min-content;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pp-titlebar-title {
+  flex: none;
+  min-width: 0;
+  max-width: 40%;
+  padding: var(--space-1) var(--space-3);
+  font: var(--type-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Centred, the title pins to the middle of the *window* rather than to the
+   space left between the capsules — an off-centre title is the tell of a
+   hand-rolled titlebar. Out of flow is what keeps it put as the slots change
+   width; it stays draggable because the strip under it is. */
+.pp-titlebar[data-align="center"] .pp-titlebar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 50%;
+  text-align: center;
+}
+
+/* ---- Overflow ----
+   The strip never spills. Past the width where the capsules fit, the lead and
+   trail slots fold into one ellipsis button and open as a sheet under it.
+
+   The window controls are pointedly not part of this. They keep their platform
+   side — left on macOS, right on Windows and Linux — and are the one thing that
+   never collapses, because a window you can't close is worse than a readout you
+   can't see. The button takes the trailing capsule's place instead, which lands
+   it at the end of the strip on macOS and just inboard of the cluster on
+   Windows: at either end, the spot the platform already puts one. */
+.pp-titlebar-overflow {
+  /* The sheet hangs off this, so it is the positioned ancestor rather than the
+     strip — the sheet tracks the button, not the window's edge. */
+  position: relative;
+  flex-shrink: 0;
+  /* Takes over `.pp-titlebar-trail`'s job of eating the free space. */
+  margin-left: auto;
+}
+
+/* The same capsule the cluster sits in, so the two read as one row of chrome
+   rather than two materials that happen to be adjacent. */
+.pp-titlebar-more {
+  display: grid;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  padding: 0;
+  border: none;
+  background: var(--ctl-bar);
+  color: var(--chrome-text);
+  /* Chrome, not content: the strip keeps the arrow the way the buttons beside
+     it do. */
+  cursor: default;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+/* Hover goes a step *deeper* than the capsule rather than toward the plate —
+   opaque, so the dots keep their full contrast against it in both schemes. The
+   translucent `--chrome-btn-fill` the window buttons use is right for a 12px
+   ring inside a capsule and wrong for the capsule itself. */
+.pp-titlebar-more:hover { background: var(--ctl-row-raised); }
+/* Same reasoning as the cluster's ring: the shared focus ring is built for a
+   plate and would print its inner gap onto the glass. An outline follows the
+   capsule instead. */
+.pp-titlebar-more:focus-visible {
+  outline: 2px solid var(--ctl-accent);
+  outline-offset: 2px;
+}
+
+/* The slots, stacked. A *plate*, not more glass — the same `--ctl-bar` capsule
+   as the cluster and the button that opened it, so the two read as one object.
+   The veil is right for a capsule sitting in the strip, where there is live
+   content behind it to wash; a sheet has to separate its contents from whatever
+   the stage happens to be showing under it, and a 0.35-alpha veil over a settled
+   plate separates nothing. The lit top edge is the flat theme's whole vocabulary
+   for a raised surface, borrowed from `.panel`.
+
+   Corners are concentric with the pills inside — half a row plus the padding
+   around it, the same arithmetic `.pp-platter.is-vertical` uses. */
+.pp-titlebar-sheet {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  min-width: 180px;
+  /* Narrow is the whole reason this exists, so it has to survive a narrow
+     window: never wider than the viewport it drops into. */
+  max-width: min(78vw, 320px);
+  padding: var(--space-2);
+  border-radius: calc(var(--control-sm) / 2 + var(--space-2));
+  background: var(--ctl-bar);
+  /* Opaque ground, so the blur `.pp-chrome` set has nothing left to do but cost
+     a compositor layer. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-inset);
+  animation: pp-sheet-in var(--dur-base) var(--ease-out);
+}
+/* A readout in the strip hugs its value; in the sheet it is a row, so the label
+   and the value go to opposite ends and the column reads as a list. */
+.pp-titlebar-sheet .pp-readout {
+  width: 100%;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-3);
+}
+
+@keyframes pp-sheet-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-titlebar-sheet { animation: none; }
+}
+
+/* Collapsed, the title and `children` are the only parts left that can give:
+   the cluster and the ellipsis are both fixed. They yield — ellipsizing, and
+   crushing — instead of pushing either off the end of the strip. */
+.pp-titlebar[data-collapsed] .pp-titlebar-title { flex: 0 1 auto; }
+.pp-titlebar[data-collapsed] .pp-titlebar-content { min-width: 0; }
+
+/* ---- Window controls ----
+   Three rings in a capsule of their own. At rest they are outlines; hovering
+   the *cluster* fills all three and fades the glyphs in, which is the trade the
+   system lights make — and the reason the glyphs can be legible without being
+   noise. */
+.pp-wc {
+  background: var(--ctl-panel);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  padding: var(--space-2);
+}
+.pp-wc-btn {
+  /* Paint, held on the button rather than read from the tokens directly, so
+     the traffic-light block below can recolour a light by restating these three
+     and nothing else — every behaviour rule under here (the cluster-wide hover
+     fill, the focus ring, the dirty dot) goes on reading whatever the button
+     itself resolves them to. */
+  --wc-ring: var(--chrome-btn-ring);
+  --wc-fill: var(--chrome-btn-fill);
+  --wc-ink: var(--chrome-btn-ink);
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  /* The ring is a shadow rather than a border so it costs no layout — twelve
+     pixels is the whole button, and a border would eat four of them. */
+  box-shadow: 0 0 0 2px var(--wc-ring);
+  background: transparent;
+  color: var(--wc-ink);
+  /* A window control is not a link. Desktop chrome keeps the arrow. */
+  cursor: default;
+  transition: background var(--dur-fast) var(--ease-out),
+              transform var(--dur-slow) var(--ease-out);
+}
+.pp-wc-btn svg {
+  display: block;
+  /* Stacked with the dirty dot rather than placed beside it: the button is a
+     12px circle and grid would otherwise give the two a row each, so both claim
+     the same cell and `place-items: center` centres them on one point. */
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.pp-wc:hover .pp-wc-btn { background: var(--wc-fill); }
+.pp-wc:hover .pp-wc-btn svg { opacity: 1; }
+.pp-wc-btn:active { transform: scale(0.9); }
+
+/* ---- macOS traffic lights ----
+   Red, amber and green, in the ring idiom the cluster already uses rather than
+   as the system's filled discs: at rest the three are coloured outlines, and
+   hovering the capsule fills them and brings the glyphs up, exactly as the
+   monochrome set does. Only the paint is new — the mechanics above are
+   untouched.
+
+   macOS-only on purpose. Windows draws no rings at all, and the Linux desktops
+   this kit follows have never used lights, so there is nothing on either to
+   recolour — which is also why `graphite` reads as a no-op there. */
+/* The fallbacks matter: a button with no light named below would otherwise
+   resolve --wc-ring to nothing, and an invalid var() takes the whole box-shadow
+   with it — the ring would vanish rather than degrade to the monochrome one. */
+.pp-wc[data-platform="mac"]:not([data-graphite]) .pp-wc-btn {
+  --wc-ring: var(--wc-light, var(--chrome-btn-ring));
+  --wc-fill: var(--wc-light, var(--chrome-btn-fill));
+  --wc-ink: var(--chrome-light-ink);
+}
+.pp-wc[data-platform="mac"]:not([data-graphite]) .pp-wc-close { --wc-light: var(--chrome-light-close); }
+.pp-wc[data-platform="mac"]:not([data-graphite]) .pp-wc-minimize { --wc-light: var(--chrome-light-minimize); }
+.pp-wc[data-platform="mac"]:not([data-graphite]) .pp-wc-maximize { --wc-light: var(--chrome-light-zoom); }
+
+/* An unfocused window takes the colour out of its lights — the system's oldest
+   focus cue, and the one that still reads when the whole strip has already
+   stepped back in opacity.
+
+   The ring token rather than a desaturating filter: all three land on one grey
+   instead of three, since draining the hue out of red, amber and green leaves
+   their differing luminances behind and the amber stays visibly the lightest.
+   This is the same value `graphite` rests on, so an unfocused window and an
+   uncoloured one agree.
+
+   Second selector: `TitleBar` builds its own cluster and forwards `inactive`,
+   but a cluster dropped into one of its slots gets the state off the strip the
+   same way the opacity step does.
+
+   `:not(:hover)` rather than a later rule putting the colour back: point at the
+   cluster and this override simply stops matching, so the lights fall back to
+   what the block above already gave them — the colour returns because nothing
+   is holding it down. That is the system's behaviour too. An unfocused window's
+   lights take their colour under the pointer, because the click lands whether
+   or not the window is focused first, and a grey target would read as dead.
+   Hovering *the cluster*, like every other hover here, not the one button. */
+.pp-wc[data-platform="mac"][data-inactive]:not([data-graphite]):not(:hover) .pp-wc-btn,
+.pp-titlebar[data-inactive] .pp-wc[data-platform="mac"]:not([data-graphite]):not(:hover) .pp-wc-btn {
+  --wc-ring: var(--chrome-btn-ring);
+  --wc-fill: var(--chrome-btn-ring);
+}
+
+/* The strip's own step-back would otherwise hold the restored lights at 62%,
+   which is not the colour the system shows. The cluster being pointed at is
+   live, so it comes back up to full while the rest of the chrome stays
+   receded. */
+.pp-titlebar[data-inactive] .pp-wc:hover { opacity: 1; }
+/* Unsaved work, in the centre of the close button — where macOS puts it. It is
+   the button's resting face: hovering the cluster gives it up for the glyph
+   rather than stacking the two, which is what makes it cost no room. */
+.pp-wc-close::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wc-fill);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.pp-wc-close.is-dirty::after { opacity: 1; }
+.pp-wc:hover .pp-wc-close::after { opacity: 0; }
+
+/* The shared focus ring is built for a plate: an inner gap in `--ctl-panel`
+   would print a grey square on the glass. An outline follows the button's own
+   circle instead, and the fill comes up with it so the glyph is legible the
+   moment the ring appears. */
+.pp-wc-btn:focus-visible {
+  outline: 2px solid var(--ctl-accent);
+  outline-offset: 3px;
+  background: var(--wc-fill);
+}
+.pp-wc-btn:focus-visible svg { opacity: 1; }
+
+/* ---- Windows cluster ----
+   The same frosted capsule, with Windows' own buttons in it. Three things make
+   the cluster read as Windows rather than as the rings restyled: the glyphs are
+   square-idiom hairlines, they are drawn *at rest* (the system never hides
+   them), and the plate lights one button at a time instead of the whole cluster
+   at once — on Windows the buttons are separate targets, not a set of lights.
+   Close goes red, as it has since Windows 8. */
+.pp-wc[data-platform="win"] {
+  border-radius: var(--radius-lg);
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  height: 26px;
+}
+.pp-wc[data-platform="win"] .pp-wc-btn {
+  /* Wider than tall, the proportion of the system's own hit targets, scaled
+     down to sit inside a capsule rather than run to the window edge. */
+  width: 32px;
+  height: 26px;
+  border-radius: 0;
+  /* No ring: on Windows the plate *is* the button, and it only appears on
+     hover. At rest the glyph stands alone on the glass. */
+  box-shadow: none;
+  color: var(--chrome-text);
+}
+.pp-wc[data-platform="win"] .pp-wc-btn svg { opacity: 1; }
+/* Undo the cluster-wide lighting the rings use, then light per button. */
+.pp-wc[data-platform="win"]:hover .pp-wc-btn { background: transparent; }
+.pp-wc[data-platform="win"] .pp-wc-btn:hover { background: var(--wc-fill); }
+/* Close is the exception, and has to follow the rule above to beat it — the two
+   selectors weigh the same, so source order is what decides. */
+.pp-wc[data-platform="win"] .pp-wc-close:hover {
+  background: var(--chrome-close);
+  color: #fff;
+}
+.pp-wc[data-platform="win"] .pp-wc-btn:active {
+    transform: none;
+    opacity: 0.8;
+}
+
+/* The dirty dot is a macOS affordance and would collide with an X that is
+   always drawn. Windows states it in the glyph instead: the close mark carries
+   the close red until the work is saved, and still turns white on hover — which
+   needs saying explicitly, or the resting red would outrank the hover ink. */
+.pp-wc[data-platform="win"] .pp-wc-close::after { content: none; }
+.pp-wc[data-platform="win"] .pp-wc-close.is-dirty { background: hsl(35deg 100% 60% / 40%) }
+.pp-wc[data-platform="win"] .pp-wc-close.is-dirty:hover { background: var(--chrome-close); color: #fff; }
+/* The ring's focus outline is offset to clear a circle; a square needs less. */
+.pp-wc[data-platform="win"] .pp-wc-btn:focus-visible { outline-offset: 1px; }
+
+/* ---- App shell ----
+   Owns the viewport so the chrome can stay put: exactly one region scrolls, and
+   it is the stage. A document-level scroll would slide the titlebar out from
+   under the cursor dragging the window. */
+.pp-app-shell {
+  /* The containing block for the titlebar's absolute positioning. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--stage-bg);
+  color: var(--ctl-text);
+  font: var(--type-ui);
+}
+/* base.css keeps its reset off the host page, scoping box-sizing to the kit's
+   own parts. The shell is the exception on purpose: it *is* the page in a
+   desktop window, and its slots hold your markup, not ours. */
+.pp-app-shell *,
+.pp-app-shell *::before,
+.pp-app-shell *::after { box-sizing: border-box; }
+
+/* The stage — the shell's only region, and the only thing that scrolls.
+   Full-bleed to the window's top edge: the capsules float over it, and the
+   dotted backdrop gives the blur something to carry. */
+.pp-app-content {
+  flex: 1;
+  min-width: 0;
+  /* Needed beside `flex: 1` in a column: without it the stage's content sets a
+     floor under the flex basis and a long page grows the shell past the
+     viewport instead of scrolling inside it. */
+  min-height: 0;
+  overflow: auto;
+  background-color: var(--stage-bg);
+  background-image: var(--grid-dots);
+  background-size: var(--grid-dots-size);
+}

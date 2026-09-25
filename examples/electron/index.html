@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- The CSP a packaged app should ship, and the reason this kit vendors its
+         fonts: `default-src 'self'` blocks fonts.googleapis.com outright, and a
+         hosted @import would fail here with no error and no fallback beyond the
+         system face. Nothing below is fetched from a network.
+
+         `npm run dev` needs this relaxed (Vite's HMR socket is a connect-src),
+         which is why the normal path is `npm start` — a real build. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pretty-panels · Electron</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/renderer/main.tsx"></script>
+  </body>
+</html>

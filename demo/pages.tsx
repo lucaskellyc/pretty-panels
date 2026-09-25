@@ -25,6 +25,7 @@ import {
   type TreeNode,
   Vector,
 } from '../src';
+import { AppShell, TitleBar, WindowControls } from '../src/window';
 import type { PropRow } from './catalog';
 
 // ---- Shared render helpers ------------------------------------------------
@@ -36,7 +37,7 @@ export function PropsTable({ rows }: { rows: PropRow[] }) {
       <table className="props">
         <thead>
           <tr>
-            <th>Prop</th>
+            <th>Property</th>
             <th>Type</th>
             <th>Default</th>
             <th>Description</th>
@@ -723,5 +724,303 @@ export function SectionExample() {
         <Slider label="Gain" value={gain} min={0} max={1} step={0.01} onChange={setGain} />
       </Section>
     </Panel>
+  );
+}
+
+// ---- Window chrome examples -----------------------------------------------
+
+/* The desktop components are wired to a real window in an Electron app (see the
+   TitleBar page's setup notes). On the web there is no window to act on, so
+   these demos hold the state themselves — which is also exactly what the
+   components see: they are as controlled as every other part of the kit.
+
+   Each one sits in a `.doc-chrome` box: a scrap of stage with the shell's own
+   ground and dotted backdrop. The capsules are glass, so a demo of them on the
+   page's flat ground would show the one thing the material never does. */
+
+export function TitleBarExample() {
+  const [maximized, setMaximized] = useState(false);
+  const [dirty, setDirty] = useState(true);
+  const [inactive, setInactive] = useState(false);
+  // Narrowing the box narrows the strip inside it, which is the only thing the
+  // collapse measures — so this slider is a window edge being dragged.
+  const [width, setWidth] = useState(100);
+  const toggle = () => setMaximized((m) => !m);
+
+  const bar = (platform: 'mac' | 'win') => (
+    <TitleBar
+      title="Untitled composition"
+      platform={platform}
+      maximized={maximized}
+      dirty={dirty}
+      inactive={inactive}
+      onMinimize={() => {}}
+      onMaximize={toggle}
+      onClose={() => {}}
+      onTitleDoubleClick={toggle}
+      right={
+        <>
+          <Readout label="FPS" value="60" />
+          <Readout label="Size" value="1920×1080" />
+        </>
+      }
+    />
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', width: '100%' }}>
+      <div className="doc-chrome" style={{ height: 170, width: `${width}%` }}>
+        {bar('mac')}
+        <StageFill />
+      </div>
+      <div className="doc-chrome" style={{ height: 170, width: `${width}%` }}>
+        {bar('win')}
+        <StageFill />
+      </div>
+      {/* Unwrapped, unlike the toggles below: a Slider draws its own label and
+          value, so a Row around it would print the word twice. */}
+      <Slider
+        label="Window width"
+        value={width}
+        min={28}
+        max={100}
+        step={1}
+        onChange={setWidth}
+        format={(v) => `${v}%`}
+      />
+      <Row label="Unsaved">
+        <Toggle checked={dirty} onChange={setDirty} />
+      </Row>
+      <Row label="Unfocused">
+        <Toggle checked={inactive} onChange={setInactive} />
+      </Row>
+    </div>
+  );
+}
+
+/** Something under the glass. The capsules blur what is behind them, so every
+ *  demo here needs content passing beneath — otherwise the frosting has nothing
+ *  to be frosting *of*. */
+function StageFill() {
+  return (
+    <div style={{ padding: 'var(--space-4)', paddingTop: 'calc(var(--titlebar-h) + var(--space-2))' }}>
+
+    </div>
+  );
+}
+
+export function WindowControlsExample() {
+  const [maximized, setMaximized] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [graphite, setGraphite] = useState(false);
+  const [inactive, setInactive] = useState(false);
+
+  const cluster = (platform: 'mac' | 'win') => (
+    <WindowControls
+      platform={platform}
+      maximized={maximized}
+      dirty={dirty}
+      graphite={graphite}
+      inactive={inactive}
+      onMinimize={() => {}}
+      onMaximize={() => setMaximized((m) => !m)}
+      onClose={() => {}}
+    />
+  );
+
+  return (
+    <div
+      className="doc-chrome"
+      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: 'var(--space-4)' }}
+    >
+      <Row label="macOS style">{cluster('mac')}</Row>
+      <Row label="Windows style">{cluster('win')}</Row>
+      <Row label="Dirty">
+        <Toggle checked={dirty} onChange={setDirty} />
+      </Row>
+      {/* Only the macOS row answers this one — the Windows cluster has no
+          lights to stand down — which is the point worth showing. */}
+      <Row label="Graphite">
+        <Toggle checked={graphite} onChange={setGraphite} />
+      </Row>
+      {/* Standalone here. In a TitleBar the strip owns this state and forwards
+          it, along with the opacity step the rest of the chrome takes. */}
+      <Row label="Unfocused">
+        <Toggle checked={inactive} onChange={setInactive} />
+      </Row>
+    </div>
+  );
+}
+
+export function AppShellExample() {
+  const [focus, setFocus] = useState(42);
+  const [grid, setGrid] = useState(true);
+
+  return (
+    <div className="doc-chrome">
+      {/* An inline height beats the stylesheet's 100dvh, which is what the
+          shell is for in a real window. */}
+      <AppShell
+        style={{ height: 340 }}
+        titleBar={
+          <TitleBar
+            title="Workbench"
+            platform="mac"
+            onMinimize={() => {}}
+            onMaximize={() => {}}
+            onClose={() => {}}
+            /* Where a status bar's line would have gone. Up here it sits beside
+               the title instead of at the far corner of the window, and folds
+               into the strip's overflow sheet when the room runs out. */
+            right={
+              <>
+                <Readout label="State" value="Ready" />
+                <Readout label="FPS" value="60" />
+              </>
+            }
+          />
+        }
+      >
+        {/* The stage runs under the chrome, so content that must be read from
+            its first line starts below it. A navigator is just one more plate
+            on the stage — the shell has no opinion about where it sits. */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 'var(--space-4)',
+            padding: 'var(--space-4)',
+            paddingTop: 'calc(var(--titlebar-h) + var(--space-2))',
+          }}
+        >
+          <Panel title="Scene" width={200}>
+            <List
+              label="Scene"
+              items={[
+                { id: 'camera', label: 'Camera', meta: '35mm' },
+                { id: 'key', label: 'Key light', meta: '900W' },
+                { id: 'floor', label: 'Floor', meta: 'mesh' },
+              ]}
+            />
+          </Panel>
+          <Panel title="Camera" width={280}>
+            <Slider label="Focus" value={focus} min={0} max={100} step={1} onChange={setFocus} />
+            <Toggle checked={grid} onChange={setGrid} label="Grid" />
+          </Panel>
+        </div>
+      </AppShell>
+    </div>
+  );
+}
+
+/** The Electron wiring, on the TitleBar page because that is the part that
+ *  needs it. Three files, none of them long. */
+export function TitleBarGuide() {
+  return (
+    <>
+      <section className="doc-section">
+        <h2>Electron setup</h2>
+        <p className="doc-prose">
+          The strip is presentational: it draws the chrome and reports presses.
+          Three small pieces connect it to a real window — window options that
+          drop the OS frame, a preload that exposes a fixed five-verb bridge, and
+          a hook that reads it. Outside Electron the hook returns inert defaults,
+          so the same tree still renders (this page is proof).
+        </p>
+        <pre className="code">
+          <code>{`// main.cjs
+const { app, BrowserWindow } = require('electron');
+const { attachWindowBridge, panelWindowOptions } = require('pretty-panels/main');
+
+app.whenReady().then(() => {
+  const win = new BrowserWindow(panelWindowOptions({
+    webPreferences: { preload: require.resolve('pretty-panels/preload') },
+  }));
+  attachWindowBridge(win);
+  win.loadFile('dist/index.html');
+});`}</code>
+        </pre>
+        <pre className="code">
+          <code>{`// renderer
+import { AppShell, TitleBar } from 'pretty-panels/window';
+import { useWindowState } from 'pretty-panels/electron';
+
+function Chrome() {
+  const win = useWindowState();
+  return (
+    <TitleBar
+      title="Workbench"
+      platform={win.platform}
+      maximized={win.maximized}
+      fullscreen={win.fullscreen}
+      inactive={!win.focused}
+      onMinimize={win.minimize}
+      onMaximize={win.toggleMaximize}
+      onClose={win.close}
+      onTitleDoubleClick={win.titleDoubleClick}
+    />
+  );
+}`}</code>
+        </pre>
+        <p className="doc-prose">
+          A runnable version of exactly this is in <code>examples/electron/</code>.
+        </p>
+      </section>
+      <section className="doc-section">
+        <h2>Platform notes</h2>
+        <p className="doc-prose">
+          Drawing your own controls on macOS means <code>frame: false</code>, which
+          also removes the traffic lights, the double-click-to-zoom gesture and the
+          green fullscreen button. <code>attachWindowBridge</code> restores the
+          first two (the double-click honours the user&rsquo;s
+          <code> AppleActionOnDoubleClick</code> setting). To keep the native
+          lights instead, create the window with{' '}
+          <code>{`{ frame: true, titleBarStyle: 'hidden' }`}</code> and render{' '}
+          <code>controls=&quot;native&quot;</code>, which reserves their space
+          rather than drawing buttons.
+        </p>
+        <p className="doc-prose">
+          Anything interactive on a drag region needs{' '}
+          <code>-webkit-app-region: no-drag</code> or it never receives its click.
+          The stylesheet does that for the kit&rsquo;s own capsules and for any{' '}
+          <code>button</code>, <code>input</code>, <code>select</code> or{' '}
+          <code>a</code> inside the strip. The title pill is the exception, and
+          deliberately: it stays part of the drag region, because the title is the
+          window&rsquo;s handle.
+        </p>
+      </section>
+      <section className="doc-section">
+        <h2>Narrow windows</h2>
+        <p className="doc-prose">
+          The strip never spills. A <code>ResizeObserver</code> watches it, and
+          the moment the row stops fitting, <code>left</code> and{' '}
+          <code>right</code> fold into a single ellipsis button at the trailing
+          end that opens them as a sheet underneath. Nothing is squeezed on the
+          way &mdash; a readout narrowed to <code>19&hellip;</code> reports
+          nothing, so the slots hold their width until they go away entirely. The
+          width the row wanted is remembered, and is the only number that brings
+          them back, so dragging the window edge across the threshold can&rsquo;t
+          set the two states flickering.
+        </p>
+        <p className="doc-prose">
+          The window controls are pointedly not part of this. They keep their
+          platform side &mdash; left on macOS, right on Windows and Linux &mdash;
+          and are the one thing that never collapses, because a window you
+          can&rsquo;t close is worse than a readout you can&rsquo;t see. That puts
+          the ellipsis at the end of the strip on macOS and just inboard of the
+          cluster on Windows: at either end, the spot the platform already puts
+          one. Below the threshold the title ellipsizes and a{' '}
+          <code>children</code> strip crushes, since they are then the only parts
+          left that can give.
+        </p>
+        <p className="doc-prose">
+          This is also why there is no status bar on <code>AppShell</code>. A
+          strip along the bottom of the window is the furthest point from the
+          work, and it spent that distance repeating what these two slots say
+          beside the title &mdash; where they also get the overflow behaviour for
+          free.
+        </p>
+      </section>
+    </>
   );
 }

@@ -28,7 +28,12 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # Same guard as ci.yml: `electron` is a devDependency for its types alone,
+      # and older lines postinstall a ~270 MB binary. The deploy path needs it
+      # just as much as the check job does.
       - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
       - run: npm run build:demo
       - uses: actions/upload-pages-artifact@v5
         with:

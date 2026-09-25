@@ -16,6 +16,13 @@ jobs:
           cache: npm
       # `npm ci` runs the `prepare` script, which builds the library — so this
       # also validates the production lib build.
+      #
+      # `electron` is a devDependency for its types alone (the preload and main
+      # entries are typechecked against them). Current versions ship no install
+      # script, but older lines postinstall a ~270 MB binary — this makes sure a
+      # version bump can never quietly do that to CI.
       - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
       - run: npm run typecheck
       - run: npm run build:demo
