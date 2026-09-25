@@ -16,8 +16,10 @@ export interface TableColumn {
   numeric?: boolean;
   /** Override the alignment a `numeric` column would otherwise pick. */
   align?: 'start' | 'end';
-  /** A CSS width for the column, applied through a `<col>`. Leave it off and
-   *  the column takes what its content needs. */
+  /** A CSS width for the column, applied through a `<col>`. The table lays out
+   *  fixed, so this is honoured exactly and the columns that leave it off split
+   *  what is left over evenly. Size the predictable ones — a count, a status —
+   *  and let the open-ended column take the slack. */
   width?: string;
   /** Let the heading be pressed to sort by this column. Pair with `sort` and
    *  `onSortChange` — nothing sorts on its own. */

@@ -9,10 +9,40 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
-Desktop window chrome (`AppShell`, `TitleBar`, `WindowControls`) on a
-`pretty-panels/window` subpath, the Electron integration behind
-`pretty-panels/electron`, `pretty-panels/preload` and `pretty-panels/main`, and
-a `Splitter` layout component. None of these have shipped in a release yet.
+### Fixed
+
+- **`Table` no longer overflows its container.** Its cells have always carried
+  `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`, but under
+  the default `table-layout: auto` a column can never be narrower than its own
+  content — so `width: 100%` was a preference, not a limit. A table of long
+  values grew past the plate, a `Panel` clipped the rows' outer corners off, and
+  the ellipsis never fired, because nothing ever asked a cell to shrink. It now
+  lays out `fixed`. That is the table's `min-width: 0` — the same job the flex
+  rule already does for a `List`'s label.
+
+### Changed
+
+- **`TableColumn.width` is now honoured exactly**, and the columns that leave it
+  off split what is left over evenly, where before each took what its own
+  content needed. This follows from the fixed layout above. Size the predictable
+  columns — a count, a status — and let the open-ended one take the slack.
+
+### Removed
+
+- `Splitter`, which an earlier draft of this section named as coming. It never
+  reached a release, so nothing that shipped is affected.
+
+### Notes
+
+- Still unreleased: desktop window chrome (`AppShell`, `TitleBar`,
+  `WindowControls`) on a `pretty-panels/window` subpath, and the Electron
+  integration behind `pretty-panels/electron`, `pretty-panels/preload` and
+  `pretty-panels/main`.
+- Docs site: props-table descriptions hold a 40ch measure rather than absorbing
+  whatever the other columns leave, so a long entry wraps to about three lines
+  instead of six or seven and the table scrolls sideways instead of the row
+  growing tall. Example wells and the page header drop their borders in favour
+  of shadow and spacing.
 
 ## [0.3.0-alpha] — 2026-09-24
 
