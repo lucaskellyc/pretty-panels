@@ -20,6 +20,9 @@ export type {
 export { List } from './components/List';
 export type { ListProps, ListItem } from './components/List';
 
+export { Menu } from './components/Menu';
+export type { MenuProps, MenuEntry, MenuItem, MenuSeparator } from './components/Menu';
+
 export { Panel } from './components/Panel';
 export type { PanelProps } from './components/Panel';
 
@@ -30,6 +33,15 @@ export type {
   PlatterStandardProps,
   PlatterSelectProps,
 } from './components/Platter';
+
+export { Popover } from './components/Popover';
+export type {
+  PopoverProps,
+  PopoverAlign,
+  PopoverAnchor,
+  PopoverPoint,
+  PopoverSide,
+} from './components/Popover';
 
 export { RadioGroup } from './components/RadioGroup';
 export type { RadioGroupProps, RadioOption } from './components/RadioGroup';

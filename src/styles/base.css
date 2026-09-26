@@ -15,7 +15,12 @@
 .pp-round-btn,
 .pp-round-btn *,
 .pp-text-btn,
-.pp-text-btn * {
+.pp-text-btn *,
+/* A popover goes wherever the thing that opens it lives, which is usually none
+   of the roots above — a button on the stage, a row in a Table — so it asks for
+   the sizing itself rather than inheriting a plate's. */
+.pp-popover,
+.pp-popover * {
   box-sizing: border-box;
 }
 

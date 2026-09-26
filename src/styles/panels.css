@@ -10,8 +10,7 @@
   background: var(--ctl-panel);
   border: var(--border-width-thick) solid var(--ctl-panel);
   border-radius: var(--radius-lg);
-  /* Flat theme: no elevation shadow, just the gentle lit top edge. */
-  box-shadow: var(--shadow-inset);
+  box-shadow: var(--doc-shadow-panel);
   overflow: hidden;
 }
 
@@ -83,6 +82,42 @@
 .pp-toolbar.is-vertical > .pp-toolbar-end {
   margin-left: 0;
   margin-top: auto;
+}
+
+/* ---- Toolbar overflow: the items that didn't fit, folded into a ⋯ ----
+   Three rules, because the surface is `Popover`'s and the arithmetic is the
+   component's. All that is left for CSS is the one thing the arithmetic depends
+   on: nothing in the bar shrinks.
+
+   That is the whole bargain. A `Platter` squeezed narrower drops its labels and
+   a `Readout` squeezed narrower reports `19…`, so a bar out of room is better
+   off taking items away than making them smaller — and sizes that don't move
+   under the fold are also what keeps the count from chattering, since every
+   number the fit is computed from is a natural one. */
+.pp-toolbar-item,
+.pp-toolbar-more {
+  flex: none;
+}
+/* The wrapper is what gets measured, so it may have no box of its own beyond
+   the item's: a plain box that hugs what it holds, laid out along the bar's own
+   axis so a folding bar arranges its items exactly as a plain one does. */
+.pp-toolbar-item {
+  display: flex;
+  align-items: center;
+}
+.pp-toolbar.is-vertical > .pp-toolbar-item {
+  flex-direction: column;
+  align-items: stretch;
+}
+/* The folded items, stacked. A column whichever way the bar runs: the sheet is
+   not a continuation of the bar, it is the list of what is missing from it. The
+   gap is the one a `Panel` keeps between rows, since that is what this is now —
+   a short column of controls on a surface. */
+.pp-toolbar-sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
 }
 
 /* ---- Slider rows: label + value + track in one object ---- */
@@ -251,10 +286,11 @@
   font-size: var(--text-xs);
 }
 /* One mono treatment for every value this set reports, so the standalone
-   capsule, the trailing value on a List / Tree row, and a Table's numeric
-   column cannot drift apart. */
+   capsule, the trailing value on a List / Tree row, a Table's numeric column and
+   a Menu's keystroke hint cannot drift apart. */
 .pp-readout-value,
 .pp-list-meta,
+.pp-menu-shortcut,
 .pp-table-cell.is-numeric {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -639,9 +675,14 @@
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 /* Unlike the grip this one stays out of sight until the row is under the
-   pointer — a menu you have not opened yet is not information. */
+   pointer — a menu you have not opened yet is not information. Once it has
+   opened one it stays: `Popover` marks whatever it is anchored to for as long as
+   it is up, and without that the button would fade the moment the menu took
+   focus, leaving the menu hanging off nothing. Any trigger of your own drawn
+   this way can key off the same attribute. */
 .pp-list-row:hover .pp-list-more,
 .pp-list-row:focus-visible .pp-list-more,
+.pp-list-more[data-pp-anchored],
 .pp-list-more:focus-visible { opacity: 1; }
 .pp-list-more:hover { opacity: 1; }
 .pp-list-more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -714,30 +755,75 @@
 /* ---- Table (a List arranged by column) ----
    The same capsule row at the same height, cut into cells. `border-collapse:
    separate` with a vertical `border-spacing` is what keeps the stack's rhythm:
-   a collapsed table has no way to put --space-1 between rows, and the capsule
-   is painted per *cell* because a `<tr>` cannot take a background in every
-   engine. The row's rounded ends are therefore the first and last cell's outer
-   corners. */
+   a collapsed table has no way to put --space-1 between rows. The capsule
+   itself is painted by one cell for the whole row (see `.pp-table-ground`),
+   which is also how a `<tr>` gets a ground it cannot take itself. */
+/* The box the rows overflow into. A plate too narrow for the set now scrolls it
+   sideways whole, where before the squeeze fell on the columns — every cell an
+   ellipsis at once, and, once the declared widths alone came to more than the
+   plate, the rows past its edge with their capsule ends clipped off by it. */
+.pp-table-scroll {
+  /* The floor a column that declared no `width` contributes to `--pp-table-min-w`
+     (the component adds them up). Raise it for a set whose open columns hold
+     more than a word or two. */
+  --pp-table-col-min: 112px;
+  /* The scrollport each row's ground measures itself against, in `cqi`. It is
+     the one number the capsule can't get from its own box: the ground hangs off
+     a cell inside the table, and the table is the thing that is too wide. */
+  container-type: inline-size;
+  /* The row spacing's pull-in, which was the table's own until this box became
+     the outer edge. It also keeps the table from spilling *vertically* — the
+     table would sit 4px proud of a box 8px shorter than itself — and a spill on
+     that axis would make this a vertical scroller too, since `overflow-x` alone
+     computes the other axis from `visible` to `auto`. */
+  margin: calc(var(--space-1) * -1) 0;
+  overflow-x: scroll;
+  /* A table already at its end shouldn't hand the rest of the gesture to the
+     window behind it. */
+  overscroll-behavior-x: contain;
+  /* The bar belongs to the rows it scrolls, not to the app: thin, and the row's
+     own raised grey rather than the platform's slab. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ctl-row-raised) transparent;
+}
+/* Focusable only while it actually scrolls — the component sets `tabindex` from
+   that measurement — so the ring only ever lands on a box with somewhere to go.
+   It hugs the rows, whose ends are pills, but the box is the full set: the
+   panel's radius is the one that reads at this size. */
+.pp-table-scroll:focus-visible {
+  outline: none;
+  border-radius: var(--radius-md);
+  box-shadow: var(--focus-ring);
+}
+
 .pp-table {
   width: 100%;
+  /* The floor the component builds from `columns`, or whatever `minWidth` says.
+     Under it the table stops shrinking and the scroller above takes the
+     overflow. */
+  min-width: var(--pp-table-min-w, 0);
   /* Fixed layout is what makes that `width` a limit rather than a preference.
      Under `auto` a column can never be narrower than its own content, and these
-     cells are `nowrap`, so a table of long names simply grows past the plate and
-     the panel clips the rows' outer corners off — while the ellipsis below never
-     fires, because nothing ever asks a cell to shrink. This is the table's
-     `min-width: 0`: the same job the flex rule does for a List's label. */
+     cells are `nowrap`, so a table of long names simply grows to fit them —
+     while the ellipsis below never fires, because nothing ever asks a cell to
+     shrink. This is the table's `min-width: 0`: the same job the flex rule does
+     for a List's label. The floor above is where the shrinking stops. */
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0 var(--space-1);
-  /* The cell padding is the row's, so a table dropped on a plate lines its
-     first column up with a List's labels rather than sitting a few pixels in. */
-  margin: calc(var(--space-1) * -1) 0;
   font: var(--type-ui);
   font-size: var(--text-sm);
   color: var(--ctl-text);
 }
 .pp-table-cell {
+  /* Positioned, so the cells paint *over* the row's ground: both are painted in
+     tree order among positioned boxes, and the ground is the row's first cell.
+     Unpositioned, the cells would paint in the earlier in-flow pass and the
+     ground would cover every one of them. */
+  position: relative;
   height: var(--control-md);
+  /* The row's own padding, so a table dropped on a plate lines its first column
+     up with a List's labels rather than sitting a few pixels in. */
   padding: 0 var(--space-3);
   text-align: start;
   font-weight: inherit;
@@ -751,15 +837,47 @@
 /* Joins the shared mono treatment up in the Readout section rather than
    restating it — see the note there. */
 
-.pp-table-row > .pp-table-cell { background: var(--ctl-row); }
-.pp-table-row > .pp-table-cell:first-child {
-  border-top-left-radius: var(--radius-pill);
-  border-bottom-left-radius: var(--radius-pill);
+/* ---- The row's ground ----
+   One element paints the capsule the whole row sits on. The cells used to paint
+   it between them, the first rounding the left end and the last the right,
+   which held for as long as a row was never wider than its plate — but a row
+   that scrolls is cut square wherever the scrollport ends, and that cut lands
+   in the middle of the ground. No cell can round an edge it doesn't know about.
+
+   So the ground is pinned rather than scrolled: `sticky` at the scrollport's
+   leading edge and exactly as wide as it, which leaves a whole capsule — both
+   ends rounded — at every scroll position, with the cells sliding across it.
+   The cut still happens, but it falls on the text, where a scrollport's cut is
+   supposed to fall, instead of on the shape.
+
+   It costs the columns nothing: the cell is zero-width and the capsule hangs
+   off it as a pseudo. And it impersonates nothing — the corners are the
+   ground's own absence, as they were when the cells rounded them, not the
+   surface colour painted back over a square end, which would only be right on
+   the one surface it was told about.
+
+   `.pp-table` and `.pp-table-scroll` are a pair from here on: the width below
+   is the scroller's, measured as the container it declares itself to be. */
+.pp-table-ground {
+  position: sticky;
+  left: 0;
+  width: 0;
+  padding: 0;
 }
-.pp-table-row > .pp-table-cell:last-child {
-  border-top-right-radius: var(--radius-pill);
-  border-bottom-right-radius: var(--radius-pill);
+.pp-table-ground::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100cqi;
+  background: var(--ctl-row);
+  border-radius: var(--radius-pill);
 }
+/* Headings ride on no ground — the cell is there to keep the columns lined up
+   through the header row, and paints nothing. */
+.pp-table thead .pp-table-ground::after { content: none; }
+
 .pp-table-row.is-disabled { opacity: 0.5; }
 /* Nothing to state about an empty table but the fact of it. */
 .pp-table-row.is-empty > .pp-table-cell {
@@ -814,6 +932,159 @@
 .pp-table-sort.is-desc .pp-table-caret { opacity: 1; }
 .pp-table-sort.is-desc .pp-table-caret { transform: rotate(90deg); }
 .pp-table-caret svg { display: block; }
+
+/* ---- Popover (a surface that floats over the work) ----
+   A plate, not glass. `TitleBar`'s sheet makes the same call for the same
+   reason: a veil is worth having where there is live content behind it to wash,
+   and a surface whose whole job is to separate its contents from whatever
+   happens to be underneath cannot let that through. So this is the `--ctl-bar`
+   ground the sheet and the strip's own capsules sit on, with the lit top edge
+   `.panel` wears — this theme's entire vocabulary for a raised surface.
+
+   Position comes from the component, which measures the anchor and writes
+   `left` / `top` here. Everything below is what that measurement needs from CSS
+   (the two clearances) and what it hands back (the room the surface landed
+   with). */
+.pp-popover {
+  /* Read back off here by the placement rather than held as numbers in TS: the
+     clearance the surface keeps from its anchor, and from the window's edges.
+     Literal px because the maths parses them — the same arrangement
+     `--tree-indent` has — and they are --space-1 and --space-2 on the grid. */
+  --pp-popover-gap: 4px;
+  --pp-popover-inset: 8px;
+
+  position: fixed;
+  /* Where the browser has a top layer the component puts the surface in it and
+     this never arises. It is the fallback's stacking — and the reason a browser
+     without the Popover API still gets a popover that floats over the panel
+     rather than inside it. */
+  z-index: var(--z-overlay);
+  /* The UA stylesheet parks a [popover] in the middle of the window with
+     `inset: 0; margin: auto`. The component sets two of those four edges
+     itself, so an `inset: 0` left standing would stretch the box to the other
+     two. */
+  inset: auto;
+  margin: 0;
+  /* Both written by the placement: how much room the surface has where it
+     landed. A menu taller than the space left scrolls inside it instead of
+     running off the bottom of the screen. */
+  max-height: var(--pp-popover-room, none);
+  max-width: var(--pp-popover-span, none);
+  overflow: auto;
+  /* Don't hand the scroll off to whatever is behind the surface at either end —
+     the same call the strip's sheet makes. */
+  overscroll-behavior: contain;
+  padding: var(--space-2);
+  border: solid 2px var(--ctl-row);
+  /* Concentric with the capsules inside: half a row, plus the padding around
+     it. */
+  border-radius: calc(var(--control-md) / 2 + var(--space-1));
+  background: var(--ctl-panel);
+  color: var(--ctl-text);
+  box-shadow: var(--doc-shadow-panel);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  /* The component gives the surface focus so Escape has somewhere to be
+     pressed. It is not a tab stop, so it needs no ring of its own. */
+  outline: none;
+  animation: pp-popover-in var(--dur-slow) var(--ease-out);
+}
+/* Grown from the edge it hangs off, so the entrance reads as the anchor opening
+   it. `data-side` is the side actually used, after any flip. */
+.pp-popover[data-side="bottom"] { transform-origin: top center; }
+.pp-popover[data-side="top"] { transform-origin: bottom center; }
+.pp-popover[data-side="right"] { transform-origin: left center; }
+.pp-popover[data-side="left"] { transform-origin: right center; }
+
+@keyframes pp-popover-in {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-popover { animation: none; }
+}
+
+/* ---- Menu (a Popover holding commands) ----
+   Capsule rows again, at a List row's height — but a menu row is something you
+   aim at rather than something you read down a column of, so it carries no
+   ground until it is under the pointer. Hover then hands it the capsule a
+   standalone button wears: one step deeper than the sheet it sits on, the
+   direction every hover in this set travels. */
+.pp-menu {
+  display: flex;
+  flex-direction: column;
+  /* No gap between the rows. The --space-1 a List keeps would read as a column
+     of separate buttons, and a menu is one object. */
+  gap: 0;
+  min-width: 180px;
+  max-width: 320px;
+}
+.pp-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.pp-menu-item:hover:not(:disabled) { background: var(--ctl-accent); color: white; }
+.pp-menu-item:hover:not(:disabled) .pp-menu-tick { color: white; }
+/* Keyboard focus *is* the highlight in a menu, so the focused command takes the
+   hover ground rather than wearing a ring beside it — with an accent outline
+   held inside the pill, because these rows are flush and an outset one would
+   print over the neighbour. The shared --focus-ring is built for a control on
+   the plate and would paint its inner gap onto the sheet. */
+.pp-menu-item:focus-visible {
+  outline: 2px solid var(--ctl-accent);
+  outline-offset: -2px;
+  background: var(--ctl-row);
+}
+.pp-menu-item:disabled { opacity: 0.5; cursor: default; }
+
+/* The tick's column, held open on every command as soon as one of them is
+   checkable — the same call a Tree branch's spacer makes, so the labels stay on
+   one rule whichever rows happen to be ticked. Accent, because a ticked option
+   is a value someone set rather than one the menu is reporting. */
+.pp-menu-tick {
+  flex: none;
+  display: flex;
+  width: 10px;
+  color: var(--ctl-accent);
+}
+.pp-menu-tick svg { display: block; }
+.pp-menu-icon { flex: none; display: flex; }
+.pp-menu-icon svg { display: block; }
+/* The label takes the slack so the keystroke stays pinned right. A long command
+   clips instead of wrapping — what keeps every row exactly one pitch tall. */
+.pp-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Mono type comes from the shared rule up in the Readout section. Dimmer than a
+   row's trailing value, and never crowding the label: a keystroke is a reminder
+   of how to get here without the menu, not something the menu is telling you. */
+.pp-menu-shortcut {
+  flex: none;
+  padding-left: var(--space-3);
+  opacity: 0.6;
+}
+/* A hairline at the labels' own rule. Mixed out of --ctl-text rather than given
+   a ground of its own, so it reads as a division and not as one more surface in
+   the stack. */
+.pp-menu-sep {
+  height: 1px;
+  margin: var(--space-1) var(--space-3);
+  background: color-mix(in srgb, var(--ctl-text) 16%, transparent);
+}
 
 /* ---- Collapsible section ---- */
 .collapse-section {

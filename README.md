@@ -167,6 +167,7 @@ Alphabetical within each family.
 | Component        | What it is                                                          |
 | ---------------- | ------------------------------------------------------------------- |
 | `GaugeRow`       | Evenly-spaced strip of `Gauge` dials.                               |
+| `Menu`           | Commands on a floating sheet: a context menu, or the menu a `⋯` button opens. Ticks, keystroke hints, the ARIA keyboard. |
 | `Platter`        | Capsule tray of icon / text buttons, row or column. `mode="select"` makes it one choice instead of many. |
 | `WindowControls` | Minimize, zoom and close as a capsule of rings; order per platform. |
 
@@ -182,7 +183,8 @@ Alphabetical within each family.
 | Component | What it is                                                                 |
 | --------- | -------------------------------------------------------------------------- |
 | `Panel`   | Plate with optional header + padded body; collapsibly folds its body away. |
-| `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. |
+| `Popover` | A surface that floats over the work, anchored to an element or to a point. Holds anything; stays on screen; dismisses itself. |
+| `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. Folds what doesn't fit into a `⋯`. |
 
 **Organisms · Window**
 
