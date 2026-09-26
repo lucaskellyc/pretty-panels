@@ -1,12 +1,16 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import {
   IconButton,
   Gauge,
   GaugeRow,
   List,
   type ListItem,
+  Menu,
   Panel,
   Platter,
+  Popover,
+  type PopoverPoint,
+  type PopoverSide,
   RadioGroup,
   Readout,
   Section,
@@ -455,37 +459,72 @@ export function ToolbarExample() {
   const [tool, setTool] = useState('move');
   const [snap, setSnap] = useState(true);
   const [grid, setGrid] = useState(false);
+  const [shading, setShading] = useState('solid');
+  // The bar folds against the box it is given, so narrowing this one is a panel
+  // edge being dragged in. Drag it and the items leave the bar from the right,
+  // one at a time, into the ⋯ that appears in their place.
+  const [width, setWidth] = useState(100);
   return (
-    <Toolbar
-      label="Viewport"
-      /* Status goes in `end` — it is what the bar reports, not what it
-         offers, and it wants the far edge. */
-      end={
-        <>
-          <Readout label="FPS" value="60" />
-          <Readout value="1920×1080" />
-        </>
-      }
-    >
-      <Platter
-        mode="select"
-        label="Transform tool"
-        value={tool}
-        onChange={setTool}
-        items={[
-          { value: 'move', icon: MOVE, label: 'Move' },
-          { value: 'rotate', icon: ROTATE, label: 'Rotate' },
-          { value: 'scale', icon: SCALE, label: 'Scale' },
-        ]}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', width: '100%' }}>
+      <div style={{ width: `${width}%` }}>
+        <Toolbar
+          label="Viewport"
+          overflow
+          /* Status goes in `end` — it is what the bar reports, not what it
+             offers, and it wants the far edge. It is also the one thing that
+             never folds, which is why it survives the narrowest setting here. */
+          end={
+            <>
+              <Readout label="FPS" value="60" />
+              <Readout value="1920×1080" />
+            </>
+          }
+        >
+          <Platter
+            mode="select"
+            label="Transform tool"
+            value={tool}
+            onChange={setTool}
+            items={[
+              { value: 'move', icon: MOVE, label: 'Move' },
+              { value: 'rotate', icon: ROTATE, label: 'Rotate' },
+              { value: 'scale', icon: SCALE, label: 'Scale' },
+            ]}
+          />
+          <Platter
+            label="Snapping"
+            items={[
+              { icon: CHECK, text: 'Snap', active: snap, onClick: () => setSnap((v) => !v) },
+              { icon: PLUS, text: 'Grid', active: grid, onClick: () => setGrid((v) => !v) },
+            ]}
+          />
+          {/* A third item, so the fold has somewhere to go one step at a time
+              rather than all at once. */}
+          <Platter
+            mode="select"
+            label="Shading"
+            value={shading}
+            onChange={setShading}
+            items={[
+              { value: 'wire', text: 'Wire' },
+              { value: 'solid', text: 'Solid' },
+              { value: 'render', text: 'Render' },
+            ]}
+          />
+        </Toolbar>
+      </div>
+      {/* Unwrapped, unlike the toggles elsewhere: a Slider draws its own label
+          and value, so a Row around it would print the word twice. */}
+      <Slider
+        label="Bar width"
+        value={width}
+        min={30}
+        max={100}
+        step={1}
+        onChange={setWidth}
+        format={(v) => `${v}%`}
       />
-      <Platter
-        label="Snapping"
-        items={[
-          { icon: CHECK, text: 'Snap', active: snap, onClick: () => setSnap((v) => !v) },
-          { icon: PLUS, text: 'Grid', active: grid, onClick: () => setGrid((v) => !v) },
-        ]}
-      />
-    </Toolbar>
+    </div>
   );
 }
 
@@ -650,8 +689,22 @@ const toggleLock = (nodes: TreeNode[], id: string): TreeNode[] =>
     return n.children ? { ...n, children: toggleLock(n.children, id) } : n;
   });
 
+/** Find one node wherever it sits in the tree. */
+const findNode = (nodes: TreeNode[], id: string): TreeNode | undefined => {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const hit = n.children && findNode(n.children, id);
+    if (hit) return hit;
+  }
+  return undefined;
+};
+
 export function TreeExample() {
   const [scene, setScene] = useState<TreeNode[]>(SCENE);
+  // The node whose ⋯ was pressed, and the element that press came from. One
+  // piece of state, because a menu with no node is not up.
+  const [more, setMore] = useState<{ id: string; anchor: HTMLElement } | null>(null);
+
   return (
     <Panel title="Outliner">
       <Tree
@@ -660,10 +713,184 @@ export function TreeExample() {
         defaultExpanded={['rig', 'spine', 'lights']}
         reorderable
         onMove={(m) => setScene((s) => applyMove(s, m))}
-        // A real outliner would open a menu here; this one locks the node, so
-        // the button has something visible to do.
-        onMore={(id) => setScene((s) => toggleLock(s, id))}
+        // What the ⋯ is for. The tree reports the press and the element it came
+        // from — the button under the pointer, or the row when the press came
+        // from the keyboard — and the menu opens off that.
+        onMore={(id, anchor) => setMore({ id, anchor })}
       />
+      {/* End-aligned, so a menu opened from a button on the row's right edge
+          opens back across the plate rather than off it. */}
+      <Menu
+        open={more != null}
+        onClose={() => setMore(null)}
+        anchor={more?.anchor ?? null}
+        align="end"
+        label="Node options"
+        items={[
+          { id: 'lock', label: 'Locked', checked: !!(more && findNode(scene, more.id)?.disabled) },
+          { separator: true },
+          { id: 'rename', label: 'Rename…', shortcut: '⏎', disabled: true },
+        ]}
+        onSelect={(cmd) => {
+          if (cmd === 'lock' && more) setScene((s) => toggleLock(s, more.id));
+        }}
+      />
+    </Panel>
+  );
+}
+
+/** The overlays the View menu ticks. Every one carries an icon *and* a tick, so
+ *  both leading columns stay uniform down the menu — a menu where only some
+ *  commands have an icon starts its labels on two different rules. */
+const OVERLAYS = [
+  { id: 'grid', label: 'Grid', icon: PLUS },
+  { id: 'guides', label: 'Guides', icon: MOVE },
+  { id: 'safe', label: 'Safe area', icon: SCALE },
+];
+
+export function MenuExample() {
+  // Where the right-click landed. The point *is* the open state — a context menu
+  // that has nowhere to be is not up — so there is no second flag to keep in
+  // step with it.
+  const [at, setAt] = useState<PopoverPoint | null>(null);
+  const [view, setView] = useState(false);
+  const [shown, setShown] = useState<string[]>(['grid', 'safe']);
+  const [pinned, setPinned] = useState(false);
+  const [last, setLast] = useState('—');
+  // The button itself is the anchor: both buttons forward a ref to their
+  // `<button>` for exactly this.
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  return (
+    <div className="doc-stack" style={{ width: '100%' }}>
+      <Toolbar end={<Readout label="Chose" value={last} />}>
+        {/* The trigger's half of the contract: what it opens, and whether that
+            is up. The menu can't say either — it never sees this button. */}
+        <TextButton
+          ref={trigger}
+          icon={CHECK}
+          active={view}
+          aria-haspopup="menu"
+          aria-expanded={view}
+          onClick={() => setView((o) => !o)}
+        >
+          View
+        </TextButton>
+      </Toolbar>
+
+      {/* A scrap of stage to press on. Right-click is the whole point of the
+          point anchor: the menu opens with its corner at the cursor, and near
+          the bottom of the window it opens upward instead. */}
+      <div
+        className="doc-chrome"
+        style={{
+          height: 180,
+          display: 'grid',
+          placeItems: 'center',
+          font: 'var(--type-ui)',
+          color: 'var(--ctl-hint)',
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setAt({ x: e.clientX, y: e.clientY });
+        }}
+      >
+        Right-click the stage
+      </div>
+
+      <Menu
+        open={at != null}
+        onClose={() => setAt(null)}
+        anchor={at}
+        label="Stage"
+        items={[
+          { id: 'frame', label: 'Frame selection', shortcut: 'F' },
+          { id: 'duplicate', label: 'Duplicate', shortcut: '⌘D' },
+          /* One checkable command gives the whole menu a tick column, which is
+             what keeps these labels on one rule. */
+          { id: 'pin', label: 'Pin to view', checked: pinned },
+          { separator: true },
+          { id: 'reset', label: 'Reset stage', shortcut: '⌥R' },
+          { id: 'delete', label: 'Delete', shortcut: '⌫', disabled: true },
+        ]}
+        onSelect={(id) => {
+          if (id === 'pin') setPinned((p) => !p);
+          setLast(id);
+        }}
+      />
+
+      {/* A menu of checkboxes: the point is to set several at once, so choosing
+          one leaves it up. Hung off the button's end so it opens under the
+          toolbar rather than out into the page. */}
+      <Menu
+        open={view}
+        onClose={() => setView(false)}
+        anchor={trigger}
+        label="Overlays"
+        closeOnSelect={false}
+        items={OVERLAYS.map((o) => ({ ...o, checked: shown.includes(o.id) }))}
+        onSelect={(id) => {
+          setShown((s) => (s.includes(id) ? s.filter((o) => o !== id) : [...s, id]));
+          setLast(id);
+        }}
+      />
+    </div>
+  );
+}
+
+export function PopoverExample() {
+  const [open, setOpen] = useState(false);
+  const [side, setSide] = useState<PopoverSide>('bottom');
+  const [exposure, setExposure] = useState(0.4);
+  const [auto, setAuto] = useState(true);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  return (
+    <Panel title="Camera">
+      <Row label="Exposure">
+        {/* `dialog` rather than `menu`: what this one opens is a couple of
+            controls, not a list of commands. */}
+        <TextButton
+          ref={trigger}
+          icon={PLUS}
+          active={open}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          Adjust
+        </TextButton>
+      </Row>
+      <Select
+        label="Opens toward"
+        value={side}
+        onChange={(v) => setSide(v as PopoverSide)}
+        options={['top', 'right', 'bottom', 'left']}
+      />
+
+      {/* Rendered inside the plate, which clips (`.panel { overflow: hidden }`)
+          — and the surface is in the top layer, so it hangs off the button and
+          out over the page regardless. Pick a side with no room and watch it
+          flip to the other one. */}
+      <Popover open={open} onClose={() => setOpen(false)} anchor={trigger} side={side} align="center">
+        {/* The surface takes no role of its own: what floats says what it is. */}
+        <div
+          role="group"
+          aria-label="Exposure"
+          style={{ display: 'flex', flexDirection: 'column', width: 220 }}
+        >
+          <Slider
+            label="EV"
+            value={exposure}
+            min={-3}
+            max={3}
+            step={0.1}
+            onChange={setExposure}
+            format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`}
+          />
+          <Toggle label="Auto" checked={auto} onChange={setAuto} />
+        </div>
+      </Popover>
     </Panel>
   );
 }
@@ -1019,6 +1246,190 @@ function Chrome() {
           work, and it spent that distance repeating what these two slots say
           beside the title &mdash; where they also get the overflow behaviour for
           free.
+        </p>
+      </section>
+    </>
+  );
+}
+
+/** What a menu needs from the thing that opens it — the one part of the
+ *  arrangement neither `Menu` nor `Popover` can see from where they stand. */
+export function MenuGuide() {
+  return (
+    <>
+      <section className="doc-section">
+        <h2>Opening one</h2>
+        <p className="doc-prose">
+          A menu is controlled, like every other state here: you hold{' '}
+          <code>open</code>, and the menu asks to be closed. What it hangs off is
+          either an element or a point, and which of the two you reach for is
+          decided by the gesture rather than by taste &mdash; a button press has
+          an element, a right-click has only the place it happened.
+        </p>
+        <pre className="code">
+          <code>{`const [at, setAt] = useState<PopoverPoint | null>(null);
+
+<div onContextMenu={(e) => { e.preventDefault(); setAt({ x: e.clientX, y: e.clientY }); }}>
+  …
+</div>
+<Menu
+  open={at != null}
+  onClose={() => setAt(null)}
+  anchor={at}
+  items={[{ id: 'duplicate', shortcut: '⌘D' }, { separator: true }, { id: 'delete' }]}
+  onSelect={run}
+/>`}</code>
+        </pre>
+        <p className="doc-prose">
+          The point <em>is</em> the open state there, so there is no second flag
+          to keep in step with it. A button-anchored menu takes a ref instead
+          &mdash; <code>IconButton</code> and <code>TextButton</code> both forward
+          one to their <code>&lt;button&gt;</code>. Any element will do, since the
+          menu only ever measures it, so a box of your own around something else
+          works the same way.
+        </p>
+        <pre className="code">
+          <code>{`const trigger = useRef<HTMLButtonElement>(null);
+
+<TextButton
+  ref={trigger}
+  aria-haspopup="menu"
+  aria-expanded={open}
+  onClick={() => setOpen((o) => !o)}
+>
+  View
+</TextButton>
+<Menu open={open} onClose={() => setOpen(false)} anchor={trigger} … />`}</code>
+        </pre>
+        <p className="doc-prose">
+          Pressing the anchor doesn&rsquo;t count as pressing outside, which is
+          what lets that button close the menu it opened rather than dismissing
+          and reopening it a moment apart.
+        </p>
+      </section>
+      <section className="doc-section">
+        <h2>The trigger&rsquo;s half</h2>
+        <p className="doc-prose">
+          <code>aria-haspopup</code> and <code>aria-expanded</code> belong on the
+          control that opens the menu &mdash; a control the menu never sees, so
+          neither is something it could set for you. Both buttons take them:{' '}
+          <code>&quot;menu&quot;</code> for a list of commands,{' '}
+          <code>&quot;dialog&quot;</code> for a <code>Popover</code> holding a
+          form. Without them a screen reader announces a plain button and never
+          says the menu is open.
+        </p>
+        <p className="doc-prose">
+          A menu on a <code>Tree</code> row&rsquo;s <code>⋯</code> needs nothing
+          extra: <code>onMore</code> reports the node&rsquo;s <code>id</code>{' '}
+          <em>and</em> the element the press came from &mdash; the button under
+          the pointer, or the row itself when the press came from the keyboard,
+          where the ⋯ is not what was aimed at and is not even on screen yet. The
+          example on the <a href="#/molecules/tree">Tree</a> page is exactly that,
+          end-aligned so it opens back across the plate &mdash; and the ⋯ stays
+          drawn for as long as its menu is up, which is the anchor mark described
+          on the <a href="#/organisms/popover">Popover</a> page.
+        </p>
+      </section>
+      <section className="doc-section">
+        <h2>Keyboard</h2>
+        <p className="doc-prose">
+          The ARIA menu pattern. The menu takes focus when it opens, arrows move
+          between commands and wrap at the ends, Home and End jump to them, and
+          Enter or Space chooses &mdash; the commands are real buttons, so that
+          part is the platform&rsquo;s. Escape dismisses. Tab also dismisses, and
+          lets the focus carry on out: a menu is not somewhere to tab{' '}
+          <em>through</em>. Disabled commands are stepped over rather than landed
+          on, and focus returns to whatever had it when the menu opened &mdash;
+          unless the press that dismissed the menu has already given focus to
+          something else, which is an answer, not something to undo.
+        </p>
+        <p className="doc-prose">
+          Submenus are deliberately absent. Nesting one surface&rsquo;s dismissal
+          inside another&rsquo;s is a different problem from this one, and a flat
+          menu with a <code>separator</code> is usually the better answer anyway.
+        </p>
+      </section>
+    </>
+  );
+}
+
+/** Why the surface floats the way it does — the part that is easy to get wrong
+ *  by hand, and the reason this is a component at all. */
+export function PopoverGuide() {
+  return (
+    <>
+      <section className="doc-section">
+        <h2>Why it floats free</h2>
+        <p className="doc-prose">
+          Where the browser has a top layer, the surface is put in it. That is not
+          a flourish: <code>Panel</code> clips its plate (
+          <code>overflow: hidden</code>, so the body can fold away) and{' '}
+          <code>Table</code> puts its rows in a scroller, so a menu opened on
+          anything inside either would otherwise be cut off at the plate&rsquo;s
+          edge or hidden behind the next stacking context. In the top layer
+          nothing can clip it and nothing can paint over it.
+        </p>
+        <p className="doc-prose">
+          It gets there without a portal, which matters for more than tidiness:
+          the surface stays where you rendered it in the tree, so a{' '}
+          <code>data-mono</code> subtree&rsquo;s tokens still reach it, the press
+          that opened it is still inside it, and focus moves in and out of it in
+          document order. A portal to <code>document.body</code> would have left
+          all three behind. Browsers with no Popover API fall back to{' '}
+          <code>position: fixed</code> at <code>--z-overlay</code> &mdash; the
+          same placement, one stacking context lower.
+        </p>
+      </section>
+      <section className="doc-section">
+        <h2>Staying on screen</h2>
+        <p className="doc-prose">
+          <code>side</code> and <code>align</code> are a preference, not an
+          instruction. The surface flips to the opposite side when the side you
+          asked for cannot hold it and the other one has more room, then slides
+          along the cross axis until it is back inside the window &mdash; the
+          least movement that puts it on screen, which is the same trade{' '}
+          <code>TitleBar</code>&rsquo;s overflow sheet makes. What is left over
+          it reports rather than fixes: the room it landed with becomes a cap on
+          its own size, so a menu taller than the space below it scrolls inside
+          that space instead of running off the bottom of the window.
+        </p>
+        <p className="doc-prose">
+          An anchor is re-measured after every render and on scroll and resize, so
+          a surface hung off a row keeps up with it while the list scrolls under
+          the pointer.
+        </p>
+      </section>
+      <section className="doc-section">
+        <h2>What it leaves to you</h2>
+        <p className="doc-prose">
+          The surface has no <code>role</code> and no name. A menu, a non-modal
+          dialog and a tooltip are three different sets of semantics, and a
+          surface that guessed at one of them would be wrong two thirds of the
+          time &mdash; so the content brings its own, the way <code>Menu</code>{' '}
+          puts <code>role=&quot;menu&quot;</code> inside it. Focus is not trapped
+          either: this is a popover, not a modal, and the page behind it stays
+          live until a press out there dismisses it.
+        </p>
+        <p className="doc-prose">
+          What it does do for the trigger is mark it: the anchor carries{' '}
+          <code>data-pp-anchored</code> for as long as the surface is up. That is
+          what keeps a <code>Tree</code> row&rsquo;s <code>⋯</code> &mdash; drawn
+          only while the row is hovered &mdash; on screen once its menu has taken
+          the focus away from the row, instead of fading out and leaving the menu
+          hanging off nothing. Any trigger of your own that appears on hover can
+          key off the same attribute:
+        </p>
+        <pre className="code">
+          <code>{`.my-row-action { opacity: 0; }
+.my-row:hover .my-row-action,
+.my-row-action[data-pp-anchored] { opacity: 1; }`}</code>
+        </pre>
+        <p className="doc-prose">
+          A data attribute rather than <code>aria-expanded</code>, which is the
+          trigger&rsquo;s own claim about itself &mdash; a surface has no business
+          putting words in its mouth. This one is CSS state, and it says only what
+          is true from where the surface stands: something is anchored here right
+          now.
         </p>
       </section>
     </>

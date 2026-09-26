@@ -9,6 +9,115 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+Desktop window chrome (`AppShell`, `TitleBar`, `WindowControls`) on a
+`pretty-panels/window` subpath, and the Electron integration behind
+`pretty-panels/electron`, `pretty-panels/preload` and `pretty-panels/main`.
+Neither has shipped in a release yet.
+
+## [0.3.1-alpha] — 2026-09-26
+
+A surface that floats over the work, the commands that usually go on it, and a
+bar that folds away what it has no room for. Nothing here is breaking.
+
+### Added
+
+- **`Popover` and `Menu` — a surface that floats over the work, and the commands
+  that usually go on it.** `Popover` is the mechanism: it hangs off an element
+  (by ref, or in the hand) or off a viewport point, which is the context-menu
+  case — a right-click has no element to open from, only the place it happened.
+  From there it flips to the anchor's other side when the room runs out, shifts
+  along the edge to stay inside the window, and caps itself to what is left, so
+  a surface with nowhere to go scrolls instead of running off the screen.
+
+  It floats in the browser's **top layer**, which is the part that could not be
+  had by hand: `.panel` clips its plate and `Table` puts its rows in a scroller,
+  so a menu opened on anything inside either would otherwise be cut off at the
+  plate's edge. It gets there without a portal, so a `data-mono` subtree's tokens
+  still reach it, the press that opened it is still inside it, and focus moves in
+  and out of it in document order. Browsers with no Popover API fall back to
+  `position: fixed` at `--z-overlay`. Dismissal is Escape or a press outside —
+  and a press on the anchor is not "outside", so the button that opened a surface
+  is the one that closes it.
+
+  While it is up it marks its anchor with **`data-pp-anchored`**. That is what
+  keeps a trigger drawn only on hover — a `Tree` row's `⋯` — on screen once its
+  menu has taken the focus away from the row, rather than fading out and leaving
+  the menu hanging off nothing; `.pp-list-more` keys off it, and so can a trigger
+  of your own. A data attribute rather than `aria-expanded`, which is the
+  trigger's own claim about itself and not a surface's to make.
+
+  `Menu` is that surface holding commands: capsule rows on the sheet, an optional
+  tick column (one checkable command opens it for the whole menu, so the labels
+  stay on one rule), trailing keystroke hints in the mono face, `{ separator:
+  true }` between runs, and the ARIA menu keyboard over all of it — arrows that
+  wrap, Home / End, Enter and Space from the buttons themselves, Escape to
+  dismiss and Tab to leave. `closeOnSelect={false}` keeps a menu of checkboxes up
+  while several are set. Submenus are deliberately absent.
+
+  Two components rather than one because they are two jobs. `Popover` says
+  nothing about what floats — no `role`, no name — since a menu, a non-modal
+  dialog and a tooltip want three different sets of semantics and a guess would
+  be wrong two thirds of the time; the content brings its own, the way `Menu`
+  puts `role="menu"` inside it.
+
+- **`IconButton` and `TextButton` can be a trigger.** Both now forward a ref to
+  their `<button>` — which is what a `Menu` or `Popover` anchors to — and both
+  take **`aria-haspopup`** and **`aria-expanded`**, the trigger's half of the
+  contract. A surface cannot set either one for you: it never sees the control
+  that opened it, and without them a screen reader announces a plain button and
+  never says the menu is open.
+
+- **`Toolbar` folds what it has no room for.** The new **`overflow`** prop gives
+  the bar the bargain the window strip already makes: items leave it from the
+  trailing end, one at a time, into a `⋯` that opens them as a sheet — built on
+  `Popover`, so the sheet stays on screen, dismisses on Escape or an outside
+  press, and floats clear of whatever the bar is sitting in. **`overflowLabel`**
+  names the button and the sheet.
+
+  One item at a time rather than all or nothing, because a toolbar's contents are
+  a list where a strip's are two slots — but an item folds *whole*: a `Platter`
+  is one item however many segments are on it, since half a segmented control is
+  not a control. **Nothing shrinks** to make room, which is the premise the count
+  rests on: a squeezed `Platter` drops its labels and a squeezed `Readout`
+  reports `19…`, so a bar out of room is better off taking items away than
+  making them smaller. Each item's width is recorded while it is in the bar and
+  kept after it leaves, filed under its key rather than its index — that stored
+  number is the only one that can decide to put it back.
+
+  `end` does not fold. It is what the bar *reports* rather than what it offers,
+  and it already sits at the edge the sheet opens from, so folding it would trade
+  a glance for a click — which makes the `⋯` plus whatever `end` holds the floor,
+  and narrower than that the bar spills the way it always has. Pressing a button
+  in the sheet closes it, the way the strip's does; anything you set rather than
+  press — a slider, a toggle — leaves it up. A vertical bar folds against its
+  height and so wants one: a column is otherwise as tall as its contents and
+  never runs out of room, where a row fills its parent and always has a width.
+
+  Off by default, and deliberately: a bar that spills, wraps or scrolls is a good
+  answer too, and which one a layout wants is not this component's call. It also
+  has a cost worth knowing about — folding an item moves it into the sheet, which
+  re-mounts it, so anything holding state the DOM owns rather than your props
+  loses it at the fold.
+
+- **`Table` scrolls sideways when the plate is too narrow for it.** The rows now
+  sit in a scroller of their own and hold a floor — so the squeeze falls on the
+  plate rather than on the columns, and a row stays a whole capsule instead of
+  going to ellipses everywhere at once or, where the declared widths already
+  came to more than the plate, running past its edge with its rounded ends
+  clipped off. The floor is built from `columns`: every `width` that was
+  declared, plus `--pp-table-col-min` (112px) for each column that left it off.
+  The new **`minWidth`** prop sets it yourself — a CSS length, or `'0'` for the
+  old squeeze. While it is actually scrolling the scroller takes a tab stop, so
+  the far columns are reachable without a pointer, and `label` names it as a
+  region; a table that fits adds nothing to the tab order.
+
+  The row stays a **whole capsule at every scroll position**. Its ground is no
+  longer painted by the cells between them — a row that scrolls is cut square
+  wherever the scrollport ends, and no cell can round an edge it doesn't know
+  about. One zero-width cell leads each row and carries the capsule as a pseudo,
+  pinned to the scrollport and exactly as wide as it, so the cut falls on the
+  text instead of on the shape.
+
 ### Fixed
 
 - **`Table` no longer overflows its container.** Its cells have always carried
@@ -22,6 +131,17 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ### Changed
 
+- **`Tree`'s `onMore` also hands over the element to open a menu on**, as a
+  second argument: the ⋯ button when the press came from the pointer, and the
+  row itself when it came from the keyboard, where the ⋯ is not what was aimed
+  at and is not even on screen yet. Additive — a handler that only wants the
+  `id` still fits — and it is what turns the ⋯ from a reported press into a
+  menu. The `Tree` example now opens a real `Menu` from it.
+- **`.pp-table` and `.pp-table-scroll` are now a pair.** The row's ground
+  measures the scroller as a container (`100cqi`), so hand-written table markup
+  wants the wrapper too — the component renders it for you. Cells no longer
+  carry a `background` or corner radii of their own; both moved to
+  `.pp-table-ground`, the zero-width cell that leads every row.
 - **`TableColumn.width` is now honoured exactly**, and the columns that leave it
   off split what is left over evenly, where before each took what its own
   content needed. This follows from the fixed layout above. Size the predictable
@@ -38,6 +158,10 @@ well as features, so read the **Changed** notes before bumping a minor.
   `WindowControls`) on a `pretty-panels/window` subpath, and the Electron
   integration behind `pretty-panels/electron`, `pretty-panels/preload` and
   `pretty-panels/main`.
+- Docs site: the sidebar card's fill and shadow lived in a narrow-screen media
+  block, so above it the card floated over the content with neither — one rule
+  now paints it at every width. The overlay pages (`Menu`, `Popover`) join the
+  catalogue, and `Toolbar`'s example gains a width slider to fold it with.
 - Docs site: props-table descriptions hold a 40ch measure rather than absorbing
   whatever the other columns leave, so a long entry wraps to about three lines
   instead of six or seven and the table scrolls sideways instead of the row
@@ -143,7 +267,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.0-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...HEAD
+[0.3.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.0-alpha...v0.3.1-alpha
 [0.3.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.2.0-alpha...v0.3.0-alpha
 [0.2.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.1.0-alpha...v0.2.0-alpha
 [0.1.0-alpha]: https://github.com/lucaskellyc/pretty-panels/releases/tag/v0.1.0-alpha

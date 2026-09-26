@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type AriaAttributes, type ReactNode, forwardRef } from 'react';
 import { cx } from './util';
 
 interface TextButtonBaseProps {
@@ -9,6 +9,15 @@ interface TextButtonBaseProps {
   /** Tooltip + accessible-name override. Defaults to the visible label. */
   label?: string;
   disabled?: boolean;
+  /** Says this button opens a floating surface: `"menu"` for a `Menu`,
+   *  `"dialog"` for a `Popover` holding a form. The trigger's half of that
+   *  contract — the surface can't set it, because it never sees the control that
+   *  opened it. */
+  'aria-haspopup'?: AriaAttributes['aria-haspopup'];
+  /** Whether the surface this button opens is currently up. Pair it with
+   *  `aria-haspopup`; without it a screen reader announces a plain button and
+   *  never says the menu is open. */
+  'aria-expanded'?: AriaAttributes['aria-expanded'];
   className?: string;
 }
 
@@ -47,8 +56,14 @@ export type TextButtonProps = TextButtonStandardProps | TextButtonToggleProps;
  * an action whose `active` marks it as the primary one, and `toggle` is an on/off
  * control whose `active` is a state, reported through `onChange` and announced
  * with `aria-pressed`. See `IconButton` for the full reasoning.
+ *
+ * It forwards a ref to the `<button>`, which is what a `Menu` or `Popover`
+ * anchors to when this is the control that opens one.
  */
-export function TextButton(props: TextButtonProps) {
+export const TextButton = forwardRef<HTMLButtonElement, TextButtonProps>(function TextButton(
+  props,
+  ref,
+) {
   const { children, icon, label, disabled, className } = props;
   // Narrowed into a `const` so the toggle branch stays narrowed inside the
   // handler closure below.
@@ -56,6 +71,7 @@ export function TextButton(props: TextButtonProps) {
 
   return (
     <button
+      ref={ref}
       type="button"
       className={cx('pp-text-btn', props.active && 'is-active', className)}
       onClick={toggle ? () => toggle.onChange(!toggle.active) : props.onClick}
@@ -64,9 +80,11 @@ export function TextButton(props: TextButtonProps) {
       aria-pressed={toggle ? toggle.active : undefined}
       aria-label={label}
       title={label}
+      aria-haspopup={props['aria-haspopup']}
+      aria-expanded={props['aria-expanded']}
     >
       {icon}
       <span>{children}</span>
     </button>
   );
-}
+});

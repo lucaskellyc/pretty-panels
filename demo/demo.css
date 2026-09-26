@@ -251,10 +251,18 @@ body {
   --sb-corner: calc(var(--doc-radius-lg) - 1px);
 
   width: 100%;
-  background: color-mix(in srgb, var(--doc-border) 15%, transparent);
+  /* One fill for both jobs: opaque enough (with the blur) to read as a drawer
+     over the content it floats above, and a step lighter than the canvas so it
+     still reads as a lifted plate on wide screens, where there's nothing behind
+     it but the page. */
+  background: color-mix(in srgb, var(--doc-surface) 78%, transparent);
   backdrop-filter: blur(16px);
   border: 1px solid var(--doc-border-quiet);
   border-radius: var(--doc-radius-lg);
+  /* The same plate shadow the catalog cards and previewed panels use, so the
+     card lifts off the canvas in both themes. .sidebar's 16px padding is the
+     room this needs — that box clips (it must, so the scroll stays inside the
+     card), and a shadow reaching past 16px would be cut off at the inset. */
   box-shadow: none;
   padding: 18px;
   padding-right: calc(18px - var(--sb-gutter));
@@ -270,12 +278,6 @@ body {
   overscroll-behavior: contain;
 }
 
-.sidebar-container {
-  @media (max-width: 720px) {
-    background: color-mix(in srgb, var(--doc-bg) 75%, transparent);
-    box-shadow: 0 0 16px rgba(0, 0, 0, 0.2);
-  }
-}
 .sidebar nav {
   width: fit-content;
 }
@@ -913,7 +915,6 @@ body {
 .catalog-row:hover {
   border-color: var(--tier-ink);
   box-shadow: var(--doc-shadow-panel);
-  /*box-shadow: var(--doc-shadow-panel), inset 0 2px 1px var(--doc-highlight);*/
 }
 .catalog-row:active {
   transform: scale(0.98);
@@ -963,6 +964,9 @@ body {
   }
   /* Same floating card as on wide screens — it just leaves the flow and parks
      off-canvas until the path bar's parent dir slides it in. */
+  .sidebar-container {
+    box-shadow: var(--doc-shadow-panel);
+  }
   .sidebar {
     position: fixed;
     top: 0;

@@ -32,8 +32,13 @@ export interface TreeProps {
   /** Give every leaf — a node with no children of its own — a ⋯ button on its
    *  right edge, and call this with the node's id when it is pressed. What the
    *  button opens is yours; the tree only reports the press. Omit it and no
-   *  button is rendered. */
-  onMore?: (id: string) => void;
+   *  button is rendered.
+   *
+   *  The second argument is the element to hang a `Menu` off: the ⋯ button when
+   *  the press came from the pointer, and the row itself when it came from the
+   *  keyboard, where there is no pointer to have aimed at the button. Take it
+   *  or leave it — a handler that only wants the id still fits. */
+  onMore?: (id: string, anchor: HTMLElement) => void;
   /** Accessible name for the tree. */
   label?: string;
   className?: string;
@@ -337,7 +342,10 @@ export function Tree({
     // menu" that terminals and keyboards actually send.
     if (onMore && !row.hasChildren && (key === 'ContextMenu' || (e.shiftKey && key === 'F10'))) {
       e.preventDefault();
-      onMore(row.node.id);
+      // The row, not the ⋯ inside it: the button is hidden until the row is
+      // hovered or focused, and a menu hung off something invisible reads as
+      // having come from nowhere. From the keyboard the row *is* the target.
+      onMore(row.node.id, e.currentTarget);
       return;
     }
     switch (key) {
@@ -469,7 +477,7 @@ export function Tree({
                   tabIndex={-1}
                   aria-label={`More options for ${nameOf(node)}`}
                   aria-keyshortcuts="Shift+F10"
-                  onClick={() => onMore(node.id)}
+                  onClick={(e) => onMore(node.id, e.currentTarget)}
                 >
                   {ELLIPSIS}
                 </button>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type AriaAttributes, type ReactNode, forwardRef } from 'react';
 import { cx } from './util';
 
 interface IconButtonBaseProps {
@@ -7,6 +7,15 @@ interface IconButtonBaseProps {
   /** Accessible name + tooltip. */
   label?: string;
   disabled?: boolean;
+  /** Says this button opens a floating surface: `"menu"` for a `Menu`,
+   *  `"dialog"` for a `Popover` holding a form. The trigger's half of that
+   *  contract — the surface can't set it, because it never sees the control that
+   *  opened it. */
+  'aria-haspopup'?: AriaAttributes['aria-haspopup'];
+  /** Whether the surface this button opens is currently up. Pair it with
+   *  `aria-haspopup`; without it a screen reader announces a plain button and
+   *  never says the menu is open. */
+  'aria-expanded'?: AriaAttributes['aria-expanded'];
   className?: string;
 }
 
@@ -50,8 +59,14 @@ export type IconButtonProps = IconButtonStandardProps | IconButtonToggleProps;
  *   toggle rather than as a button that happens to be highlighted.
  *
  * Only the semantics differ; the accent is the kit's "on" paint either way.
+ *
+ * It forwards a ref to the `<button>`, which is what a `Menu` or `Popover`
+ * anchors to when this is the control that opens one.
  */
-export function IconButton(props: IconButtonProps) {
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  props,
+  ref,
+) {
   const { children, label, disabled, className } = props;
   // Narrowed into a `const` so the toggle branch stays narrowed inside the
   // handler closure below.
@@ -59,6 +74,7 @@ export function IconButton(props: IconButtonProps) {
 
   return (
     <button
+      ref={ref}
       type="button"
       className={cx('pp-round-btn', props.active && 'is-active', className)}
       onClick={toggle ? () => toggle.onChange(!toggle.active) : props.onClick}
@@ -68,8 +84,10 @@ export function IconButton(props: IconButtonProps) {
       aria-pressed={toggle ? toggle.active : undefined}
       aria-label={label}
       title={label}
+      aria-haspopup={props['aria-haspopup']}
+      aria-expanded={props['aria-expanded']}
     >
       {children}
     </button>
   );
-}
+});
