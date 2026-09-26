@@ -12,6 +12,7 @@
 
 import type { FC } from 'react';
 import {
+  AppShellExample,
   GaugeExample,
   GaugeRowExample,
   IconButtonExample,
@@ -27,10 +28,13 @@ import {
   TabsExample,
   TextButtonExample,
   TextFieldExample,
+  TitleBarExample,
+  TitleBarGuide,
   ToggleExample,
   ToolbarExample,
   TreeExample,
   VectorExample,
+  WindowControlsExample,
 } from './pages';
 
 /** Atomic level a component sits at — drives the sidebar grouping. */
@@ -90,6 +94,21 @@ export interface DocPage {
 // ---- Page registry --------------------------------------------------------
 
 export const pages: DocPage[] = [
+  {
+    slug: 'app-shell',
+    name: 'App Shell',
+    group: 'organisms',
+    family: 'Window',
+    importFrom: 'pretty-panels/window',
+    summary: 'The window a desktop app fills: a stage under floating chrome, and nothing else. It owns the viewport so exactly one region scrolls, and it is the containing block the titlebar pins to. The stage carries the ground and the dotted backdrop the glass above it blurs. Two slots on purpose — no status bar (the titlebar readouts say it closer to the work) and no sidebar (a column of panels is just panels on the stage).',
+    Example: AppShellExample,
+    props: [
+      { name: 'children', type: 'ReactNode', required: true, description: 'The stage. Scrolls; everything else stays put. Runs full-bleed under the chrome — pad it with --titlebar-h if its content must start clear.' },
+      { name: 'titleBar', type: 'ReactNode', description: 'The chrome over the top — normally a TitleBar. An overlay: the shell reserves no room for it.' },
+      { name: 'className', type: 'string', description: 'Extra class names on the shell.' },
+      { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the shell (an explicit height beats the 100dvh default).' },
+    ],
+  },
   {
     slug: 'gauge',
     name: 'Gauge',
@@ -352,6 +371,39 @@ export const pages: DocPage[] = [
     ],
   },
   {
+    slug: 'title-bar',
+    name: 'Title Bar',
+    group: 'organisms',
+    family: 'Window',
+    importFrom: 'pretty-panels/window',
+    summary: 'The chrome across the top of a frameless desktop window — window controls, a title and slots of your own, as frosted capsules floating over the app. An overlay, not a row: it reserves nothing, so the window runs full-bleed to its top edge and the glass has something to blur. It never spills either: narrow the window and the slots fold into an ellipsis sheet while the controls hold their platform side.',
+    Example: TitleBarExample,
+    Guide: TitleBarGuide,
+    props: [
+      { name: 'title', type: 'ReactNode', description: "Window title, in a capsule of its own. Omit it and no capsule is drawn — an empty pill would float there saying nothing. Ignored when children is given." },
+      { name: 'children', type: 'ReactNode', description: 'Strip content in place of a title — a Tabs strip, a toolbar. Unglazed, so it brings its own surface; never a drag handle.' },
+      { name: 'left', type: 'ReactNode', description: 'Leading capsule, inboard of the window controls. Opts out of the drag region, and folds into the overflow sheet when the window is too narrow to hold it.' },
+      { name: 'right', type: 'ReactNode', description: 'Trailing capsule, pushed to the far end. Opts out of the drag region, and folds into the overflow sheet when the window is too narrow to hold it.' },
+      { name: 'platform', type: "'mac' | 'win' | 'linux'", default: 'auto-detected', description: 'Control placement and order. Pass what the preload bridge reports rather than trusting the user agent.' },
+      { name: 'controls', type: "'custom' | 'native' | 'none'", default: "'custom'", description: "custom draws the kit's own cluster (the only option that works with frame: false everywhere); native draws none and reserves space for the OS buttons; none reserves nothing." },
+      { name: 'controlsSide', type: "'left' | 'right'", default: 'platform convention', description: 'Which end the controls sit at — left on macOS, right elsewhere.' },
+      { name: 'align', type: "'start' | 'center'", default: "'start'", description: 'Title placement. Centred pins it to the middle of the window, not to the space between the capsules.' },
+      { name: 'maximized', type: 'boolean', default: 'false', description: "Turns the zoom triangles inward and relabels the button Restore." },
+      { name: 'fullscreen', type: 'boolean', default: 'false', description: 'Stands the controls down: in fullscreen the OS owns the top of the screen.' },
+      { name: 'dirty', type: 'boolean', default: 'false', description: 'Unsaved work — a dot in the centre of the close button, given up for the glyph on hover.' },
+      { name: 'graphite', type: 'boolean', default: 'false', description: 'Monochrome window controls instead of the macOS traffic lights. controls="custom" only — the OS paints its own under native.' },
+      { name: 'inactive', type: 'boolean', default: 'false', description: 'Step the glass back to mark an unfocused window. The contents recede, and the macOS traffic lights lose their colour.' },
+      { name: 'overlay', type: 'boolean', default: 'false', description: "Lay the strip out against env(titlebar-area-*) — the Window Controls Overlay geometry. Pair with controls=\"native\"." },
+      { name: 'overflowLabel', type: 'string', default: "'More'", description: 'Accessible name and tooltip for the ellipsis button the slots fold into, and for the sheet it opens. Worth setting in a localised app.' },
+      { name: 'onMinimize', type: '() => void', description: 'Omit and that button is not rendered.' },
+      { name: 'onMaximize', type: '() => void', description: 'Omit and that button is not rendered.' },
+      { name: 'onClose', type: '() => void', description: 'Omit and that button is not rendered.' },
+      { name: 'onTitleDoubleClick', type: '() => void', description: "The native zoom gesture. Presses inside a capsule don't count; the title pill stays part of the strip, so a double-click on it does." },
+      { name: 'className', type: 'string', description: 'Extra class names on the strip.' },
+      { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the strip.' },
+    ],
+  },
+  {
     slug: 'toolbar',
     name: 'Toolbar',
     group: 'organisms',
@@ -415,6 +467,30 @@ export const pages: DocPage[] = [
       { name: 'min', type: 'number', description: 'Clamp values to this minimum.' },
       { name: 'max', type: 'number', description: 'Clamp values to this maximum.' },
       { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value (expects three 0–255 components).' },
+    ],
+  },
+  {
+    slug: 'window-controls',
+    name: 'Window Controls',
+    /* A closed set of peer buttons in one capsule — the same shape as `Platter`,
+       and filed with it. The Window organisms are the parts that *host* your
+       content (`TitleBar`'s slots, `AppShell`'s stage); this one hosts nothing,
+       so the subpath it ships on is the only thing it had in common with them. */
+    group: 'molecules',
+    family: 'Groups',
+    importFrom: 'pretty-panels/window',
+    summary: "Minimize, zoom and close as a frosted capsule of rings — the system's own red, amber and green on macOS. At rest they are outlines; hovering the capsule fills all three and fades their glyphs in — the trade the system lights make, and what lets the glyphs be legible without being noise. Button order follows the platform.",
+    Example: WindowControlsExample,
+    props: [
+      { name: 'platform', type: "'mac' | 'win' | 'linux'", default: 'auto-detected', description: 'Button order — close leads on macOS, trails elsewhere.' },
+      { name: 'maximized', type: 'boolean', default: 'false', description: 'Turns the zoom triangles inward and relabels the button Restore.' },
+      { name: 'dirty', type: 'boolean', default: 'false', description: "Unsaved work, as a dot in the centre of the close button — where macOS puts it. It is the button's resting face, so hovering gives it up for the glyph rather than stacking the two." },
+      { name: 'graphite', type: 'boolean', default: 'false', description: "Stand the traffic lights down to monochrome rings, the way macOS' own Graphite appearance does — for chrome over artwork the colours would fight. No effect off macOS, where there are no lights to stand down." },
+      { name: 'inactive', type: 'boolean', default: 'false', description: 'Unfocused window: the traffic lights drop to 0% saturation, the way the system greys them out. TitleBar forwards its own inactive here, so this is only worth passing to a cluster you place yourself.' },
+      { name: 'onMinimize', type: '() => void', description: 'Omit a handler and that button is not rendered — a window that cannot be maximized simply passes no onMaximize.' },
+      { name: 'onMaximize', type: '() => void', description: 'See onMinimize.' },
+      { name: 'onClose', type: '() => void', description: 'See onMinimize.' },
+      { name: 'className', type: 'string', description: 'Extra class names on the capsule.' },
     ],
   },
 ];

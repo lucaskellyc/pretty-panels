@@ -13,10 +13,14 @@
     "control-panel",
     "panels",
     "slider",
-    "toggle"
+    "toggle",
+    "electron",
+    "desktop",
+    "titlebar"
   ],
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "./dist/pretty-panels.preload.cjs"
   ],
   "files": [
     "dist"
@@ -30,11 +34,30 @@
       "import": "./dist/pretty-panels.js",
       "require": "./dist/pretty-panels.cjs"
     },
+    "./window": {
+      "types": "./dist/window.d.ts",
+      "import": "./dist/pretty-panels.window.js",
+      "require": "./dist/pretty-panels.window.cjs"
+    },
+    "./electron": {
+      "types": "./dist/electron/renderer.d.ts",
+      "import": "./dist/pretty-panels.electron.js",
+      "require": "./dist/pretty-panels.electron.cjs"
+    },
+    "./preload": {
+      "types": "./dist/electron/preload.d.ts",
+      "default": "./dist/pretty-panels.preload.cjs"
+    },
+    "./main": {
+      "types": "./dist/electron/main.d.ts",
+      "import": "./dist/pretty-panels.main.js",
+      "require": "./dist/pretty-panels.main.cjs"
+    },
     "./styles.css": "./dist/pretty-panels.css"
   },
   "scripts": {
     "dev": "vite --config vite.demo.config.ts",
-    "build": "vite build",
+    "build": "vite build && vite build --config vite.preload.config.ts",
     "build:demo": "vite build --config vite.demo.config.ts",
     "preview": "vite preview --config vite.demo.config.ts",
     "typecheck": "tsc --noEmit",
@@ -42,7 +65,8 @@
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "electron": ">=22"
   },
   "devDependencies": {
     "@fontsource/ibm-plex-sans": "^5.3.0",
@@ -51,9 +75,15 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
+    "electron": "^44.4.4",
     "lottie-web": "^5.13.0",
     "typescript": "^5.6.2",
     "vite": "^5.4.8",
     "vite-plugin-dts": "^4.3.0"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    }
   }
 }

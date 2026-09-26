@@ -46,6 +46,14 @@ function vendorFonts(): Plugin {
 
 // Library build. Emits ESM + CJS bundles, a single extracted stylesheet
 // (dist/pretty-panels.css), the vendored font files, and per-file .d.ts types.
+//
+// Four entries here, one package. The root is the component kit; `window` is
+// the desktop chrome; `electron` is renderer-side and pure while `main` imports
+// `electron` itself and must never be pulled into a browser bundle. Splitting
+// them is what lets a web consumer's bundler drop all of it.
+//
+// The fifth entry, the preload, is built separately (vite.preload.config.ts) —
+// it has to be self-contained, which it cannot be while it shares this graph.
 export default defineConfig({
   plugins: [
     react(),
@@ -54,16 +62,27 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: { index: resolve(__dirname, 'src/index.ts') },
+      // Flat keys on purpose: the entry name goes into the output filename, so
+      // a nested key ('electron/preload') would emit a directory.
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        window: resolve(__dirname, 'src/window.ts'),
+        electron: resolve(__dirname, 'src/electron/renderer.ts'),
+        main: resolve(__dirname, 'src/electron/main.ts'),
+      },
       name: 'PrettyPanels',
       formats: ['es', 'cjs'],
       fileName: (format, entry) =>
         `pretty-panels${entry === 'index' ? '' : `.${entry}`}.${format === 'es' ? 'js' : 'cjs'}`,
     },
+    // One stylesheet for every entry — the desktop chrome included — so
+    // consumers keep importing exactly one file.
     cssCodeSplit: false,
     rollupOptions: {
-      // React is a peer dependency — never bundle it.
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // React is a peer dependency — never bundle it. `electron` is resolved by
+      // the runtime that loads the preload/main entries and is never present in
+      // a renderer bundle, so it is external for the same reason.
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'electron'],
       output: {
         // The stylesheet keeps its published name; the font files keep theirs,
         // under dist/fonts/, where the url()s in the CSS point. A single
