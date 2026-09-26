@@ -97,22 +97,8 @@ export interface DocPage {
 
 // ---- Page registry --------------------------------------------------------
 
-export const pages: DocPage[] = [
-  {
-    slug: 'app-shell',
-    name: 'App Shell',
-    group: 'organisms',
-    family: 'Window',
-    importFrom: 'pretty-panels/window',
-    summary: 'The window a desktop app fills: a stage under floating chrome, and nothing else. It owns the viewport so exactly one region scrolls, and it is the containing block the titlebar pins to. The stage carries the ground and the dotted backdrop the glass above it blurs. Two slots on purpose — no status bar (the titlebar readouts say it closer to the work) and no sidebar (a column of panels is just panels on the stage).',
-    Example: AppShellExample,
-    props: [
-      { name: 'children', type: 'ReactNode', required: true, description: 'The stage. Scrolls; everything else stays put. Runs full-bleed under the chrome — pad it with --titlebar-h if its content must start clear.' },
-      { name: 'titleBar', type: 'ReactNode', description: 'The chrome over the top — normally a TitleBar. An overlay: the shell reserves no room for it.' },
-      { name: 'className', type: 'string', description: 'Extra class names on the shell.' },
-      { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the shell (an explicit height beats the 100dvh default).' },
-    ],
-  },
+/* Every page but the desktop ones, which are held back below. */
+const CORE: DocPage[] = [
   {
     slug: 'gauge',
     name: 'Gauge',
@@ -425,39 +411,6 @@ export const pages: DocPage[] = [
     ],
   },
   {
-    slug: 'title-bar',
-    name: 'Title Bar',
-    group: 'organisms',
-    family: 'Window',
-    importFrom: 'pretty-panels/window',
-    summary: 'The chrome across the top of a frameless desktop window — window controls, a title and slots of your own, as frosted capsules floating over the app. An overlay, not a row: it reserves nothing, so the window runs full-bleed to its top edge and the glass has something to blur. It never spills either: narrow the window and the slots fold into an ellipsis sheet while the controls hold their platform side.',
-    Example: TitleBarExample,
-    Guide: TitleBarGuide,
-    props: [
-      { name: 'title', type: 'ReactNode', description: "Window title, in a capsule of its own. Omit it and no capsule is drawn — an empty pill would float there saying nothing. Ignored when children is given." },
-      { name: 'children', type: 'ReactNode', description: 'Strip content in place of a title — a Tabs strip, a toolbar. Unglazed, so it brings its own surface; never a drag handle.' },
-      { name: 'left', type: 'ReactNode', description: 'Leading capsule, inboard of the window controls. Opts out of the drag region, and folds into the overflow sheet when the window is too narrow to hold it.' },
-      { name: 'right', type: 'ReactNode', description: 'Trailing capsule, pushed to the far end. Opts out of the drag region, and folds into the overflow sheet when the window is too narrow to hold it.' },
-      { name: 'platform', type: "'mac' | 'win' | 'linux'", default: 'auto-detected', description: 'Control placement and order. Pass what the preload bridge reports rather than trusting the user agent.' },
-      { name: 'controls', type: "'custom' | 'native' | 'none'", default: "'custom'", description: "custom draws the kit's own cluster (the only option that works with frame: false everywhere); native draws none and reserves space for the OS buttons; none reserves nothing." },
-      { name: 'controlsSide', type: "'left' | 'right'", default: 'platform convention', description: 'Which end the controls sit at — left on macOS, right elsewhere.' },
-      { name: 'align', type: "'start' | 'center'", default: "'start'", description: 'Title placement. Centred pins it to the middle of the window, not to the space between the capsules.' },
-      { name: 'maximized', type: 'boolean', default: 'false', description: "Turns the zoom triangles inward and relabels the button Restore." },
-      { name: 'fullscreen', type: 'boolean', default: 'false', description: 'Stands the controls down: in fullscreen the OS owns the top of the screen.' },
-      { name: 'dirty', type: 'boolean', default: 'false', description: 'Unsaved work — a dot in the centre of the close button, given up for the glyph on hover.' },
-      { name: 'graphite', type: 'boolean', default: 'false', description: 'Monochrome window controls instead of the macOS traffic lights. controls="custom" only — the OS paints its own under native.' },
-      { name: 'inactive', type: 'boolean', default: 'false', description: 'Step the glass back to mark an unfocused window. The contents recede, and the macOS traffic lights lose their colour.' },
-      { name: 'overlay', type: 'boolean', default: 'false', description: "Lay the strip out against env(titlebar-area-*) — the Window Controls Overlay geometry. Pair with controls=\"native\"." },
-      { name: 'overflowLabel', type: 'string', default: "'More'", description: 'Accessible name and tooltip for the ellipsis button the slots fold into, and for the sheet it opens. Worth setting in a localised app.' },
-      { name: 'onMinimize', type: '() => void', description: 'Omit and that button is not rendered.' },
-      { name: 'onMaximize', type: '() => void', description: 'Omit and that button is not rendered.' },
-      { name: 'onClose', type: '() => void', description: 'Omit and that button is not rendered.' },
-      { name: 'onTitleDoubleClick', type: '() => void', description: "The native zoom gesture. Presses inside a capsule don't count; the title pill stays part of the strip, so a double-click on it does." },
-      { name: 'className', type: 'string', description: 'Extra class names on the strip.' },
-      { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the strip.' },
-    ],
-  },
-  {
     slug: 'toolbar',
     name: 'Toolbar',
     group: 'organisms',
@@ -525,6 +478,66 @@ export const pages: DocPage[] = [
       { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value (expects three 0–255 components).' },
     ],
   },
+];
+
+/* The desktop chrome — `AppShell`, `TitleBar`, `WindowControls`. It ships in the
+   kit and is documented in the README, but it is not on the published site yet,
+   so these three pages are development-only: they are here to build and check
+   against, and the deployed docs neither list them nor carry them.
+
+   Held apart rather than filtered out of one list, because `import.meta.env.DEV`
+   is replaced at build time: the production branch below becomes `[]`, nothing
+   references `DESKTOP`, and the bundler drops these entries and the example
+   components they name. Publishing them again is deleting the condition. */
+const DESKTOP: DocPage[] = [
+  {
+    slug: 'app-shell',
+    name: 'App Shell',
+    group: 'organisms',
+    family: 'Window',
+    importFrom: 'pretty-panels/window',
+    summary: 'The window a desktop app fills: a stage under floating chrome, and nothing else. It owns the viewport so exactly one region scrolls, and it is the containing block the titlebar pins to. The stage carries the ground and the dotted backdrop the glass above it blurs. Two slots on purpose — no status bar (the titlebar readouts say it closer to the work) and no sidebar (a column of panels is just panels on the stage).',
+    Example: AppShellExample,
+    props: [
+      { name: 'children', type: 'ReactNode', required: true, description: 'The stage. Scrolls; everything else stays put. Runs full-bleed under the chrome — pad it with --titlebar-h if its content must start clear.' },
+      { name: 'titleBar', type: 'ReactNode', description: 'The chrome over the top — normally a TitleBar. An overlay: the shell reserves no room for it.' },
+      { name: 'className', type: 'string', description: 'Extra class names on the shell.' },
+      { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the shell (an explicit height beats the 100dvh default).' },
+    ],
+  },
+  {
+    slug: 'title-bar',
+    name: 'Title Bar',
+    group: 'organisms',
+    family: 'Window',
+    importFrom: 'pretty-panels/window',
+    summary: 'The chrome across the top of a frameless desktop window — window controls, a title and slots of your own, as frosted capsules floating over the app. An overlay, not a row: it reserves nothing, so the window runs full-bleed to its top edge and the glass has something to blur. It never spills either: narrow the window and the slots fold into an ellipsis sheet while the controls hold their platform side.',
+    Example: TitleBarExample,
+    Guide: TitleBarGuide,
+    props: [
+      { name: 'title', type: 'ReactNode', description: "Window title, in a capsule of its own. Omit it and no capsule is drawn — an empty pill would float there saying nothing. Ignored when children is given." },
+      { name: 'children', type: 'ReactNode', description: 'Strip content in place of a title — a Tabs strip, a toolbar. Unglazed, so it brings its own surface; never a drag handle.' },
+      { name: 'left', type: 'ReactNode', description: 'Leading capsule, inboard of the window controls. Opts out of the drag region, and folds into the overflow sheet when the window is too narrow to hold it.' },
+      { name: 'right', type: 'ReactNode', description: 'Trailing capsule, pushed to the far end. Opts out of the drag region, and folds into the overflow sheet when the window is too narrow to hold it.' },
+      { name: 'platform', type: "'mac' | 'win' | 'linux'", default: 'auto-detected', description: 'Control placement and order. Pass what the preload bridge reports rather than trusting the user agent.' },
+      { name: 'controls', type: "'custom' | 'native' | 'none'", default: "'custom'", description: "custom draws the kit's own cluster (the only option that works with frame: false everywhere); native draws none and reserves space for the OS buttons; none reserves nothing." },
+      { name: 'controlsSide', type: "'left' | 'right'", default: 'platform convention', description: 'Which end the controls sit at — left on macOS, right elsewhere.' },
+      { name: 'align', type: "'start' | 'center'", default: "'start'", description: 'Title placement. Centred pins it to the middle of the window, not to the space between the capsules.' },
+      { name: 'maximized', type: 'boolean', default: 'false', description: "Turns the zoom triangles inward and relabels the button Restore." },
+      { name: 'fullscreen', type: 'boolean', default: 'false', description: 'Stands the controls down: in fullscreen the OS owns the top of the screen.' },
+      { name: 'dirty', type: 'boolean', default: 'false', description: 'Unsaved work — a dot in the centre of the close button, given up for the glyph on hover.' },
+      { name: 'graphite', type: 'boolean', default: 'false', description: 'Monochrome window controls instead of the macOS traffic lights. controls="custom" only — the OS paints its own under native.' },
+      { name: 'inactive', type: 'boolean', default: 'false', description: 'Step the glass back to mark an unfocused window. The contents recede, and the macOS traffic lights lose their colour.' },
+      { name: 'overlay', type: 'boolean', default: 'false', description: "Lay the strip out against env(titlebar-area-*) — the Window Controls Overlay geometry. Pair with controls=\"native\"." },
+      { name: 'overflowLabel', type: 'string', default: "'More'", description: 'Accessible name and tooltip for the ellipsis button the slots fold into, and for the sheet it opens. Worth setting in a localised app.' },
+      { name: 'onMinimize', type: '() => void', description: 'Omit and that button is not rendered.' },
+      { name: 'onMaximize', type: '() => void', description: 'Omit and that button is not rendered.' },
+      { name: 'onClose', type: '() => void', description: 'Omit and that button is not rendered.' },
+      { name: 'onTitleDoubleClick', type: '() => void', description: "The native zoom gesture. Presses inside a capsule don't count; the title pill stays part of the strip, so a double-click on it does." },
+      { name: 'className', type: 'string', description: 'Extra class names on the strip.' },
+      { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the strip.' },
+    ],
+  },
   {
     slug: 'window-controls',
     name: 'Window Controls',
@@ -550,6 +563,8 @@ export const pages: DocPage[] = [
     ],
   },
 ];
+
+export const pages: DocPage[] = [...CORE, ...(import.meta.env.DEV ? DESKTOP : [])];
 
 /** The families inside one tier, in display order, each holding its pages.
  *  A tier whose pages carry no family comes back as a single unlabelled section,
