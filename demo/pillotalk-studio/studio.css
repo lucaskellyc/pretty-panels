@@ -1,0 +1,330 @@
+/* ============================================================
+   Pillotalk Studio, browser variant — a full-bleed stage with the glyphs,
+   inspector and preview plates docked over its corners. pretty-panels owns
+   every control look; this file positions the plates and draws the sheet,
+   from tokens.
+   ============================================================ */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* An editor, not a form. */
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:root {
+  /* An artboard's edge: a quiet violet hairline, the colour proof sheets use
+     for "the box", kept off the accent — the accent means "what you have hold
+     of", and an artboard is there whether or not anything is selected. */
+  --artboard-edge: color-mix(in srgb, #7a6cff 45%, transparent);
+  --guide-ink: #35c8e0;
+
+  --mono-h: 212;
+  --mono-s: 12%;
+  --mono-l: 90;
+  --stage-bg: white;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mono-l: 18;
+    --stage-bg: #222;
+  }
+}
+
+/* The page is the stage. A plain ground, without the kit's dot grid: the
+   artboards are the grid. */
+.pt-app {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--stage-bg);
+  color: var(--ctl-text);
+  font: var(--type-ui);
+}
+.pt-app *,
+.pt-app *::before,
+.pt-app *::after {
+  box-sizing: border-box;
+}
+
+/* ---- Stage ------------------------------------------------------------- */
+
+.pt-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.pt-sheet {
+  display: block;
+  touch-action: none;
+}
+
+.pt-sheet:active {
+  cursor: grabbing;
+}
+
+.pt-section-label {
+  fill: var(--ctl-hint);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.pt-artboard {
+  fill: transparent;
+  stroke: var(--artboard-edge);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+}
+
+.pt-artboard:hover {
+  stroke: var(--ctl-accent);
+}
+
+.pt-artboard[data-selected] {
+  fill: color-mix(in srgb, var(--ctl-panel) 55%, transparent);
+  stroke: var(--ctl-accent);
+  stroke-dasharray: none;
+  stroke-width: 1.5;
+  cursor: zoom-in;
+}
+
+.pt-ink {
+  fill: var(--ctl-text);
+  pointer-events: none;
+}
+
+.pt-guide {
+  stroke: var(--guide-ink);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.pt-guide-label {
+  fill: var(--guide-ink);
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+
+/* The real stroke at the font's weight, in glyph units — it scales with the
+   view, unlike the hairlines around it. */
+.pt-stroke {
+  fill: none;
+  stroke: var(--ctl-text);
+  pointer-events: none;
+}
+
+/* ---- Outliner ---------------------------------------------------------- */
+
+.pt-outline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.pt-outline-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-sm);
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--ctl-row);
+  color: var(--ctl-text);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.pt-outline-row:hover {
+  background: var(--ctl-row-raised);
+}
+
+.pt-outline-row[data-selected] {
+  background: var(--ctl-accent);
+  color: var(--ctl-on-track);
+}
+
+.pt-thumb {
+  width: 14px;
+  height: 18px;
+  flex: none;
+}
+
+.pt-thumb path {
+  fill: currentColor;
+}
+
+.pt-thumb .is-stroke {
+  fill: none;
+  stroke: currentColor;
+}
+
+.pt-outline-name {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.pt-outline-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ctl-hint);
+}
+
+.pt-outline-row[data-selected] .pt-outline-meta {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.pt-outline-row[data-empty]:not([data-selected]) .pt-outline-name {
+  color: var(--ctl-hint);
+}
+
+/* ---- Inspector --------------------------------------------------------- */
+
+.pt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
+.pt-empty {
+  margin: var(--space-2) 0;
+  color: var(--ctl-hint);
+  font: var(--type-ui);
+  font-size: var(--text-sm);
+}
+
+/* ---- Preview ----------------------------------------------------------- */
+
+.preview-text {
+  margin: var(--space-2) 0;
+  padding: var(--space-3);
+  border-radius: 12px;
+  background: var(--ctl-section);
+  color: var(--ctl-text);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  min-height: 3em;
+}
+
+/* ---- Dock -------------------------------------------------------------- */
+
+/* The inspector and preview, docked over the stage's right edge: one column,
+   the inspector from the top corner, the preview pushed to the bottom one.
+   The column itself lets drags through to the stage; only the plates catch. */
+.pt-dock {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+
+.pt-dock-slot {
+  min-height: 0;
+}
+
+/* The glyphs plate, mirrored into the top-left corner; rolled up, it draws in
+   toward the left edge. */
+.pt-dock.is-left {
+  left: var(--space-3);
+  right: auto;
+}
+.pt-dock.is-left .panel {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* Rolled up, a plate draws in to hug its header (DockPanel measures it into
+   --dock-panel-w), pinned to its edge, while the kit folds its body — the
+   same duration and curve, so they land together. The body's content keeps
+   the column's width and is clipped, never reflowed. Only the plates catch
+   the pointer: a rolled-up one leaves the column's width beside it to the
+   stage. */
+.pt-dock .panel {
+  width: var(--dock-panel-w, 100%);
+  margin-left: auto;
+  pointer-events: auto;
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.pt-dock .panel-head b {
+  white-space: nowrap;
+}
+/* Tighter under the title: the body starts right at the header's own bottom
+   padding. Trimmed from the body rather than the header, so a rolled-up
+   strip stays even top and bottom. */
+.pt-dock .panel-body-inner {
+  padding-top: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-dock .panel {
+    transition-duration: 1ms;
+  }
+}
+
+/* The tall plates — the inspector, the glyphs — give up height first, and
+   scroll inside their slots. */
+.pt-dock-slot.is-scrolling {
+  flex: 0 1 auto;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border-radius: var(--radius-lg);
+}
+.pt-dock-slot.is-scrolling::-webkit-scrollbar {
+  display: none;
+}
+
+.pt-dock-slot.is-preview {
+  flex: none;
+  margin-top: auto;
+}
+
+/* As wide as the column, wrapping past it; capped so a big size can't push
+   the inspector off the top. */
+.pt-dock-preview {
+  max-height: 40vh;
+  overflow: auto;
+  scrollbar-width: none;
+}
+.pt-dock-preview .preview-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.pt-dock input,
+.pt-dock textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}

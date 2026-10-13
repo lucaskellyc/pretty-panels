@@ -512,6 +512,25 @@ function Overview() {
           </div>
         ))}
       </section>
+      {/* Apps built on the kit, each a page of its own beside the docs. Same
+          cell and cards as the catalog, in the neutral palette (no tier). */}
+      <section className="catalog experiments">
+        <div className="catalog-cell" data-tier="apps">
+          <h3 className="catalog-cell-title">Experiments</h3>
+          <ul className="catalog-list">
+            <li>
+              <a
+                className="catalog-row"
+                href={`${import.meta.env.BASE_URL}pillotalk-studio/`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span className="catalog-name">Pillotalk Studio</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </section>
     </article>
   );
 }
