@@ -106,9 +106,15 @@
      A pinned text colour cannot sit on a plate-relative ground: run the same
      offsets off a light plate and a track lands mid-grey, where 12px white
      labels fall to ~3.3:1 and a hover — which steps *toward* the plate, i.e.
-     toward white — takes them to 2.7:1. Pinning the grounds to the deep end
-     instead keeps every capsule at 4.8:1 or better in both polarities, and
-     makes hover mean the same thing either way: one step further in.
+     toward white — takes them to 2.7:1. Pinning the grounds instead keeps
+     each capsule's contrast the same in both polarities, and makes hover mean
+     the same thing either way: one step further in.
+
+     Where they are pinned is a trade. At 54% the resting track is a mid-tone,
+     and white labels on it read at about 3.2:1 on a grey ramp (4.2:1 on
+     hover) — under WCAG AA's 4.5:1 for small text. 38% / 32% gives 5.7:1 /
+     7.2:1. An app that needs AA can set these two back, or flip
+     --ctl-on-track to dark on a light plate.
 
      Hue and saturation still come from the knobs, so --mono-h / --mono-s
      retint these exactly like the rest of the ramp; only lightness is fixed. */
