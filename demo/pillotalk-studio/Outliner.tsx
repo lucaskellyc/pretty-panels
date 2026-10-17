@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Section } from '../../src';
 import { codepointLabel, isDrawn, strokePathData, type FontProject, type GlyphData } from './font/model';
 import { SECTIONS } from './font/sheet';
+import { trimmedGlyph } from './font/trim';
 
 interface OutlinerProps {
   project: FontProject;
@@ -22,6 +23,7 @@ const Thumb = memo(function Thumb({
   weight: number;
 }) {
   const top = ascender - (glyph?.offsetY ?? 0);
+  const strokes = glyph && trimmedGlyph(glyph).strokes;
   const d = (glyph?.contours ?? [])
     .filter((c) => c.points.length >= 3)
     .map((c) => c.points.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${top - p.y}`).join('') + 'Z')
@@ -29,10 +31,10 @@ const Thumb = memo(function Thumb({
   return (
     <svg className="pt-thumb" viewBox={`0 0 ${glyph?.advanceWidth || 1} ${height}`} aria-hidden>
       <path d={d} />
-      {glyph?.strokes?.length ? (
+      {glyph && strokes?.length ? (
         <path
           className="is-stroke"
-          d={strokePathData(glyph.strokes, top)}
+          d={strokePathData(strokes, top)}
           strokeWidth={weight}
           strokeLinecap={glyph.cap ?? 'round'}
           strokeLinejoin={glyph.join ?? 'round'}

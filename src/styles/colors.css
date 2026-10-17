@@ -112,8 +112,8 @@
 
      Hue and saturation still come from the knobs, so --mono-h / --mono-s
      retint these exactly like the rest of the ramp; only lightness is fixed. */
-  --ctl-track:            hsl(var(--mono-h) var(--mono-s) 38%);
-  --ctl-track-hover:      hsl(var(--mono-h) var(--mono-s) 32%);
+  --ctl-track:            hsl(var(--mono-h) var(--mono-s) 54%);
+  --ctl-track-hover:      hsl(var(--mono-h) var(--mono-s) 46%);
   --ctl-deep-hover:       hsl(var(--mono-h) var(--mono-s) 26%);
   --ctl-accent:           hsl(var(--mono-h) var(--mono-sa) 44%);
   --ctl-accent-hover:     hsl(var(--mono-h) calc(var(--mono-sa) * 1.2) 38%);

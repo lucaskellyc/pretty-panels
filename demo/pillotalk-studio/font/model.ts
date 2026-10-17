@@ -49,6 +49,12 @@ export interface GlyphData {
    *  units. Kept apart from the geometry so it reads back as one number;
    *  applied wherever the glyph is drawn or built. */
   offsetY?: number;
+  /** Trim paths (see trim.ts): the stroke paths are drawn only from
+   *  `trimStart` to `trimEnd` percent of their length, slid along by
+   *  `trimOffset` percent. Unset reads 0 / 100 / 0 — the whole glyph. */
+  trimStart?: number;
+  trimEnd?: number;
+  trimOffset?: number;
 }
 
 export interface FontProject {

@@ -1,0 +1,431 @@
+/* ============================================================
+   Timeline dock + `.tl` seeker, vendored from open-action (from
+   motion-studio, itself the woodshop design system's `.tl` block).
+   Rules for features it doesn't have (clip blocks, layer reorder,
+   channel links) are dropped; local changes are marked `local:`.
+   ============================================================ */
+
+/* ---- Timeline dock ------------------------------------------------------ */
+
+/* The app's only chrome: the design system's timeline/seeker on a panel plate
+   the full width of the window, rather than a floating dock — the playhead
+   needs the horizontal room. */
+.dock-tl {
+  position: relative;
+  flex: none;
+  z-index: var(--z-sticky);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  background: var(--ctl-panel);
+  border-top: var(--border-width) solid var(--ctl-panel);
+  -webkit-app-region: no-drag;
+}
+
+/* The dock's top edge, dragged to give the lanes more or less room. It sits
+   over the border rather than inside the padding, so the whole seam between
+   stage and dock is the grab target — and it overhangs the border by a pixel
+   each way so there's no dead line to catch the pointer out.
+
+   Nothing here sets the dock's height: the grip writes --tl-body-h and the
+   dock stays as tall as its contents, which is what keeps the fold, the lane
+   count, and the resize from having to agree about a number. */
+.dock-tl-grip {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 9px;
+  cursor: ns-resize;
+  -webkit-app-region: no-drag;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+/* A pill that appears under the pointer, the way the window controls' glyphs
+   do — the edge is draggable at rest, it just doesn't advertise it. */
+.dock-tl-grip::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 44px;
+  height: 3px;
+  margin-left: -22px;
+  border-radius: var(--radius-pill);
+  background: var(--ctl-hint);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.dock-tl-grip:hover::after,
+.dock-tl.is-resizing .dock-tl-grip::after {
+  opacity: 1;
+}
+.dock-tl.is-resizing .dock-tl-grip::after {
+  background: var(--ctl-accent);
+}
+/* A folded dock has no lanes to resize. */
+.dock-tl.is-collapsed .dock-tl-grip {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Hold the resize cursor across the window: the pointer is captured by the
+   grip, but it travels over the stage and the lanes, which ask for their own. */
+.dock-tl.is-resizing,
+.dock-tl.is-resizing *,
+body:has(.dock-tl.is-resizing) .pt-stage {
+  cursor: ns-resize;
+}
+
+/* Collapsed: the dock folds down to its transport bar, so playback stays to
+   hand while the stage takes the rest. The lanes and footer animate their own
+   height to zero rather than switching to `display: none`, which cannot
+   transition — and the dock still hard-codes no height, so it shrinks to what
+   is left and the stage, which measures its own box, refits into the room that
+   frees up.
+
+   `interpolate-size` is what makes that possible at all: without it `height:
+   auto` is not an interpolable value and the fold would jump. (Chromium 129+;
+   this app ships its own runtime, so support is a known quantity.) */
+:root {
+  interpolate-size: allow-keywords;
+}
+.tl-body {
+  height: auto;
+  overflow: hidden;
+  transition:
+    height var(--dur-slow) var(--ease-out),
+    padding-block var(--dur-slow) var(--ease-out),
+    margin-top var(--dur-slow) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    visibility var(--dur-slow);
+}
+/* The height the dock's grip writes. Everything else in the dock is fixed
+   chrome, so sizing the lane area sizes the dock — and the stage, which
+   measures its own box, refits into whatever is left. Unset (the default, and
+   what a double-click on the grip restores) the lanes size the dock, exactly as
+   they did before it could be dragged.
+
+   Past that height the lanes scroll rather than being cropped; the ruler goes
+   with them, since `.tl-canvas` clips its own overflow and there is no
+   scrollport for a sticky ruler to stick to. */
+.tl-body {
+  height: var(--tl-body-h, auto);
+  overflow: hidden auto;
+}
+/* The drag has to land on the frame, not 240ms behind the pointer. */
+.dock-tl.is-resizing .tl-body {
+  transition: none;
+}
+/* No scrollbar through the fold, in **either** direction.
+
+   The collapsed rule below takes the height to zero, and its class lands before
+   the height starts moving, so shutting was always covered. Opening was not: by
+   then the class is gone, so for the whole 240ms the lanes carried
+   `overflow-y: auto` over content taller than the box — a scrollbar that
+   appeared, took 10px off the canvas column, and vanished again at the end.
+   `is-folding` is set by `App.tsx` for exactly as long as the height animates,
+   which is the half the collapsed class cannot describe. */
+.dock-tl.is-collapsed .tl-body,
+.dock-tl.is-folding .tl-body {
+  overflow: hidden;
+}
+.dock-tl.is-collapsed .tl-body {
+  height: 0;
+  /* Padding outlives `height: 0` under border-box, so it is zeroed rather than
+     left to hold the folded dock open. */
+  padding-block: 0;
+  /* `.tl` is a flex column with a gap, which survives a zero-height row and
+     would leave 12px of dead space per folded section. Pulling each one up by
+     the gap cancels it, and animates alongside the height instead of snapping
+     the way `gap: 0` would. */
+  margin-top: calc(var(--space-3) * -1);
+  opacity: 0;
+  /* Keeps the folded controls out of the tab order. Visibility is special-cased
+     in transitions: it holds until the fold finishes, then flips. */
+  visibility: hidden;
+}
+/* Tighter around the lone bar, or a collapsed dock reads as a mostly empty
+   plate rather than a strip. Transitioned with the fold so the two move as one. */
+.dock-tl {
+  transition: padding var(--dur-slow) var(--ease-out);
+}
+.dock-tl.is-collapsed {
+  padding-block: var(--space-3);
+}
+/* The chevron points the way the dock will go. */
+.tl-collapse svg {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.dock-tl.is-collapsed .tl-collapse svg {
+  transform: rotate(180deg);
+}
+
+/* ---- Timeline / seeker --------------------------------------------------
+   Vendored from the woodshop design system (components/panels.css, the `.tl-*`
+   block); Timeline.tsx renders that component's markup contract. Keep this in
+   step with the DS instead of restyling it — the handful of changes made for
+   this app are marked "local:".
+   ------------------------------------------------------------------------- */
+/* local: shorter lanes with more air between them than the DS's 26px/4px — the
+   row pitch is unchanged, so the dock keeps its height. The gap is a variable
+   because the name column and the lanes have to step in lockstep to stay in
+   register; changing one hard-coded 4px alone would shear the rows apart. */
+.tl { display: flex; flex-direction: column; gap: var(--space-3); --tl-lane-h: 20px; --tl-lane-gap: 10px; --tl-ruler-h: 20px; --tl-prop-h: 16px; --tl-prop-gap: 4px; }
+/* local: a three-column grid rather than the DS's flex row, so the resolution
+   strip stays centred in the *window* however wide the transport on its left or
+   the readout on its right happen to be. The two flanking groups are
+   `.tl-bar-side`; without them each child of the bar would claim a column. */
+/* local: two groups, one at each end. It was a three-column grid while the
+   viewport-resolution strip sat between them — a centred child needs its
+   flanking groups to claim equal columns, or it drifts with whichever side is
+   wider. With that strip gone there is nothing to centre, and space-between is
+   what "one group at each end" actually says. */
+.tl-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.tl-bar-side { display: flex; align-items: center; gap: var(--space-2); }
+.tl-bar-side.is-end { justify-content: flex-end; }
+/* local: `.tl-seg` is the *same* control the transport is — a pill of segments
+   with the chosen one in the accent — so it shares the rule rather than being a
+   second answer to what a segmented control looks like. It was the viewport
+   resolution's strip and is now the graph editor's overshoot chips, which is
+   why the rule outlived the control it was written for. */
+.tl-transport, .tl-seg { display: flex; gap: 2px; background: var(--ctl-btn); border-radius: var(--radius-pill); padding: 3px; }
+.tl-btn { height: 24px; min-width: 26px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ctl-text); font: var(--type-label); display: grid; place-items: center; cursor: default; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+/* local: button states are pretty-panels' (`.pp-platter-btn` / `.pp-text-btn`):
+   plate ink on the quiet `--ctl-btn` ground, one step deeper on hover, and the
+   accent carrying bright on-track ink when on. Those tokens keep contrast at any
+   `--mono-l` — the DS's switch-off/knob pair washed out on a lighter plate. */
+.tl-btn:hover { background: var(--ctl-btn-hover); }
+/* local: the glyphs come from icons.tsx (lucide, 24-grid) and carry their own
+   fill/stroke, so only the box is set here — the DS sizes 12-grid filled ones. */
+.tl-btn svg { width: 15px; height: 15px; display: block; }
+/* local: a `.tl-seg`'s segments are radios rather than toggles — exactly one is
+   always on — so a chosen one says `aria-checked` and has to read the same as a
+   pressed transport button. */
+.tl-btn[aria-pressed="true"], .tl-btn[aria-checked="true"] { background: var(--ctl-accent); color: var(--ctl-on-track); }
+.tl-btn[aria-pressed="true"]:hover, .tl-btn[aria-checked="true"]:hover { background: var(--ctl-accent-hover); color: var(--ctl-on-track); }
+.tl-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* A standalone chip rests on the same quiet ground as the transport tray. */
+.tl-chip { background: var(--ctl-btn); color: var(--ctl-text); letter-spacing: var(--ls-wide); }
+.tl-chip:hover { background: var(--ctl-btn-hover); }
+/* local: fps + frame counter travel with the timecode, so one auto margin
+   carries the pair to the right rather than each claiming its own share. */
+.tl-readout { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+/* local: the readout is also a control — dragging it vertically scrubs (see
+   Timeline.tsx), hence the cursor and the active state. */
+.tl-time { margin-left: auto; font: var(--type-data); font-size: var(--text-md); font-variant-numeric: tabular-nums; color: var(--ctl-on-track); background: var(--ctl-track); border-radius: var(--radius-pill); padding: 3px var(--space-3); cursor: ns-resize; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.tl-time:hover { background: var(--ctl-track-hover); }
+.tl-time.is-scrubbing { background: var(--ctl-accent); color: var(--ctl-on-track); }
+.tl-meta { font: var(--type-label); color: var(--ctl-hint); white-space: nowrap; text-transform: uppercase; }
+
+/* local: 124px rather than the DS's narrower column — the name row carries a
+   disclosure twisty as well as the visibility dot. */
+/* local: `minmax(min-content, 1fr)` so the one row does both jobs the resizable
+   dock asks of it — fills a body dragged taller than the lanes (the canvas is
+   the scrub surface, and dead space under it would not scrub), and falls back to
+   its own height when the lanes outgrow the body, which is what the body then
+   scrolls through. */
+.tl-body { display: grid; grid-template-columns: 124px 1fr; grid-template-rows: minmax(min-content, 1fr); gap: var(--space-2); }
+/* local: no ruler header in this app — pad the name column down to its lanes. */
+.tl-names { display: flex; flex-direction: column; gap: var(--tl-lane-gap); padding-top: var(--tl-ruler-h); }
+/* local: a row is a *group* — a layer's name (or lane) with its property rows
+   folded underneath. Both columns are built the same way out of the same
+   heights and gaps, which is the whole reason they stay in register however
+   many layers are open. The group carries no gap of its own; the disclosure
+   brings its own top padding, so a closed one collapses to nothing. */
+.tl-group, .tl-lane-group { display: flex; flex-direction: column; }
+/* local: `--depth` is how many groups a layer sits inside. The rows are already
+   in tree order (see `normalizeOrder`), so one indent is the whole of what makes
+   the column read as a tree — there is no second list and no nesting in the
+   markup, which is what keeps the two halves of `.tl-body` in register. */
+.tl-name { height: var(--tl-lane-h); display: flex; align-items: center; gap: 6px; padding: 0 var(--space-2) 0 calc(var(--space-2) + var(--depth, 0) * 11px); border: 0; border-radius: var(--radius-pill); background: var(--ctl-bar); font: var(--type-label); color: var(--ctl-text); text-align: left; cursor: default; }
+.tl-name:hover { background: var(--ctl-row-hover); }
+/* local: the DS's name cell is one button. Here it's a row of three, so that
+   revealing a layer's properties, hiding it, and selecting it (which drives the
+   inspector window) don't compete for the same click — the dot that was a
+   ::before marker is now the visibility control, and the name is the selection
+   target. */
+.tl-twisty { display: grid; place-items: center; width: 12px; height: 12px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ctl-text); flex-shrink: 0; cursor: default; }
+.tl-twisty svg { display: block; transform: rotate(-90deg); transition: transform var(--dur-base) var(--ease-out); }
+.tl-twisty[aria-expanded="true"] svg { transform: rotate(0deg); }
+/* Inert, not absent, on a layer with nothing to reveal: the column is one grid,
+   and dropping the glyph would indent only the animated layers. */
+.tl-twisty:disabled { opacity: 0.25; }
+.tl-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: var(--ctl-track); flex-shrink: 0; cursor: default; }
+.tl-dot[aria-pressed="true"] { background: var(--ctl-accent); }
+/* The padlock, on every row like the twisty and faint until it is on — the
+   column stays one grid rather than growing a control where a layer happens to
+   be locked. It keeps full contrast when locked, since that is the state worth
+   spotting from across the list. */
+.tl-lock { display: grid; place-items: center; width: 12px; height: 12px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ctl-text); flex-shrink: 0; cursor: default; opacity: 0.28; transition: opacity var(--dur-base) var(--ease-out); }
+.tl-lock svg { display: block; }
+.tl-name:hover .tl-lock { opacity: 0.6; }
+.tl-lock.is-on,
+.tl-name:hover .tl-lock.is-on { opacity: 1; color: var(--ctl-accent); }
+.tl-label { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; font: inherit; color: inherit; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-name.is-off { color: var(--ctl-hint); }
+/* local: the selected row is the group the graph view shows. */
+.tl-name.is-selected { box-shadow: inset 0 0 0 1px var(--ctl-accent); }
+
+/* local: the per-property disclosure, using pretty-panels' own `.collapsible`
+   as it ships — a 1fr → 0fr grid row over a clipped body, so the rows slide
+   instead of popping and the two columns fold in lockstep off one class.
+   The clip's own `padding-top` is what spaces the first property row off the
+   lane; putting it here rather than as a gap on the group means a closed
+   disclosure occupies exactly nothing. */
+.tl-props > .collapsible-clip,
+.tl-prop-lanes > .collapsible-clip { display: flex; flex-direction: column; gap: var(--tl-prop-gap); padding-top: var(--tl-prop-gap); }
+/* The DS clip bleeds 4px so a focus ring survives the crop. A key diamond is a
+   12px square rotated 45°, so it reaches ~8.5px past the centre it is pinned
+   to, and a key at t=0 sits on the lane's edge — the lane side needs the wider
+   bleed or the first key of every track gets sliced in half. */
+.tl-prop-lanes > .collapsible-clip { margin-inline: -9px; padding-inline: 9px; }
+/* Flush under the layer's own name — past the twisty and the dot (12 + 6 + 7 +
+   6), so the properties read as hanging off the name rather than off the row. */
+.tl-prop-name { height: var(--tl-prop-h); display: flex; align-items: center; padding-left: calc(var(--space-2) + 31px); font: var(--type-label); font-size: var(--text-2xs); color: var(--ctl-hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A shallower cut than `.tl-lane`: the merged lane above is the layer, these are
+   the detail inside it. */
+.tl-prop-lane { position: relative; height: var(--tl-prop-h); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ctl-panel) 55%, transparent); }
+.tl-prop-lane.is-off { opacity: 0.4; }
+/* Smaller diamonds too, so a property key reads as part of the mark above it
+   rather than competing with it. */
+.tl-prop-lane .tl-key { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-width: 1px; }
+
+.tl-canvas { position: relative; background: var(--ctl-track); border-radius: 14px; padding: 0 10px; overflow: hidden; cursor: ew-resize; }
+.tl-ruler { position: relative; height: var(--tl-ruler-h); }
+.tl-tick { position: absolute; top: 8px; bottom: 0; left: calc(var(--t) * 100%); width: 1px; background: color-mix(in srgb, var(--ctl-on-track) 35%, transparent); }
+.tl-tick.is-major { top: 4px; background: color-mix(in srgb, var(--ctl-on-track) 70%, transparent); }
+.tl-tick i { position: absolute; top: -6px; left: 3px; font: var(--type-data); font-size: var(--text-2xs); color: var(--ctl-on-track); font-style: normal; }
+/* local: a floor of one lane. With an empty comp the lane column collapses and
+   the canvas shrinks to its ruler — a sliver to scrub, and the dock jumps the
+   moment the first layer lands. */
+.tl-lanes { position: relative; display: flex; flex-direction: column; gap: var(--tl-lane-gap); padding-bottom: 8px; min-height: var(--tl-lane-h); }
+/* local: in the dark themes switch-off and track are the same value, so the DS's
+   translucent lane fill would vanish into the canvas. Three flat steps instead —
+   canvas well, lane cut into it at the panel plate's depth, layer window lifted
+   back out — so the rows stay legible against the track behind them. */
+.tl-lane { position: relative; height: var(--tl-lane-h); border-radius: var(--radius-pill); background: var(--ctl-panel); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ctl-knob-off) 12%, transparent); }
+.tl-lane.is-off { opacity: 0.4; }
+
+/* local: keys drag horizontally to retime, so they take the grab cursor rather
+   than the DS's inert one — the canvas underneath asks for a scrub cursor, and
+   a key is the one thing on it that doesn't scrub. */
+.tl-key { position: absolute; top: 50%; left: calc(var(--t) * 100%); width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--ctl-knob-off); border: 2px solid var(--ctl-switch-off); border-radius: 3px; transform: rotate(45deg); cursor: grab; }
+.tl-key:hover { background: var(--ctl-knob-on); }
+.tl-key[aria-selected="true"] { background: var(--ctl-accent); border-color: var(--ctl-knob-on); }
+.tl-key[data-ease="hold"] { border-radius: 0; }
+.tl-key[data-ease="linear"] { border-radius: 50%; }
+
+/* local: the lane area scrolls once the dock is dragged shorter than its
+   layers, and base.css styles scrollbars for the *page* — a mid-grey track and
+   an ink-ramp thumb, neither of which belongs on the dock's plate. A thumb in
+   the capsule colour, floated off the edge by a transparent border, and no
+   track at all. */
+.tl-body::-webkit-scrollbar { width: 10px; height: 10px; }
+.tl-body::-webkit-scrollbar-track { background: transparent; }
+.tl-body::-webkit-scrollbar-thumb { background: var(--ctl-track); background-clip: padding-box; border: 3px solid transparent; border-radius: var(--radius-pill); }
+.tl-body::-webkit-scrollbar-thumb:hover { background: var(--ctl-track-hover); background-clip: padding-box; }
+.tl-body::-webkit-scrollbar-corner { background: transparent; }
+
+/* The dashed edges are the work area's grips: the canvas hands a pointer within
+   a few pixels of one to the drag, and thickens the line to say so. */
+.tl-range { position: absolute; top: 0; bottom: 0; left: calc(10px + var(--in) * (100% - 20px)); width: calc((var(--out) - var(--in)) * (100% - 20px)); background: color-mix(in srgb, var(--ctl-on-track) 8%, transparent); border-left: 1px dashed var(--ctl-on-track); border-right: 1px dashed var(--ctl-on-track); pointer-events: none; }
+.tl-canvas.is-over-edge { cursor: col-resize; }
+.tl-range.is-dragging { border-left-color: var(--ctl-accent); border-right-color: var(--ctl-accent); background: color-mix(in srgb, var(--ctl-on-track) 14%, transparent); }
+.tl-canvas.is-over-edge .tl-range, .tl-range.is-dragging { border-left-style: solid; border-right-style: solid; border-left-width: 2px; border-right-width: 2px; }
+
+.tl-playhead { position: absolute; top: 0; bottom: 0; left: calc(10px + var(--t) * (100% - 20px)); width: 2px; margin-left: -1px; background: var(--ctl-accent); pointer-events: none; }
+.tl-head { position: absolute; top: 0; left: 50%; width: 12px; height: 10px; margin-left: -6px; background: var(--ctl-accent); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+/* local: the seeker's zoom readout, shown only while the window is not the whole
+   composition. The stage's `.ms-zoom` says the same thing in the same words; it
+   is not reused because that one is positioned against the stage's own box. */
+.tl-zoom { position: absolute; top: 3px; right: 10px; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: color-mix(in srgb, black 16%, transparent); backdrop-filter: blur(16px); color: var(--ctl-on-track); font: var(--type-data); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; pointer-events: none; }
+
+/* ---- The value graph ----------------------------------------------------
+   local, with no DS counterpart: the dock's other view of the same window,
+   showing what a property *does* between its keys rather than only when they
+   land. It replaces the lanes inside the canvas, so it inherits the seeker's
+   own padding, ruler, playhead and work area and nothing has to be positioned
+   twice.
+
+   The canvas becomes a flex column while it is open, so the graph takes
+   whatever height the dock's grip has left rather than a height of its own.
+   ------------------------------------------------------------------------- */
+.tl-canvas.is-graph { display: flex; flex-direction: column; }
+.tl-canvas.is-graph .tl-ruler { flex: none; }
+.tl-graph { position: relative; flex: 1; min-height: 120px; margin-bottom: 8px; }
+.tl-graph.is-empty { display: grid; place-items: center; font: var(--type-label); color: color-mix(in srgb, var(--ctl-on-track) 60%, transparent); }
+/* Stretched to the box rather than fitted, since the two axes measure different
+   things and neither has a natural aspect. `vector-effect` is what keeps the
+   strokes one pixel wide through that. */
+.tl-graph-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tl-graph-lines polyline, .tl-graph-lines line { fill: none; vector-effect: non-scaling-stroke; }
+/* The lanes that are not being shaped: context, not competition. */
+.tl-graph-line { stroke: color-mix(in srgb, var(--ctl-on-track) 26%, transparent); stroke-width: 1; }
+.tl-graph-line.is-active { stroke: var(--ctl-accent); stroke-width: 2; }
+.tl-graph-stems line { stroke: color-mix(in srgb, var(--ctl-accent) 55%, transparent); stroke-width: 1; stroke-dasharray: 2 2; }
+
+/* Keys and handles are positioned elements rather than SVG, so they keep their
+   shape and their hit area whatever the box's aspect ratio is — the same `--t`
+   idiom the lanes use for a keyframe. */
+.tl-graph-key, .tl-graph-handle { position: absolute; left: calc(var(--x) * 100%); top: calc(var(--y) * 100%); cursor: grab; }
+/* A diamond, so a key looks like a key here too. Hollow until it has been
+   shaped by hand, which is the one thing this view is for. */
+.tl-graph-key { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; background: var(--ctl-track); border: 2px solid var(--ctl-accent); border-radius: 2px; transform: rotate(45deg); }
+.tl-graph-key.is-shaped { background: var(--ctl-accent); }
+.tl-graph-key[aria-selected="true"] { background: var(--ctl-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ctl-accent) 35%, transparent); }
+/* Round, so a handle never reads as a keyframe. Smaller, because it is the
+   detail on one. */
+.tl-graph-handle { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; background: var(--ctl-on-track); border: 1px solid var(--ctl-accent); border-radius: 50%; }
+.tl-graph-handle:hover { background: var(--ctl-accent); }
+.tl-graph.is-dragging, .tl-graph.is-dragging * { cursor: grabbing; }
+/* The focused lane's own numbers. Every lane is normalised to its own range, so
+   there is no axis the whole box shares — this says whose it is. */
+.tl-graph-axis { position: absolute; inset: 0 auto 0 2px; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; font: var(--type-data); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ctl-on-track) 55%, transparent); pointer-events: none; }
+
+/* The name column in graph mode: the selected layer's properties, one of which
+   carries the handles. Same rows as the layer names, so the column does not
+   change shape when the view does. */
+.tl-graph-names { gap: 4px; }
+.tl-graph-name { width: 100%; cursor: default; }
+.tl-graph-name.is-selected { box-shadow: inset 0 0 0 1px var(--ctl-accent); }
+/* Enough distinct hues to tell a handful of context curves apart, and a
+   repeat past that — the focused lane is the accent, so these only have to
+   differ from each other. */
+.tl-graph-swatch { width: 7px; height: 7px; flex-shrink: 0; border-radius: 2px; background: hsl(calc(var(--n) * 47deg + 190) 65% 60%); }
+
+
+/* Overshoot, over the graph's top-right corner. Floated rather than in flow, so
+   turning it on does not take height from the curve it is about; top-*right*
+   because the axis numbers already own the left edge.
+
+   No look of its own: it is `.tl-seg` and `.tl-btn`, the same segmented control
+   the transport and the resolution strip are, for the reason given there — the
+   app has one answer to what a row of exclusive choices looks like. Exactly one
+   chip is on, except where the curve was dragged by hand and matches no preset,
+   which is the honest reading of a `radiogroup` with nothing checked. */
+.tl-graph-ease { position: absolute; top: 4px; right: 4px; z-index: 1; }
+.tl-graph-ease .tl-btn { height: 20px; font-size: var(--text-2xs); }
+
+
+/* ---- local: open-action additions ------------------------------------- */
+
+/* pretty-panels inverted one name this block was written against: the old
+   design system's `--ctl-knob-off` was the *light* knob riding a dark capsule,
+   and the kit's equivalent is `--ctl-on-track`. Remapped for the timeline's
+   subtree only, so the kit's own toggles keep their knobs. */
+.tl { --ctl-knob-off: var(--ctl-on-track); }
+
+.tl.is-retiming, .tl.is-retiming * { cursor: grabbing; }
+
+/* Graph mode's name column: the three groups, then the selected group's keyed
+   channels. Same row height as the lanes so the column keeps its rhythm. */
+.tl-graph-group { width: 100%; font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); }
+.tl-graph-group.is-selected { box-shadow: inset 0 0 0 1px var(--ctl-accent); }
+
+/* ---- local: pillotalk additions --------------------------------------- */
+
+/* The names this block was written against that the kit doesn't define —
+   open-action aliases them on :root; here they are kept to the dock. */
+.dock-tl {
+  --ctl-row-hover: var(--ctl-row-raised);
+  --border-width: 1px;
+  /* Mono for numeric readouts (timecode, ruler labels). */
+  --type-data: var(--fw-medium) var(--text-sm) / var(--lh-normal) var(--font-mono);
+}

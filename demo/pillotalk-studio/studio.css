@@ -1,8 +1,8 @@
 /* ============================================================
-   Pillotalk Studio, browser variant — a full-bleed stage with the glyphs,
-   inspector and preview plates docked over its corners. pretty-panels owns
-   every control look; this file positions the plates and draws the sheet,
-   from tokens.
+   Pillotalk Studio, browser variant — a full-bleed stage with the glyphs and
+   inspector plates docked over its top corners, over the timeline dock.
+   pretty-panels owns every control look; this file positions the plates and
+   draws the sheet, from tokens.
    ============================================================ */
 
 html,
@@ -31,10 +31,21 @@ body {
   --artboard-edge: color-mix(in srgb, #7a6cff 45%, transparent);
   --guide-ink: #35c8e0;
 
-  --mono-h: 212;
-  --mono-s: 12%;
-  --mono-l: 90;
+  --mono-h: 200;
+  --mono-s: 15%;
+  --mono-l: 85;
   --stage-bg: white;
+
+  /* The capsules follow the plate's polarity rather than the kit's pinned
+     white-on-track: on a light plate a pale track and a lighter accent under
+     dark labels, and the mirror image on a dark one — a deep track and a
+     darker accent under white. Each lightness swings about 50% by
+     --mono-sgn (+1 light, -1 dark), so the two modes are reflections. */
+  --ctl-track:        hsl(var(--mono-h) var(--mono-s) calc((50 + 24 * var(--mono-sgn)) * 1%));
+  --ctl-track-hover:  hsl(var(--mono-h) var(--mono-s) calc((50 + 18 * var(--mono-sgn)) * 1%));
+  --ctl-accent:       hsl(var(--mono-h) var(--mono-sa) calc((50 + 12 * var(--mono-sgn)) * 1%));
+  --ctl-accent-hover: hsl(var(--mono-h) calc(var(--mono-sa) * 1.2) calc((50 + 6 * var(--mono-sgn)) * 1%));
+  --ctl-on-track:     hsl(var(--mono-h) var(--mono-s) calc((53 - 41 * var(--mono-sgn)) * 1%));
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,6 +59,8 @@ body {
    artboards are the grid. */
 .pt-app {
   position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
   overflow: hidden;
   background: var(--stage-bg);
@@ -61,6 +74,14 @@ body {
 }
 
 /* ---- Stage ------------------------------------------------------------- */
+
+/* The stage takes what the timeline dock leaves: the dock keeps its own
+   height, and the stage, which measures its own box, refits into the rest. */
+.pt-stage-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
 
 .pt-stage {
   position: absolute;
@@ -237,8 +258,7 @@ body {
 
 /* ---- Dock -------------------------------------------------------------- */
 
-/* The inspector and preview, docked over the stage's right edge: one column,
-   the inspector from the top corner, the preview pushed to the bottom one.
+/* The inspector, docked over the stage's right edge from its top corner.
    The column itself lets drags through to the stage; only the plates catch. */
 .pt-dock {
   position: absolute;
@@ -294,8 +314,7 @@ body {
   }
 }
 
-/* The tall plates — the inspector, the glyphs — give up height first, and
-   scroll inside their slots. */
+/* The plates give up height to the stage, and scroll inside their slots. */
 .pt-dock-slot.is-scrolling {
   flex: 0 1 auto;
   overflow-y: auto;
@@ -306,25 +325,160 @@ body {
   display: none;
 }
 
-.pt-dock-slot.is-preview {
-  flex: none;
-  margin-top: auto;
-}
-
-/* As wide as the column, wrapping past it; capped so a big size can't push
-   the inspector off the top. */
-.pt-dock-preview {
-  max-height: 40vh;
-  overflow: auto;
-  scrollbar-width: none;
-}
-.pt-dock-preview .preview-text {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
 .pt-dock input,
 .pt-dock textarea {
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* ---- Keyframe gutters ------------------------------------------------------
+   open-action's, beside each keyable inspector control: the circle that arms
+   a setting and the diamond for the frame under the playhead.
+   ------------------------------------------------------------------------- */
+
+.insp-prop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.insp-ctl {
+  flex: 1;
+  min-width: 0;
+}
+.insp-prop.is-locked .insp-ctl {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* The two glyphs stack, so the gutter is one glyph wide and the control keeps
+   nearly the panel's full width. Fixed, so a static row holds the column. */
+.insp-keys {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 16px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  /* The kit's capsule ground, the same as the control beside it. */
+  background: var(--ctl-track);
+}
+
+.insp-arm {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 1.5px solid color-mix(in srgb, var(--ctl-on-track) 70%, transparent);
+  border-radius: 50%;
+  background: transparent;
+  cursor: default;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.insp-arm:hover:not(:disabled) {
+  border-color: var(--ctl-knob-on);
+}
+.insp-arm[aria-pressed='true'] {
+  background: var(--ctl-accent);
+  border-color: var(--ctl-accent);
+}
+
+/* The diamond: a key on the frame under the playhead. A rotated square, the
+   way the timeline draws `.tl-key` — hollow means the frame could take a key,
+   filled means it has one. */
+.insp-diamond {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 1.5px solid color-mix(in srgb, var(--ctl-on-track) 70%, transparent);
+  background: transparent;
+  transform: rotate(45deg);
+  cursor: default;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.insp-diamond:hover:not(:disabled) {
+  border-color: var(--ctl-knob-on);
+}
+.insp-diamond[aria-pressed='true'] {
+  background: var(--ctl-accent);
+  border-color: var(--ctl-accent);
+}
+/* Inert on a static setting — faded rather than removed, so every row reads
+   the same and the shape is there the moment the setting is armed. */
+.insp-diamond:disabled,
+.insp-arm:disabled {
+  opacity: 0.35;
+}
+
+/* ---- Canvas ---------------------------------------------------------------
+   The sidebar's other tab: a frame on the stage with a line of text set in the
+   font, drawn from the glyphs' paths so it plays with the timeline.
+   ------------------------------------------------------------------------- */
+
+/* The frame: a sheet of the panel's ground, edged like an artboard. */
+/* A matte: black ground, white letters, in either theme. */
+.pt-canvas-frame {
+  fill: #000;
+  stroke: var(--artboard-edge);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.pt-canvas-letter {
+  cursor: pointer;
+}
+.pt-canvas-letter .pt-ink {
+  fill: #fff;
+}
+.pt-canvas-letter .pt-stroke {
+  stroke: #fff;
+}
+/* The selected letter takes the accent, so it's plain which glyph the
+   inspector is keying. */
+.pt-canvas-letter[data-selected] .pt-stroke {
+  stroke: var(--ctl-accent);
+}
+.pt-canvas-letter[data-selected] .pt-ink {
+  fill: var(--ctl-accent);
+}
+
+/* The canvas's text: label above, a box the panel's width that grows a row
+   per line, on the kit's text-field look. */
+.pt-canvas-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.pt-canvas-field-label {
+  font: var(--type-label);
+  color: var(--ctl-text);
+}
+.pt-canvas-text {
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.pt-canvas-dims {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.pt-canvas-dims-label {
+  font: var(--type-label);
+  color: var(--ctl-text);
+}
+
+/* Docked, the tabs lead the plate's body, under its own header. */
+.pt-dock-tabs {
+  margin: 0 calc(var(--space-3) * -1) var(--space-2);
 }

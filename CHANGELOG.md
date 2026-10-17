@@ -14,6 +14,46 @@ Desktop window chrome (`AppShell`, `TitleBar`, `WindowControls`) on a
 `pretty-panels/electron`, `pretty-panels/preload` and `pretty-panels/main`.
 Neither has shipped in a release yet.
 
+## [0.3.2-alpha] — 2026-10-17
+
+Lighter capsule tracks, and Pillotalk Studio on the docs site. Nothing here is
+breaking.
+
+### Added
+
+- **Pillotalk Studio, an app built on the kit, is served beside the docs** at
+  `/pretty-panels/pillotalk-studio/` and linked from a new Experiments section
+  on the home page. It is a font editor: import SVG glyphs, set weight, caps and
+  spacing in a docked inspector, and export an `.otf`. It is a demo page, not
+  part of the package — nothing under `src/` depends on it.
+
+  Since its first cut it has gained a **Canvas** tab beside the glyph sheet (a
+  fixed frame with a line of text set in the font: tracking, leading, staggered
+  repeats and weight, and a write-on), **keyframes** on weight, width, offset
+  and the new trim-paths controls, a **timeline** along the bottom that resizes
+  and folds down to its transport, **Export as MP4** of the canvas over the
+  timeline's work area, and Space to play and pause on the Canvas tab. The
+  Preview panel is gone. Its capsules follow the plate's polarity — dark labels
+  on pale tracks in light mode, white on deep ones in dark.
+
+  `mediabunny` (WebCodecs encoding and MP4 muxing) joins opentype.js and
+  clipper-lib as a devDependency for the docs build only, loaded the first time
+  a video is exported.
+
+### Changed
+
+- **Capsule tracks are lighter.** `--ctl-track` goes from 38% to 54% lightness
+  and `--ctl-track-hover` from 32% to 46%, so every capsule ground — `Slider`,
+  `TextField`, `Select`, `Vector`, `Stepper`, the radio dots — reads as a
+  mid-tone rather than a deep one, in both polarities. Hue and saturation still
+  come from `--mono-h` / `--mono-s`.
+
+  The labels on them are unchanged: `--ctl-on-track` is still pinned at 96%. On
+  a grey ramp that takes white-on-track from about 5.6:1 down to about 3.2:1
+  (4.2:1 on hover), under WCAG AA's 4.5:1 for small text. An app that needs AA
+  can set `--ctl-track` / `--ctl-track-hover` back, or flip `--ctl-on-track` to
+  dark on a light plate the way Pillotalk Studio does (above).
+
 ## [0.3.1-alpha] — 2026-09-26
 
 A surface that floats over the work, the commands that usually go on it, and a
@@ -267,7 +307,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...HEAD
+[0.3.2-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...v0.3.2-alpha
 [0.3.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.0-alpha...v0.3.1-alpha
 [0.3.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.2.0-alpha...v0.3.0-alpha
 [0.2.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.1.0-alpha...v0.2.0-alpha
