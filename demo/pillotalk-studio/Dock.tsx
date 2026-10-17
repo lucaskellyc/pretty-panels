@@ -3,8 +3,8 @@ import { Panel } from '../../src';
 import type { FontProject } from './font/model';
 import { codepointLabel } from './font/model';
 import { Inspector } from './Inspector';
-import type { EditMessage, PreviewSettings } from './types';
-import { PreviewLine, usePreviewFace } from './Preview';
+import type { KeyContext } from './timeline/KeyGutter';
+import type { EditMessage } from './types';
 
 /** The docked column's width, which framing keeps the sheet clear of. */
 export const DOCK_W = 320;
@@ -78,21 +78,14 @@ export function DockPanel({
   );
 }
 
-/** Which docked panels are rolled up to their headers. */
-export interface DockState {
-  inspector: boolean;
-  preview: boolean;
-}
-
 /**
- * The inspector and preview, docked over the stage's right edge — the
- * inspector in the top corner, the preview in the bottom one. Edits go
- * straight to the studio's handler.
+ * The inspector, docked over the stage's top-right corner. Edits go straight
+ * to the studio's handler.
  */
 export function Dock({
   project,
+  keys,
   char,
-  preview,
   collapsed,
   onCollapsedChange,
   onEdit,
@@ -100,54 +93,42 @@ export function Dock({
   onExport,
   onReset,
 }: {
+  /** The project at the playhead. */
   project: FontProject;
+  keys: KeyContext;
   char: string | null;
-  preview: PreviewSettings;
-  collapsed: DockState;
-  onCollapsedChange: (name: keyof DockState, collapsed: boolean) => void;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
   onEdit: (edit: EditMessage) => void;
   onImport: () => void;
   onExport: () => void;
   onReset: () => void;
 }) {
-  const face = usePreviewFace(project);
   const title = char ? `${char}  ${codepointLabel(char)}` : 'Inspector';
 
   return (
-    // One column down the right edge: the inspector from the top, the preview
-    // pushed to the bottom. A tall inspector scrolls rather than run under it.
+    // A column down the right edge; a tall inspector scrolls inside it.
     <div className="pt-dock" style={{ width: DOCK_W }}>
       <DockPanel
         className="pt-dock-slot is-scrolling"
         title={title}
-        collapsed={collapsed.inspector}
-        onCollapsedChange={(c) => onCollapsedChange('inspector', c)}
+        collapsed={collapsed}
+        onCollapsedChange={onCollapsedChange}
       >
         <Inspector
           project={project}
+          keys={keys}
           char={char}
-          preview={preview}
-          onPreviewChange={(value) => onEdit({ type: 'preview', value })}
           onBearingChange={(side, value) => char && onEdit({ type: side, char, value })}
           onWidthChange={(value) => char && onEdit({ type: 'width', char, value })}
           onOffsetChange={(value) => char && onEdit({ type: 'offsetY', char, value })}
+          onTrimChange={(field, value) => char && onEdit({ type: 'trim', char, field, value })}
           onWeightChange={(value) => onEdit({ type: 'weight', value })}
           onCapChange={(cap) => onEdit({ type: 'cap', cap })}
           onImport={onImport}
           onExport={onExport}
           onReset={onReset}
         />
-      </DockPanel>
-
-      <DockPanel
-        className="pt-dock-slot is-preview"
-        title="Preview"
-        collapsed={collapsed.preview}
-        onCollapsedChange={(c) => onCollapsedChange('preview', c)}
-      >
-        <div className="pt-dock-preview">
-          <PreviewLine {...face} {...preview} />
-        </div>
       </DockPanel>
     </div>
   );

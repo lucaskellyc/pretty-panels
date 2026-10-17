@@ -1,20 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Tabs } from '../../src';
 import { exportOtf } from './font/export';
 import { CHARSET, createProject, isDrawn, shiftGlyph, toLineCap, type FontProject, type GlyphData, type LineCap } from './font/model';
 import { inkBounds } from './font/outline';
 import { importSvgs } from './font/svgImport';
 import { layoutSheet } from './font/sheet';
-import { DOCK_W, Dock, DockPanel, type DockState } from './Dock';
-import type { EditMessage, PreviewSettings } from './types';
+import { CanvasControls, CanvasStage, useCanvasSettings } from './Canvas';
+import { DOCK_W, Dock, DockPanel } from './Dock';
+import type { EditMessage } from './types';
 import { Outliner } from './Outliner';
 import { Stage } from './Stage';
+import { glyphProp, groupOf, resolveProject } from './timeline/channels';
+import type { KeyContext } from './timeline/KeyGutter';
+import { anim, bindProject, FPS, keyAtPlayhead, setValue, toggle, toggleArmed, transport, unkeyAtPlayhead } from './timeline/state';
+import { TimelineDock } from './timeline/Timeline';
 import { useFitView } from './view';
 
 const STORAGE_KEY = 'pillotalk-studio:project';
 /** Whether the glyphs plate is rolled up, remembered with the project. */
 const SIDEBAR_KEY = 'pillotalk-studio:sidebar-collapsed';
-/** Which right-hand plates are rolled up. */
+/** Whether the inspector plate is rolled up. */
 const DOCK_KEY = 'pillotalk-studio:dock-collapsed';
+/** Which of the left plate's tabs is open: the glyph sheet or the canvas. */
+const VIEW_KEY = 'pillotalk-studio:view';
+
+type StudioView = 'glyphs' | 'canvas';
+const VIEW_TABS = [
+  { id: 'glyphs', label: 'Glyphs' },
+  { id: 'canvas', label: 'Canvas' },
+];
 
 /** The glyphs plate's width, docked over the stage's left edge. */
 const SIDEBAR_W = 264;
@@ -37,14 +51,14 @@ function loadProject(): FontProject {
 }
 
 /**
- * Pillotalk Studio's browser variant: a full-bleed specimen sheet with the
- * glyphs plate docked in its top-left corner, the inspector in its top-right
- * and the preview in its bottom-right. Every plate rolls up to its header.
+ * Pillotalk Studio's browser variant: a full-bleed stage — the specimen sheet,
+ * or the canvas — with the glyphs plate docked in its top-left corner and the
+ * inspector in its top-right, over the timeline dock. Every plate rolls up to
+ * its header, and the timeline folds down to its transport bar.
  */
 export function App() {
   const [project, setProject] = useState<FontProject>(loadProject);
   const [char, setChar] = useState<string | null>(null);
-  const [preview, setPreview] = useState<PreviewSettings>({ text: 'Pillotalk', size: 56 });
   const fileRef = useRef<HTMLInputElement>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
@@ -61,25 +75,104 @@ export function App() {
     }
   }, [sidebarCollapsed]);
 
-  // ---- dock ---------------------------------------------------------------
-
-  const [dockCollapsed, setDockCollapsed] = useState<DockState>(() => {
+  // The left plate's tabs: the glyph sheet, or the canvas — each brings its
+  // own stage with it.
+  const [studioView, setStudioView] = useState<StudioView>(() => {
     try {
-      return { inspector: false, preview: false, ...JSON.parse(localStorage.getItem(DOCK_KEY) ?? '{}') };
+      return localStorage.getItem(VIEW_KEY) === 'canvas' ? 'canvas' : 'glyphs';
     } catch {
-      return { inspector: false, preview: false };
+      return 'glyphs';
     }
   });
   useEffect(() => {
     try {
-      localStorage.setItem(DOCK_KEY, JSON.stringify(dockCollapsed));
+      localStorage.setItem(VIEW_KEY, studioView);
+    } catch {
+      /* ignore */
+    }
+  }, [studioView]);
+  const [canvas, setCanvas] = useCanvasSettings();
+  const onCanvas = studioView === 'canvas';
+
+  // Space plays and pauses the canvas — the one shortcut the page takes, and
+  // only on the tab built for watching. Typing a space in a field is left be.
+  useEffect(() => {
+    if (!onCanvas) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+      e.preventDefault();
+      if (!e.repeat) toggle();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCanvas]);
+
+  // ---- dock ---------------------------------------------------------------
+
+  const [dockCollapsed, setDockCollapsed] = useState<boolean>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(DOCK_KEY) ?? '{}').inspector === true;
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(DOCK_KEY, JSON.stringify({ inspector: dockCollapsed }));
     } catch {
       /* ignore */
     }
   }, [dockCollapsed]);
 
-  const sheet = useMemo(() => layoutSheet(project), [project]);
-  const fitView = useFitView(sheet.width, sheet.height);
+  // ---- timeline ------------------------------------------------------------
+
+  // The project is the timeline's base values: a static channel's edits land
+  // in it, and a disarmed or emptied track freezes its last value into it.
+  const projectRef = useRef(project);
+  projectRef.current = project;
+  useEffect(
+    () =>
+      bindProject({
+        get: () => projectRef.current,
+        update: (fn) => setProject((p) => (projectRef.current = fn(p))),
+      }),
+    [],
+  );
+
+  const animState = anim.use();
+  // The canvas's write-on is animation without keys.
+  const animated = Object.keys(animState.doc.tracks).length > 0 || canvas.writeOn;
+  // Only an animated project follows the playhead; a static one doesn't
+  // re-render as it moves.
+  const time = transport.useSelect((s) => (animated ? s.time : 0));
+  /** The project at the playhead: what every view draws and Export writes. */
+  const shown = useMemo(
+    () => resolveProject(project, { tracks: animState.doc.tracks, muted: animState.muted }, time),
+    [project, animState, time],
+  );
+
+  /** The project at any time, for the canvas's staggered repeats. */
+  const resolveAt = useCallback(
+    (t: number) => resolveProject(project, { tracks: animState.doc.tracks, muted: animState.muted }, t),
+    [project, animState],
+  );
+
+  const keys: KeyContext = {
+    tracks: animState.doc.tracks,
+    locked: animState.locked,
+    fps: FPS,
+    time,
+    onArm: toggleArmed,
+    onKey: keyAtPlayhead,
+    onUnkey: unkeyAtPlayhead,
+  };
+
+  // The sheet is laid out at the playhead, so an animated width moves its
+  // neighbours; it is fitted by the static one, so playback doesn't zoom.
+  const sheet = useMemo(() => layoutSheet(shown), [shown]);
+  const baseSheet = useMemo(() => layoutSheet(project), [project]);
+  const fitView = useFitView(baseSheet.width, baseSheet.height);
   const drawnCount = CHARSET.filter((c) => isDrawn(project.glyphs[c])).length;
 
   useEffect(() => {
@@ -148,24 +241,31 @@ export function App() {
 
   /** Side bearings are measured from the ink, so they only mean something for
    *  a drawn glyph. Moving the left one carries the ink and keeps the right
-   *  one; the right one is the advance. */
-  const setBearing = (c: string, side: 'lsb' | 'rsb', value: number) =>
-    editGlyph(c, (g, p) => {
-      const ink = inkBounds(g, p.strokeWeight);
-      if (!ink) return g;
-      if (side === 'rsb') return { ...g, advanceWidth: Math.max(1, Math.round(ink.xMax + value)) };
-      const dx = value - ink.xMin;
-      return { ...shiftGlyph(g, dx), advanceWidth: Math.max(1, Math.round(g.advanceWidth + dx)) };
-    });
+   *  one; the right one is the advance. Both are read at the playhead, and
+   *  the advance goes through the timeline — keyed there if it is animated. */
+  const setBearing = (c: string, side: 'lsb' | 'rsb', value: number) => {
+    const g = shown.glyphs[c];
+    const ink = g && inkBounds(g, shown.strokeWeight);
+    const width = glyphProp('width', c);
+    if (!g || !ink || animState.locked.includes(groupOf(width))) return;
+    if (side === 'rsb') return setValue(width, Math.max(1, Math.round(ink.xMax + value)));
+    const dx = value - ink.xMin;
+    editGlyph(c, (glyph) => shiftGlyph(glyph, dx));
+    setValue(width, Math.max(1, Math.round(g.advanceWidth + dx)));
+  };
 
+  /** The keyable values go through the timeline, which writes the project
+   *  itself while a value is static and keys it at the playhead once armed. */
   const onEdit = (edit: EditMessage) => {
-    if (edit.type === 'weight') setProject((p) => ({ ...p, strokeWeight: edit.value }));
+    if (edit.type === 'weight') setValue('weight', edit.value);
     else if (edit.type === 'cap') setAllCaps(edit.cap);
     else if (edit.type === 'lsb' || edit.type === 'rsb') setBearing(edit.char, edit.type, edit.value);
-    else if (edit.type === 'width')
-      editGlyph(edit.char, (g) => ({ ...g, advanceWidth: Math.max(1, Math.round(edit.value)) }));
-    else if (edit.type === 'offsetY') editGlyph(edit.char, (g) => ({ ...g, offsetY: edit.value || undefined }));
-    else if (edit.type === 'preview') setPreview((p) => ({ ...p, ...edit.value }));
+    else if (edit.type === 'width') setValue(glyphProp('width', edit.char), Math.max(1, Math.round(edit.value)));
+    else if (edit.type === 'offsetY') setValue(glyphProp('offsetY', edit.char), edit.value);
+    else if (edit.type === 'trim') setValue(glyphProp(edit.field, edit.char), edit.value);
+    else if (edit.type === 'arm') toggleArmed(edit.prop);
+    else if (edit.type === 'key') keyAtPlayhead(edit.prop);
+    else if (edit.type === 'unkey') unkeyAtPlayhead(edit.prop);
   };
 
   /** Each file replaces its glyph whole. The weight is taken from the files
@@ -191,15 +291,43 @@ export function App() {
     if (problems.length) window.alert(`Imported ${result.glyphs.length} glyphs.\n\n${problems.join('\n')}`);
   };
 
+  /** The font at the playhead, as every view shows it. */
   const doExport = () => {
-    if (drawnCount > 0) exportOtf(project);
+    if (drawnCount > 0) exportOtf(shown);
   };
 
-  /** Back to an empty project — every glyph and parameter. The preview's
-   *  sample is the reader's, not the font's, so it stays. */
+  // ---- video ---------------------------------------------------------------
+
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  /** The canvas over the work area, written to an .mp4 named for the font. */
+  const exportVideo = async () => {
+    if (videoProgress !== null) return;
+    setVideoProgress(0);
+    const name = `${project.familyName || 'Untitled'} ${project.styleName}`.trim().replace(/[^A-Za-z0-9]+/g, '-');
+    try {
+      // The encoder and muxer load on first use, not with the page.
+      const { exportMp4 } = await import('./videoExport');
+      await exportMp4({
+        resolveAt,
+        settings: canvas,
+        fps: FPS,
+        work: transport.get().work,
+        fileName: `${name || 'Untitled'}.mp4`,
+        onProgress: setVideoProgress,
+      });
+    } catch (e) {
+      window.alert(`Couldn't export the video.\n\n${e instanceof Error ? e.message : e}`);
+    } finally {
+      setVideoProgress(null);
+    }
+  };
+
+  /** Back to an empty project — every glyph, parameter and key. The canvas's
+   *  text and frame are the reader's, not the font's, so they stay. */
   const reset = () => {
-    if (!window.confirm('Reset the font? Every imported glyph and setting will be cleared.')) return;
+    if (!window.confirm('Reset the font? Every imported glyph, setting and keyframe will be cleared.')) return;
     setProject(createProject());
+    anim.set({ doc: { ...anim.get().doc, tracks: {} }, muted: [], locked: [] });
     setChar(null);
   };
 
@@ -210,38 +338,75 @@ export function App() {
 
   return (
     <div className="pt-app">
-      <Stage
-        project={project}
-        sheet={sheet}
-        fitView={fitView}
-        char={char}
-        onSelectGlyph={setChar}
-        onFrame={frame}
-      />
+      <div className="pt-stage-area">
+        {/* Both stay mounted, the other one hidden: each keeps its own pan
+            and zoom across a switch, and is measured when it reappears. */}
+        <div hidden={onCanvas}>
+          <Stage
+            project={shown}
+            sheet={sheet}
+            fitView={fitView}
+            char={char}
+            onSelectGlyph={setChar}
+            onFrame={frame}
+          />
+        </div>
+        <div hidden={!onCanvas}>
+          <CanvasStage
+            project={shown}
+            resolveAt={resolveAt}
+            time={time}
+            settings={canvas}
+            char={char}
+            onSelectGlyph={setChar}
+          />
+        </div>
 
-      <div className="pt-dock is-left" style={{ width: SIDEBAR_W }}>
-        <DockPanel
-          className="pt-dock-slot is-scrolling"
-          title="Glyphs"
-          width={SIDEBAR_W}
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={setSidebarCollapsed}
-        >
-          <Outliner project={project} char={char} onPick={pick} />
-        </DockPanel>
+        <div className="pt-dock is-left" style={{ width: SIDEBAR_W }}>
+          <DockPanel
+            className="pt-dock-slot is-scrolling"
+            title={onCanvas ? 'Canvas' : 'Glyphs'}
+            width={SIDEBAR_W}
+            collapsed={sidebarCollapsed}
+            onCollapsedChange={setSidebarCollapsed}
+          >
+            {/* The plate's header is its title and roll-up; the tabs lead its
+                body instead. */}
+            <div className="pt-dock-tabs">
+              <Tabs
+                items={VIEW_TABS}
+                value={studioView}
+                onChange={(id) => setStudioView(id as StudioView)}
+                label="Sidebar"
+              />
+            </div>
+            {onCanvas ? (
+              <CanvasControls
+                settings={canvas}
+                onChange={setCanvas}
+                exportProgress={videoProgress}
+                onExportVideo={exportVideo}
+              />
+            ) : (
+              <Outliner project={shown} char={char} onPick={pick} />
+            )}
+          </DockPanel>
+        </div>
+
+        <Dock
+          project={shown}
+          keys={keys}
+          char={char}
+          collapsed={dockCollapsed}
+          onCollapsedChange={setDockCollapsed}
+          onEdit={onEdit}
+          onImport={() => fileRef.current?.click()}
+          onExport={doExport}
+          onReset={reset}
+        />
       </div>
 
-      <Dock
-        project={project}
-        char={char}
-        preview={preview}
-        collapsed={dockCollapsed}
-        onCollapsedChange={(name, c) => setDockCollapsed((d) => ({ ...d, [name]: c }))}
-        onEdit={onEdit}
-        onImport={() => fileRef.current?.click()}
-        onExport={doExport}
-        onReset={reset}
-      />
+      <TimelineDock selected={char} />
 
       {/* Import SVGs… opens this. */}
       <input

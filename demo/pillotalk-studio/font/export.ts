@@ -1,6 +1,7 @@
 import { Font, Glyph, Path } from 'opentype.js';
 import { type FontProject, type GlyphData, isDrawn } from './model';
 import { glyphOutlines } from './outline';
+import { trimmedGlyph } from './trim';
 
 /** PostScript glyph name: the letter or digit itself, `uniXXXX` otherwise. */
 function glyphName(char: string): string {
@@ -9,11 +10,11 @@ function glyphName(char: string): string {
 }
 
 /** Filled outlines only: strokes are expanded at the font's weight here, and
- *  the glyph's vertical offset applied. */
+ *  the glyph's trim and vertical offset applied. */
 function outline(glyph: GlyphData, weight: number): Path {
   const path = new Path();
   const dy = glyph.offsetY ?? 0;
-  for (const points of glyphOutlines(glyph, weight)) {
+  for (const points of glyphOutlines(trimmedGlyph(glyph), weight)) {
     path.moveTo(Math.round(points[0].x), Math.round(points[0].y + dy));
     for (const p of points.slice(1)) path.lineTo(Math.round(p.x), Math.round(p.y + dy));
     path.close();

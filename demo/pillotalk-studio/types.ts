@@ -1,10 +1,5 @@
 import type { LineCap } from './font/model';
-
-/** The preview plate's sample, set from the inspector. */
-export interface PreviewSettings {
-  text: string;
-  size: number;
-}
+import type { AnimProp, TrimField } from './timeline/channels';
 
 /** What the inspector asks of the studio. The studio owns the project, so
  *  these are requests it applies — never a project to replace its own with. */
@@ -17,4 +12,7 @@ export type EditMessage =
   /** One glyph's advance width; the ink stays put and the right bearing takes
    *  up the difference. */
   | { type: 'width'; char: string; value: number }
-  | { type: 'preview'; value: Partial<PreviewSettings> };
+  /** One glyph's trim-paths percentage. */
+  | { type: 'trim'; char: string; field: TrimField; value: number }
+  /** The keyframe gutter: the circle, and the diamond's add / remove. */
+  | { type: 'arm' | 'key' | 'unkey'; prop: AnimProp };

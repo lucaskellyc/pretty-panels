@@ -1,15 +1,16 @@
 import { Section, Select, Slider, Stepper, TextButton } from '../../src';
 import { CHARSET, isDrawn, type FontProject, type GlyphData, type LineCap } from './font/model';
 import { inkBounds } from './font/outline';
-import type { PreviewSettings } from './types';
-import { PreviewControls } from './Preview';
+import { glyphProp, type TrimField } from './timeline/channels';
+import { KeyRow, type KeyContext } from './timeline/KeyGutter';
 
 interface InspectorProps {
+  /** The project as it stands at the playhead — every animated value sampled. */
   project: FontProject;
+  /** The timeline, for the keyframe gutters beside the keyable controls. */
+  keys?: KeyContext;
   /** The glyph selected on the stage, or null for the font as a whole. */
   char: string | null;
-  preview: PreviewSettings;
-  onPreviewChange: (next: Partial<PreviewSettings>) => void;
   onWeightChange: (weight: number) => void;
   /** Set every glyph's caps at once. */
   onCapChange: (cap: LineCap) => void;
@@ -17,6 +18,8 @@ interface InspectorProps {
   /** The glyph's advance width, in font units. */
   onWidthChange: (value: number) => void;
   onOffsetChange: (value: number) => void;
+  /** One of the glyph's trim-paths percentages. */
+  onTrimChange: (field: TrimField, value: number) => void;
   onImport: () => void;
   onExport: () => void;
   /** Start over from an empty project. */
@@ -34,12 +37,16 @@ const units = (v: number) => `${Math.round(v)} u`;
 function GlyphSections({
   glyph,
   weight,
+  keys,
   onBearingChange,
   onWidthChange,
   onOffsetChange,
+  onTrimChange,
 }: {
   glyph: GlyphData;
   weight: number;
+  keys?: KeyContext;
+  onTrimChange: InspectorProps['onTrimChange'];
   onBearingChange: InspectorProps['onBearingChange'];
   onWidthChange: InspectorProps['onWidthChange'];
   onOffsetChange: InspectorProps['onOffsetChange'];
@@ -48,15 +55,17 @@ function GlyphSections({
   return (
     <>
       <Section title="Spacing">
-        <Stepper
-          label="Width"
-          hint={ink ? `Advance — ink ${Math.round(ink.xMax - ink.xMin)} u wide` : 'Advance'}
-          value={Math.round(glyph.advanceWidth)}
-          step={5}
-          min={1}
-          onChange={onWidthChange}
-          format={units}
-        />
+        <KeyRow prop={glyphProp('width', glyph.char)} ctx={keys}>
+          <Stepper
+            label="Width"
+            hint={ink ? `Advance — ink ${Math.round(ink.xMax - ink.xMin)} u wide` : 'Advance'}
+            value={Math.round(glyph.advanceWidth)}
+            step={5}
+            min={1}
+            onChange={onWidthChange}
+            format={units}
+          />
+        </KeyRow>
         <Stepper
           label="Left"
           hint={ink ? 'Side bearing — moves the ink' : 'Nothing drawn to space'}
@@ -78,18 +87,48 @@ function GlyphSections({
       </Section>
 
       <Section title="Position">
-        <Stepper
-          label="Vertical offset"
-          hint="Up from the baseline; negative drops it"
-          value={glyph.offsetY ?? 0}
-          step={5}
-          onChange={onOffsetChange}
-          format={units}
-        />
+        <KeyRow prop={glyphProp('offsetY', glyph.char)} ctx={keys}>
+          <Stepper
+            label="Vertical offset"
+            hint="Up from the baseline; negative drops it"
+            value={Math.round(glyph.offsetY ?? 0)}
+            step={5}
+            onChange={onOffsetChange}
+            format={units}
+          />
+        </KeyRow>
+      </Section>
+
+      <Section title="Trim paths">
+        {glyph.strokes?.length ? (
+          TRIMS.map(({ field, label, min, fallback }) => (
+            <KeyRow key={field} prop={glyphProp(field, glyph.char)} ctx={keys}>
+              <Slider
+                label={label}
+                value={glyph[field] ?? fallback}
+                min={min}
+                max={100}
+                step={0.1}
+                onChange={(v) => onTrimChange(field, v)}
+                format={(v) => `${v.toFixed(1)}%`}
+              />
+            </KeyRow>
+          ))
+        ) : (
+          <p className="pt-empty">No stroke paths to trim.</p>
+        )}
       </Section>
     </>
   );
 }
+
+/** The trim's three percentages, in After Effects' order. Key End from 0 to
+ *  100 to write the letter on; Offset slides the drawn part along. */
+const TRIMS: { field: TrimField; label: string; min: number; fallback: number }[] = [
+  { field: 'trimStart', label: 'Start', min: 0, fallback: 0 },
+  { field: 'trimEnd', label: 'End', min: 0, fallback: 100 },
+  { field: 'trimOffset', label: 'Offset', min: -100, fallback: 0 },
+];
 
 const CAPS: LineCap[] = ['round', 'square'];
 
@@ -107,18 +146,18 @@ function sharedCap(project: FontProject): LineCap | 'mixed' {
 /**
  * With a glyph selected, that glyph's spacing and position; with none, the
  * font-wide parameters — the knobs that re-draw every glyph at once — and the
- * files in and out. The preview's own controls in both, for the preview plate.
+ * files in and out.
  */
 export function Inspector({
   project,
+  keys,
   char,
-  preview,
-  onPreviewChange,
   onWeightChange,
   onCapChange,
   onBearingChange,
   onWidthChange,
   onOffsetChange,
+  onTrimChange,
   onImport,
   onExport,
   onReset,
@@ -132,21 +171,25 @@ export function Inspector({
         <GlyphSections
           glyph={glyph}
           weight={project.strokeWeight}
+          keys={keys}
           onBearingChange={onBearingChange}
           onWidthChange={onWidthChange}
           onOffsetChange={onOffsetChange}
+          onTrimChange={onTrimChange}
         />
       ) : (
         <Section title="Parameters">
-          <Slider
-            label="Weight"
-            value={project.strokeWeight}
-            min={10}
-            max={300}
-            step={1}
-            onChange={onWeightChange}
-            format={(v) => `${v} u`}
-          />
+          <KeyRow prop="weight" ctx={keys}>
+            <Slider
+              label="Weight"
+              value={project.strokeWeight}
+              min={10}
+              max={300}
+              step={1}
+              onChange={onWeightChange}
+              format={(v) => `${Math.round(v)} u`}
+            />
+          </KeyRow>
           <Select
             label="Caps"
             hint={cap === 'mixed' ? 'Glyphs differ — pick one to set them all' : 'All glyphs'}
@@ -159,11 +202,6 @@ export function Inspector({
           />
         </Section>
       )}
-
-      {/* Either way: the preview plate is driven from here. */}
-      <Section title="Preview">
-        <PreviewControls {...preview} onChange={onPreviewChange} />
-      </Section>
 
       {!glyph && (
         <Section title="Import / Export">

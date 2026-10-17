@@ -1,6 +1,7 @@
-import { memo, useRef, type MouseEvent, type PointerEvent } from 'react';
+import { memo, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react';
 import { strokePathData, type FontProject, type GlyphData, type Point } from './font/model';
 import type { Artboard as ArtboardBox, Sheet } from './font/sheet';
+import { trimmedGlyph } from './font/trim';
 import type { FitView } from './view';
 
 interface StageProps {
@@ -45,6 +46,7 @@ const Artboard = memo(function Artboard({
 }) {
   // Drawing against a lower top edge raises the glyph by its offset.
   const top = ascender - (glyph?.offsetY ?? 0);
+  const trimmed = useMemo(() => glyph && trimmedGlyph(glyph), [glyph]);
   return (
     <g transform={`translate(${box.x} ${box.y})`} data-char={box.char}>
       <rect
@@ -55,10 +57,10 @@ const Artboard = memo(function Artboard({
         pointerEvents="all"
       />
       <path className="pt-ink" d={fillData(glyph, top)} fillRule="nonzero" />
-      {glyph?.strokes?.length ? (
+      {glyph && trimmed?.strokes?.length ? (
         <path
           className="pt-stroke"
-          d={strokePathData(glyph.strokes, top)}
+          d={strokePathData(trimmed.strokes, top)}
           strokeWidth={weight}
           strokeLinecap={glyph.cap ?? 'round'}
           strokeLinejoin={glyph.join ?? 'round'}
