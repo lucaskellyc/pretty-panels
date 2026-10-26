@@ -165,6 +165,12 @@ export function App() {
   // where the sidebar is always a visible grid column.
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Name the tab (and the history entry) after the page, so tabs, bookmarks and
+  // a screen reader's page announcement say which component this is.
+  useEffect(() => {
+    document.title = page ? `${page.name} — PrettyPanels` : 'PrettyPanels';
+  }, [page]);
+
   // Close the drawer after navigating (link click or back/forward)...
   useEffect(() => setMenuOpen(false), [slug]);
   // ...and on Escape while it's open.
