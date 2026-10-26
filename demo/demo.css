@@ -555,11 +555,18 @@ body {
    they use the component tokens, not the page palette). */
 .doc-row {
   display: flex;
+  /* Wraps like the library's .switch-row: on a narrow plate the control takes
+     its own line, still right-aligned, instead of being clipped. */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  /* 10px, not 16: a vec4 beside "Rotation" needs just under the 300px a 340px
+     plate gives it, and would otherwise wrap even there. */
+  gap: 8px 10px;
   padding: 8px 0;
 }
+.doc-row > .doc-row-label { flex: 1 1 0; min-width: min-content; }
+.doc-row > :last-child { margin-left: auto; }
 .doc-row-label {
   font-size: 13px;
   color: var(--ctl-text);
@@ -944,6 +951,22 @@ body {
 @media (max-width: 560px) {
   .hero-poster {
     padding: 40px 24px 32px;
+  }
+  /* Too narrow for all three on one line — the seeker would be squeezed to a
+     sliver — so the button and stepper share a line and the seeker runs the
+     full width beneath them. */
+  .hero-transport {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-seek {
+    flex-basis: 100%;
+    order: 1;
+  }
+  /* The well's side padding is most of what squeezes an example panel on a
+     phone; the plate's own shadow is all the inset it needs. */
+  .doc-example {
+    padding: 32px 12px;
   }
 }
 

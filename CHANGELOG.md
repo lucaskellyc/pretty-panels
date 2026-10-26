@@ -43,6 +43,15 @@ Electron integration that were in development alongside it are gone.
   controls; the value follows raw mouse travel. Where the lock is refused, the
   page still turns off selection and hover for the length of the drag. Fields
   take `touch-action: none`, so a touch drag scrubs instead of panning.
+- **Panels no longer clip their controls on narrow screens**
+  ([#6](https://github.com/lucaskellyc/pretty-panels/issues/6)). A
+  `.switch-row` (`Toggle`, `TextField`, `RadioGroup`, `Stepper`, `Select`) whose label and
+  control don't fit side by side now wraps, dropping the control to its own
+  line, still right-aligned, instead of running past the plate's edge where
+  `.panel-body` cut it off. The label gives up width first, so a row only wraps
+  when even its longest word won't fit beside the control. A `GaugeRow` wraps
+  too, and a `Vector`'s fields shrink from 58px when the capsule is wider than
+  its row. Panels wide enough for their rows lay out exactly as before.
 
 ### Changed
 

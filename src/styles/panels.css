@@ -179,6 +179,7 @@
    and 2.7deg per unit walks the leading end-cap around that same arc. */
 .gauge-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-around;
   align-items: flex-start;
   padding: var(--space-2) 0;
@@ -308,12 +309,20 @@
 /* ---- Switch rows (Toggle) ---- */
 .switch-row {
   display: flex;
+  /* A panel narrower than label + control (a phone, a thin sidebar) drops the
+     control to its own line rather than letting .panel-body clip it. */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
   padding: var(--space-2) 0;
   user-select: none;
 }
+/* …and keeps it right-aligned there, where it sits when the row fits. The
+   label starts at its narrowest (longest word), so the row wraps only when even
+   that won't fit beside the control, not as soon as the label would rewrap. */
+.switch-row > .switch-meta { flex: 1 1 0; min-width: min-content; }
+.switch-row > :not(.switch-meta) { margin-left: auto; }
 .switch-meta { display: flex; flex-direction: column; gap: 2px; }
 .switch-meta .control-name {
   font-weight: var(--fw-bold);
@@ -551,10 +560,14 @@
   /* Hug the fields — a stretched capsule would round its corners in the empty
      space past the last field, leaving that field's square edge looking cut off. */
   width: fit-content;
+  /* …but never wider than the row it's in: on a narrow plate the fields give up
+     width (from 58px) instead of running past the edge. */
+  max-width: 100%;
   flex-shrink: 0;
 }
 .vector input {
-  width: 58px;
+  flex: 0 1 58px;
+  min-width: 0;
   height: 100%;
   border: none;
   border-radius: 0;
