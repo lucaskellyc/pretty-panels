@@ -934,12 +934,11 @@
 .pp-table-caret svg { display: block; }
 
 /* ---- Popover (a surface that floats over the work) ----
-   A plate, not glass. `TitleBar`'s sheet makes the same call for the same
-   reason: a veil is worth having where there is live content behind it to wash,
-   and a surface whose whole job is to separate its contents from whatever
-   happens to be underneath cannot let that through. So this is the `--ctl-bar`
-   ground the sheet and the strip's own capsules sit on, with the lit top edge
-   `.panel` wears — this theme's entire vocabulary for a raised surface.
+   A plate, not glass: a veil is worth having where there is live content
+   behind it to wash, and a surface whose whole job is to separate its contents
+   from whatever happens to be underneath cannot let that through. So this is
+   the `--ctl-bar` ground, with the lit top edge `.panel` wears — this theme's
+   entire vocabulary for a raised surface.
 
    Position comes from the component, which measures the anchor and writes
    `left` / `top` here. Everything below is what that measurement needs from CSS

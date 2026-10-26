@@ -64,11 +64,10 @@
 
   /* The rail's width, fixed rather than content-sized. The active link is
      600-weight, so letting the track size to its contents made the whole rail
-     (and the content column beside it) jump ~3px the moment the longest name —
-     "Window Controls" — became active. Pinned just above that bolded maximum
-     (244.5px measured), so the pills still hug their labels but the rail never
-     moves. A longer component name than that one is the only thing that would
-     need this number raised. */
+     (and the content column beside it) jump ~3px the moment the longest name
+     became active. Pinned just above the bolded maximum, so the pills still hug
+     their labels but the rail never moves. A longer component name is the only
+     thing that would need this number raised. */
   --doc-sidebar-w: 252px;
 }
 
@@ -1101,16 +1100,12 @@ html.vt-up .sidebar {
   from { opacity: 0; transform: translateY(-30px); }
 }
 
-/* A scrap of window for the chrome demos to float over. It has to be a real
-   stage, not a frame: the capsules are glass, so a demo on the page's flat
-   ground would show the one thing the material never does. Hence the shell's
-   own ground and dotted backdrop — and `position: relative`, because the
-   titlebar is absolute and this is what it pins to. */
-.doc-chrome {
-  position: relative;
+/* A scrap of stage for a demo to press on — the Menu page's right-click target.
+   The stage ground rather than the page's, so the menu opens over what it would
+   open over in an app. */
+.doc-stage {
   /* The example well centres its children, so without this the stage would
-     shrink to its content and the trailing capsule — pushed to the far end,
-     which is the whole point of it — would be cropped off the right. */
+     shrink to its content. */
   width: 100%;
   border-radius: calc(var(--radius-lg) - var(--radius-sm));
   overflow: hidden;

@@ -17,7 +17,6 @@
   padding: var(--space-4) var(--space-5) var(--space-5);
   background: var(--ctl-panel);
   border-top: var(--border-width) solid var(--ctl-panel);
-  -webkit-app-region: no-drag;
 }
 
 /* The dock's top edge, dragged to give the lanes more or less room. It sits
@@ -35,7 +34,6 @@
   right: 0;
   height: 9px;
   cursor: ns-resize;
-  -webkit-app-region: no-drag;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 /* A pill that appears under the pointer, the way the window controls' glyphs

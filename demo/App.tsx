@@ -295,7 +295,7 @@ function DocPageView({
         <h2>Import</h2>
         <pre className="code">
           {/* The display name carries a space ("Title Bar"); the export doesn't. */}
-          <code>{`import { ${page.name.replace(/\s/g, '')} } from '${page.importFrom ?? 'pretty-panels'}';`}</code>
+          <code>{`import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`}</code>
         </pre>
       </section>
     </article>

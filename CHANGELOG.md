@@ -9,10 +9,27 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
-Desktop window chrome (`AppShell`, `TitleBar`, `WindowControls`) on a
-`pretty-panels/window` subpath, and the Electron integration behind
-`pretty-panels/electron`, `pretty-panels/preload` and `pretty-panels/main`.
-Neither has shipped in a release yet.
+pretty-panels is a browser library now. The desktop window chrome and the
+Electron integration that were in development alongside it are gone.
+
+### Removed
+
+- **The `pretty-panels/window`, `pretty-panels/electron`,
+  `pretty-panels/preload` and `pretty-panels/main` subpaths**, and everything
+  they exported: `AppShell`, `TitleBar`, `WindowControls` and `detectPlatform`;
+  `useWindowState()`, `useNativeTheme()` and `getWindowBridge()`; the preload's
+  `createWindowBridge()` and `exposeWindowBridge()`; and `panelWindowOptions()`,
+  `attachWindowBridge()`, `stageColor()` and `plateColor()`. None of them were documented as released, but 0.3.x packages
+  did carry these entries in `exports`, so an app importing any of them has to
+  stop before upgrading. The root export and `styles.css` are unaffected.
+- `electron` as an optional peer dependency, and the runnable app under
+  `examples/electron/`.
+
+### Changed
+
+- `--stage-bg`, the ground an app's panels float on, moves from the removed
+  window layer into `colors.css`, so it is still defined under the root
+  stylesheet.
 
 ## [0.3.2-alpha] — 2026-10-17
 

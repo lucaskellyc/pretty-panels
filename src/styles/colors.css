@@ -58,6 +58,11 @@
      so it reads as a value you set rather than another plate. */
   --mono-sa: calc(var(--mono-s) * 1.9);
 
+  /* ---- Stage ----
+     The ground an app's panels float on — deeper than any plate, so it is the
+     one token on the ramp that steps *away* from the panel rather than into it. */
+  --stage-bg:             hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - -6 * var(--mono-sgn)) * 1%), 100%));
+
   /* ---- Panel & control surfaces ----
      Offsets are the whole design: 0 is the plate, bigger numbers sit deeper.
      Sections and the header bar sit just below the plate, capsule tracks recess
