@@ -4,7 +4,7 @@ A lightweight, themeable React component library for control-panel UIs.
 
 **[Full documentation →](https://lucaskellyc.github.io/pretty-panels/)**
 
-- **16 components**, 0 runtime dependencies (React is a peer dep).
+- **22 components**, 0 runtime dependencies (React is a peer dep).
 - **Fully controlled** — you own the state; every component is a pure function of props.
 - Ships an ESM + CJS bundle, TypeScript types, and one stylesheet.
 
