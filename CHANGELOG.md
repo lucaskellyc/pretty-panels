@@ -52,6 +52,15 @@ Electron integration that were in development alongside it are gone.
   when even its longest word won't fit beside the control. A `GaugeRow` wraps
   too, and a `Vector`'s fields shrink from 58px when the capsule is wider than
   its row. Panels wide enough for their rows lay out exactly as before.
+- **Controls no longer stay lit after a tap on a touch screen**
+  ([#2](https://github.com/lucaskellyc/pretty-panels/issues/2)). A touch screen
+  leaves the last-tapped element "hovered" until the next tap lands elsewhere,
+  so buttons, tabs and platter segments held their hover ground after being
+  pressed. Every hover style is now gated to `@media (hover: hover)`. On touch
+  screens (`hover: none`) buttons, tabs, platter segments, stepper buttons and
+  the panel collapse toggle show their hover ground while pressed (`:active`)
+  instead, and drop the browser's rectangular tap flash. A `Tree` row's `⋯`
+  button, which only appeared on hover, is always shown on touch screens.
 
 ### Changed
 

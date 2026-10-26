@@ -36,7 +36,8 @@
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 }
-.panel-collapse-btn:hover { background: var(--ctl-bar); }
+@media (hover: hover) { .panel-collapse-btn:hover { background: var(--ctl-bar); } }
+@media (hover: none) { .panel-collapse-btn:active { background: var(--ctl-bar); } }
 
 /* ---- Tab bar (Tabs) ----
    Standalone it is a self-contained bar. Handed to Panel's `title` slot it *is*
@@ -76,7 +77,8 @@
   transition: background var(--dur-fast) var(--ease-out),
               color var(--dur-fast) var(--ease-out);
 }
-.tab:hover { background: var(--ctl-tab-hover); }
+@media (hover: hover) { .tab:hover { background: var(--ctl-tab-hover); } }
+@media (hover: none) { .tab:active { background: var(--ctl-tab-hover); } }
 /* The selected tab is where you already are, so it also doesn't light up under
    the pointer: this rule follows `.tab:hover` at equal specificity, which is
    what holds the selected colour through a hover. */
@@ -84,7 +86,8 @@
   background: var(--ctl-tab-active);
   color: var(--ctl-tab-active-text);
 }
-.tab:disabled:hover { background: var(--ctl-tab); }
+@media (hover: hover) { .tab:disabled:hover { background: var(--ctl-tab); } }
+@media (hover: none) { .tab:disabled:active { background: var(--ctl-tab); } }
 
 /* ---- Round icon button (IconButton) + text button (TextButton) ----
    Two shapes of the same part: the round one is a fixed square plate around an
@@ -147,8 +150,10 @@
 /* Hover is excluded on a disabled button rather than reset afterwards: a
    disabled one is dimmed but still hoverable (it keeps its tooltip), and a
    reset would have to be written once per tier to put the right ground back. */
-.pp-round-btn:hover:not(:disabled) { background: var(--ctl-btn-hover); }
-.pp-text-btn:hover:not(:disabled) { background: var(--ctl-btn-hover); }
+@media (hover: hover) { .pp-round-btn:hover:not(:disabled) { background: var(--ctl-btn-hover); } }
+@media (hover: none) { .pp-round-btn:active:not(:disabled) { background: var(--ctl-btn-hover); } }
+@media (hover: hover) { .pp-text-btn:hover:not(:disabled) { background: var(--ctl-btn-hover); } }
+@media (hover: none) { .pp-text-btn:active:not(:disabled) { background: var(--ctl-btn-hover); } }
 
 /* Prominent — an accented action. `:not([aria-pressed])` is exactly "not a
    toggle". It ties the standard hover above on specificity and is declared
@@ -160,9 +165,17 @@
   background: var(--ctl-track);
   color: var(--ctl-on-track);
 }
-.pp-round-btn.is-active:not([aria-pressed]):hover:not(:disabled),
-.pp-text-btn.is-active:not([aria-pressed]):hover:not(:disabled) {
-  background: var(--ctl-track-hover);
+@media (hover: hover) {
+  .pp-round-btn.is-active:not([aria-pressed]):hover:not(:disabled),
+  .pp-text-btn.is-active:not([aria-pressed]):hover:not(:disabled) {
+    background: var(--ctl-track-hover);
+  }
+}
+@media (hover: none) {
+  .pp-round-btn.is-active:not([aria-pressed]):active:not(:disabled),
+  .pp-text-btn.is-active:not([aria-pressed]):active:not(:disabled) {
+    background: var(--ctl-track-hover);
+  }
 }
 
 /* On — a toggle carrying its state. This one is *less* specific than the
@@ -175,9 +188,17 @@
   background: var(--ctl-accent);
   color: var(--ctl-on-track);
 }
-.pp-round-btn[aria-pressed="true"]:hover:not(:disabled),
-.pp-text-btn[aria-pressed="true"]:hover:not(:disabled) {
-  background: var(--ctl-accent-hover);
+@media (hover: hover) {
+  .pp-round-btn[aria-pressed="true"]:hover:not(:disabled),
+  .pp-text-btn[aria-pressed="true"]:hover:not(:disabled) {
+    background: var(--ctl-accent-hover);
+  }
+}
+@media (hover: none) {
+  .pp-round-btn[aria-pressed="true"]:active:not(:disabled),
+  .pp-text-btn[aria-pressed="true"]:active:not(:disabled) {
+    background: var(--ctl-accent-hover);
+  }
 }
 
 /* ---- Button platter (Platter) ----
@@ -242,16 +263,19 @@
 /* Hover goes one step deeper than the tray, the direction every hover in this
    set travels — and the same step a standalone button takes, since the tray and
    the button share a resting ground. */
-.pp-platter-btn:hover { background: var(--ctl-btn-hover); }
+@media (hover: hover) { .pp-platter-btn:hover { background: var(--ctl-btn-hover); } }
+@media (hover: none) { .pp-platter-btn:active { background: var(--ctl-btn-hover); } }
 /* Lit — a standard-mode toggle that is on. The accent carries on-track text, so
    the label flips bright with the ground rather than staying plate ink on it. */
 .pp-platter-btn.is-active {
   background: var(--ctl-accent);
   color: var(--ctl-on-track);
 }
-.pp-platter-btn.is-active:hover { background: var(--ctl-accent-hover); }
+@media (hover: hover) { .pp-platter-btn.is-active:hover { background: var(--ctl-accent-hover); } }
+@media (hover: none) { .pp-platter-btn.is-active:active { background: var(--ctl-accent-hover); } }
 /* Last, so a disabled segment stays flat even when it is also active. */
-.pp-platter-btn:disabled:hover { background: transparent; }
+@media (hover: hover) { .pp-platter-btn:disabled:hover { background: transparent; } }
+@media (hover: none) { .pp-platter-btn:disabled:active { background: transparent; } }
 
 /* Select mode — the selected segment is whichever radio is checked, so the
    accent is painted off `:has(input:checked)` rather than a class. Each of
@@ -273,11 +297,14 @@
   background: var(--ctl-accent);
   color: var(--ctl-on-track);
 }
-.pp-platter-seg:hover:has(input:checked) { background: var(--ctl-accent-hover); }
+@media (hover: hover) { .pp-platter-seg:hover:has(input:checked) { background: var(--ctl-accent-hover); } }
+@media (hover: none) { .pp-platter-seg:active:has(input:checked) { background: var(--ctl-accent-hover); } }
 /* A disabled segment stays flat under the pointer, and a disabled *selected*
    one keeps its accent rather than dropping to the tray. */
-.pp-platter-seg:has(input:disabled):hover { background: transparent; }
-.pp-platter-seg:has(input:checked:disabled):hover { background: var(--ctl-accent); }
+@media (hover: hover) { .pp-platter-seg:has(input:disabled):hover { background: transparent; } }
+@media (hover: none) { .pp-platter-seg:has(input:disabled):active { background: transparent; } }
+@media (hover: hover) { .pp-platter-seg:has(input:checked:disabled):hover { background: var(--ctl-accent); } }
+@media (hover: none) { .pp-platter-seg:has(input:checked:disabled):active { background: var(--ctl-accent); } }
 
 /* ---- Shared button chrome ----
    The focus ring, the disabled treatment and the icon reset are the same part
@@ -308,6 +335,20 @@
 .pp-text-btn svg,
 .pp-platter-btn svg {
   display: block;
+}
+/* Touch. Hover is gated to `(hover: hover)` throughout, because a touch screen
+   leaves the last-tapped control "hovered" until the next tap lands elsewhere;
+   each button's hover ground comes back as an `(hover: none)` `:active` instead,
+   so a press still shows while the finger is down. That press replaces the
+   browser's grey tap flash, which ignores the pill's radius. */
+.panel-collapse-btn,
+.tab,
+.pp-round-btn,
+.pp-text-btn,
+.pp-platter-btn,
+.stepper-btn,
+.dropdown-trigger {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ---- Slide-collapse (Section body) ----
