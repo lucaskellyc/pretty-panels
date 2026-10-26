@@ -25,6 +25,25 @@ Electron integration that were in development alongside it are gone.
 - `electron` as an optional peer dependency, and the runnable app under
   `examples/electron/`.
 
+### Fixed
+
+- **`Vector` fields can be emptied while typing.** They were controlled
+  `type="number"` inputs, which report an empty field — and a lone `-` or `1.` —
+  as `""`, so deleting the last digit was ignored and the digit re-rendered
+  straight back. They now hold their text while focused, the way `Stepper`'s
+  readout does: in-range numbers are reported as they are typed, Enter or
+  clicking away clamps and commits, an empty field falls back to the value it
+  started on, and Escape restores it. Clamping no longer happens mid-entry, so
+  a value below `min` on its way to a valid one (`2` → `25` with `min={10}`) is
+  no longer snapped up. ArrowUp / ArrowDown still step by `step`.
+- **Scrubbing a `Vector` field no longer scrolls the page or selects text on the
+  way** ([#4](https://github.com/lucaskellyc/pretty-panels/issues/4)). Once a
+  mouse drag passes 3px the cursor is locked to the field (Pointer Lock) and
+  hidden until release, so it can't reach a screen edge or wander onto other
+  controls; the value follows raw mouse travel. Where the lock is refused, the
+  page still turns off selection and hover for the length of the drag. Fields
+  take `touch-action: none`, so a touch drag scrubs instead of panning.
+
 ### Changed
 
 - `--stage-bg`, the ground an app's panels float on, moves from the removed

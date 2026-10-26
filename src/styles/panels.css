@@ -566,6 +566,9 @@
   font-variant-numeric: tabular-nums;
   text-align: center;
   cursor: ns-resize;
+  /* A vertical drag is a scrub, not a scroll — without this a touch drag pans
+     the page (and fires pointercancel) instead of changing the value. */
+  touch-action: none;
 }
 /* Round the outer ends so the fused fields read as one capsule; inner edges stay
    square so the 2px gaps divide them. */
@@ -580,10 +583,20 @@
 .vector input:hover { background: var(--ctl-track-hover); }
 .vector input:focus,
 .vector input:focus-visible { outline: none; box-shadow: none; }
-.vector input::-webkit-outer-spin-button,
-.vector input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.vector input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .color-vector input { transition: background var(--dur-fast) var(--ease-out); }
+/* A scrub in progress, set on <html> by the dragged field. The cursor crosses
+   the rest of the page on the way, so nothing else may select or take hover —
+   and the ns-resize cursor holds wherever it is, not only over the field. The
+   drag itself is tracked on `window`, so it needs nothing here to hit. */
+.pp-scrubbing,
+.pp-scrubbing * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: ns-resize !important;
+}
+/* The hover half, on its own class because Safari doesn't get it: WebKit stops
+   sending the drag its moves once nothing under the cursor can be hit. */
+.pp-scrubbing-hover body * { pointer-events: none; }
 
 /* ---- List (stacked rows) ----
    A capsule shape at a slider row's height, but a far quieter ground: rows are
