@@ -466,7 +466,9 @@ export const pages: DocPage[] = [
       { name: 'step', type: 'number', default: '0.5', description: 'Scrub / type increment.' },
       { name: 'min', type: 'number', description: 'Clamp values to this minimum.' },
       { name: 'max', type: 'number', description: 'Clamp values to this maximum.' },
-      { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value (expects three 0–255 components).' },
+      { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value from the first three entries; a missing channel reads as 0.' },
+      { name: 'label', type: 'string', description: 'Accessible name for the group of fields, e.g. "Rotation". Give it whenever no visible label says what the capsule sets.' },
+      { name: 'fieldLabels', type: 'string[]', description: 'Accessible name for each field. Defaults to X / Y / Z / W, or R / G / B / A with colorMode.' },
     ],
   },
 ];

@@ -909,6 +909,8 @@ export function VectorExample() {
       <Row label="vec2 · UV">
         <Vector
           value={uv}
+          label="UV"
+          fieldLabels={['U', 'V']}
           min={0}
           max={1}
           step={0.01}
@@ -919,6 +921,7 @@ export function VectorExample() {
         <Vector
           value={color}
           colorMode
+          label="Color"
           step={1}
           min={0}
           max={255}
@@ -928,6 +931,7 @@ export function VectorExample() {
       <Row label="vec4 · Rotation">
         <Vector
           value={rot}
+          label="Rotation"
           step={0.01}
           onChange={(axis, v) => setRot((r) => withAxis(r, axis, v))}
         />

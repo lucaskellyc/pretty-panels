@@ -10,7 +10,16 @@ export interface VectorProps {
   max?: number;
   /** Paint each field with its live rgb value (expects three 0–255 components). */
   colorMode?: boolean;
+  /** What the capsule sets, for assistive tech — e.g. "Rotation". Names the
+   *  group the fields sit in; give it whenever no visible label says it. */
+  label?: string;
+  /** Per-field names, announced with each field. Default X / Y / Z / W, or
+   *  R / G / B (/ A) with `colorMode`. */
+  fieldLabels?: string[];
 }
+
+const AXES = ['X', 'Y', 'Z', 'W'];
+const CHANNELS = ['R', 'G', 'B', 'A'];
 
 /** Safari (desktop or iOS, any WebKit shell that isn't Chrome or Firefox on
  *  iOS). It stops delivering a scrub's moves once the page under the cursor is
@@ -34,7 +43,16 @@ function readContrast(r: number, g: number, b: number) {
  * clamps and commits, and an empty field falls back to the value it opened on.
  * Escape restores that value. ArrowUp / ArrowDown step by `step`.
  */
-export function Vector({ value, onChange, step = 0.5, min, max, colorMode = false }: VectorProps) {
+export function Vector({
+  value,
+  onChange,
+  step = 0.5,
+  min,
+  max,
+  colorMode = false,
+  label,
+  fieldLabels,
+}: VectorProps) {
   const state = useRef<{
     startVal: number;
     /** Travel so far, up = positive. Summed per move rather than read off
@@ -168,13 +186,16 @@ export function Vector({ value, onChange, step = 0.5, min, max, colorMode = fals
   let bg: string | undefined;
   let fg: string | undefined;
   if (colorMode) {
-    const [r, g, b] = value.map((v) => clamp(Math.round(v), 0, 255));
+    // Exactly three channels: a missing one reads as 0 (a 2-field value used to
+    // paint `rgb(r,g,undefined)`, which is invalid and painted nothing), and a
+    // fourth is a field like any other, not part of the colour.
+    const [r, g, b] = [0, 1, 2].map((i) => clamp(Math.round(value[i] ?? 0), 0, 255));
     bg = `rgb(${r},${g},${b})`;
     fg = readContrast(r, g, b);
   }
 
   return (
-    <span className={cx('vector', colorMode && 'color-vector')}>
+    <span className={cx('vector', colorMode && 'color-vector')} role="group" aria-label={label}>
       {value.map((v, axis) => (
         <input
           key={axis}
@@ -183,6 +204,7 @@ export function Vector({ value, onChange, step = 0.5, min, max, colorMode = fals
           // as `""`, so a controlled field cannot hold them and snaps back to
           // the last value. `inputMode` still asks for the numeric keypad.
           inputMode="decimal"
+          aria-label={(fieldLabels ?? (colorMode ? CHANNELS : AXES))[axis]}
           value={draft?.axis === axis ? draft.text : String(v)}
           style={bg ? { background: bg, color: fg } : undefined}
           onPointerDown={onPointerDown(axis)}

@@ -61,6 +61,15 @@ Electron integration that were in development alongside it are gone.
   the panel collapse toggle show their hover ground while pressed (`:active`)
   instead, and drop the browser's rectangular tap flash. A `Tree` row's `⋯`
   button, which only appeared on hover, is always shown on touch screens.
+- **`Slider`, `Vector` and `Section` are named for assistive tech.** A
+  `Slider`'s range input is labelled by its visible name, and with `format` the
+  formatted readout is its `aria-valuetext`. Each `Vector` field is named
+  X / Y / Z / W (R / G / B / A in `colorMode`), overridable with the new
+  `fieldLabels`, and the capsule is a `role="group"` named by the new `label`.
+  A `Section`'s toggle carries `aria-controls` for the region it folds.
+- **A 2-field `Vector` in `colorMode` paints.** The colour is built from the
+  first three entries with a missing channel read as 0; it used to emit
+  `rgb(r,g,undefined)`, which is invalid and painted nothing.
 
 ### Changed
 
