@@ -8,14 +8,6 @@
 - Component list comes from the shipped `dist/*.d.ts` exports: **15 components**.
   `src/components/ControlRow.tsx` exists but is **not exported** from `src/index.ts`,
   so it is correctly absent — that is not a discovery miss.
-- The desktop chrome added 2026-09-22 (`TitleBar`, `WindowControls`, `AppShell`)
-  is exported from `src/window.ts`, a **separate package entry**
-  (`pretty-panels/window`), not from the root. Discovery reads the root entry, so
-  the synced surface stays at 15 and none of the `docsMap` / `overrides` bookkeeping
-  below changes. That was the point of putting them on a subpath: they are window
-  chrome for a frameless Electron window, not control-panel atoms. If they should
-  ever appear in the design project, point `--entry` at `dist/pretty-panels.window.js`
-  as a second sync rather than re-exporting them from the root.
 
 ## Build
 
@@ -36,7 +28,7 @@
   the compiled `dist/pretty-panels.css` and therefore reach designs through the
   `styles.css` → `_ds_bundle.css` closure. `tokens: 97 defined, 66 referenced` —
   no `[TOKENS_MISSING]`.
-- **Fonts are now local** (changed 2026-09-22, when the Electron support landed).
+- **Fonts are now local** (changed 2026-09-22).
   There is no Google Fonts `@import` any more: `src/styles/fonts/` holds 11
   woff2 subsets and `src/styles/fonts.css` declares the faces over them.
   `src/styles/index.css` does **not** import that file — Vite's library mode

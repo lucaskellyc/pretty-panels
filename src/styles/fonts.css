@@ -5,10 +5,10 @@
    files beside the woff2s) rather than being fetched at runtime.
 
    That is deliberate and it is the one thing to preserve here. A hosted
-   @import fails silently in exactly the places this kit is meant to run: an
-   Electron renderer under a `default-src 'self'` CSP blocks the request, a
-   packaged desktop app may never have a network, and either way the only
-   symptom is that every label quietly renders in the system fallback.
+   @import fails silently in exactly the places this kit is meant to run: a
+   page under a `default-src 'self'` CSP blocks the request, an offline or
+   intranet app may never reach the network, and either way the only symptom is
+   that every label quietly renders in the system fallback.
 
    Only what the components actually use: upright faces at the three weights
    the tokens name (--fw-regular / --fw-medium / --fw-bold), plus 600 for the

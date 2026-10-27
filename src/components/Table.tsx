@@ -110,8 +110,7 @@ const floorWidth = (columns: TableColumn[]): string | undefined => {
  * are readable with a pointer and no other way — but a table that fits wants no
  * tab stop of its own, so this is measured rather than assumed. Nothing about
  * the answer changes the layout that produced it (a `tabindex` occupies no
- * space), so unlike the titlebar's version it cannot chatter over a pixel, and
- * a plain comparison is enough.
+ * space), so it cannot chatter over a pixel, and a plain comparison is enough.
  */
 function useScrollable(
   scroller: RefObject<HTMLDivElement | null>,

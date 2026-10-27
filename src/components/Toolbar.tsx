@@ -89,9 +89,9 @@ function useFold(
    *  browser paints, since all of this happens in a layout effect. */
   const button = useRef(0);
 
-  // Held in a ref and refreshed on every render — the arrangement `TitleBar`'s
-  // strip and `Popover` both use — so the observer below installs once and still
-  // reads current props.
+  // Held in a ref and refreshed on every render — the arrangement `Popover`
+  // uses too — so the observer below installs once and still reads current
+  // props.
   const fit = useRef<() => void>(() => {});
   fit.current = () => {
     const el = bar.current;
@@ -196,9 +196,8 @@ function useFold(
  * layout is yours.
  *
  * **`overflow` folds it.** Set it and the items the bar has run out of room for
- * fold, last first, into a trailing ⋯ that opens them as a sheet — the same
- * bargain `TitleBar` strikes with its strip, one item at a time instead of all
- * or nothing, since a toolbar's contents are a list and a strip's are two slots.
+ * fold, last first, into a trailing ⋯ that opens them as a sheet — one item at
+ * a time rather than all or nothing, since a toolbar's contents are a list.
  * Items fold whole: a `Platter` is one item however many segments are on it,
  * because half a segmented control is not a control.
  *

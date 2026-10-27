@@ -101,9 +101,8 @@ const OPPOSITE: Record<PopoverSide, PopoverSide> = {
  * preferred side gives way to its opposite when it cannot hold the surface and
  * the opposite one has more room — a menu under a row near the bottom of the
  * window opens upward instead. **Shift**: the cross axis then slides back inside
- * the viewport, which is the same trade `TitleBar`'s sheet makes in the one axis
- * it has, and for the same reason — the least movement that puts the surface
- * back on screen beats hopping to the other edge of the anchor.
+ * the viewport, because the least movement that puts the surface back on
+ * screen beats hopping to the other edge of the anchor.
  *
  * What it can't fix by moving, it reports: `maxWidth` / `maxHeight` are what the
  * surface is allowed to be where it ended up, and a taller menu scrolls inside
@@ -225,8 +224,8 @@ export function Popover({
   const surface = useRef<HTMLDivElement>(null);
 
   // Held in a ref and refreshed on every render — the same arrangement
-  // `TitleBar`'s sheet uses — so the listeners below install once and still
-  // read current props.
+  // `Toolbar` uses — so the listeners below install once and still read
+  // current props.
   const position = useRef<() => void>(() => {});
   position.current = () => {
     const el = surface.current;

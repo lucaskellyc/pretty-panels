@@ -64,12 +64,21 @@
 
   /* The rail's width, fixed rather than content-sized. The active link is
      600-weight, so letting the track size to its contents made the whole rail
-     (and the content column beside it) jump ~3px the moment the longest name —
-     "Window Controls" — became active. Pinned just above that bolded maximum
-     (244.5px measured), so the pills still hug their labels but the rail never
-     moves. A longer component name than that one is the only thing that would
-     need this number raised. */
+     (and the content column beside it) jump ~3px the moment the longest name
+     became active. Pinned just above the bolded maximum, so the pills still hug
+     their labels but the rail never moves. A longer component name is the only
+     thing that would need this number raised. */
   --doc-sidebar-w: 252px;
+
+  /* Code colours (the <Code> blocks). Each clears 4.5:1 on
+     --doc-surface-recessed in its theme; comments are the quietest. */
+  --code-keyword: hsl(275 60% 36%);
+  --code-string: hsl(150 70% 20%);
+  --code-number: hsl(20 85% 28%);
+  --code-tag: hsl(200 90% 24%);
+  --code-attr: hsl(330 60% 33%);
+  --code-fn: hsl(230 65% 38%);
+  --code-comment: hsl(210 24% 31%);
 }
 
 /* ---- Dark (when the OS prefers it) ---- */
@@ -100,6 +109,14 @@
       0 4px 14px 2px hsl(var(--doc-hue-neutral) 50% 2% / 0.2),
       inset 0 2px 1px var(--doc-highlight);
     --doc-shadow-panel: 0 10px 26px -6px hsl(var(--doc-hue-neutral) 55% 2% / 0.62);
+
+    --code-keyword: hsl(275 75% 80%);
+    --code-string: hsl(140 50% 72%);
+    --code-number: hsl(30 85% 72%);
+    --code-tag: hsl(195 75% 70%);
+    --code-attr: hsl(330 70% 80%);
+    --code-fn: hsl(225 90% 80%);
+    --code-comment: hsl(220 20% 62%);
   }
 }
 
@@ -556,11 +573,18 @@ body {
    they use the component tokens, not the page palette). */
 .doc-row {
   display: flex;
+  /* Wraps like the library's .switch-row: on a narrow plate the control takes
+     its own line, still right-aligned, instead of being clipped. */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  /* 10px, not 16: a vec4 beside "Rotation" needs just under the 300px a 340px
+     plate gives it, and would otherwise wrap even there. */
+  gap: 8px 10px;
   padding: 8px 0;
 }
+.doc-row > .doc-row-label { flex: 1 1 0; min-width: min-content; }
+.doc-row > :last-child { margin-left: auto; }
 .doc-row-label {
   font-size: 13px;
   color: var(--ctl-text);
@@ -662,6 +686,13 @@ body {
   color: var(--doc-text);
   white-space: pre;
 }
+.tok-keyword { color: var(--code-keyword); }
+.tok-string { color: var(--code-string); }
+.tok-number { color: var(--code-number); }
+.tok-tag { color: var(--code-tag); }
+.tok-attr { color: var(--code-attr); }
+.tok-fn { color: var(--code-fn); }
+.tok-comment { color: var(--code-comment); font-style: italic; }
 /* `clone` is what keeps a wrapped capsule a capsule: by default an inline box
    that breaks across lines is one box sliced in two, so the break edges lose
    their radius and padding and each fragment ends up half-squared. Cloning
@@ -946,6 +977,22 @@ body {
   .hero-poster {
     padding: 40px 24px 32px;
   }
+  /* Too narrow for all three on one line — the seeker would be squeezed to a
+     sliver — so the button and stepper share a line and the seeker runs the
+     full width beneath them. */
+  .hero-transport {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-seek {
+    flex-basis: 100%;
+    order: 1;
+  }
+  /* The well's side padding is most of what squeezes an example panel on a
+     phone; the plate's own shadow is all the inset it needs. */
+  .doc-example {
+    padding: 32px 12px;
+  }
 }
 
 /* The catalog's `auto-fill` track sizing drops it from three cells to two to one
@@ -1101,16 +1148,12 @@ html.vt-up .sidebar {
   from { opacity: 0; transform: translateY(-30px); }
 }
 
-/* A scrap of window for the chrome demos to float over. It has to be a real
-   stage, not a frame: the capsules are glass, so a demo on the page's flat
-   ground would show the one thing the material never does. Hence the shell's
-   own ground and dotted backdrop — and `position: relative`, because the
-   titlebar is absolute and this is what it pins to. */
-.doc-chrome {
-  position: relative;
+/* A scrap of stage for a demo to press on — the Menu page's right-click target.
+   The stage ground rather than the page's, so the menu opens over what it would
+   open over in an app. */
+.doc-stage {
   /* The example well centres its children, so without this the stage would
-     shrink to its content and the trailing capsule — pushed to the far end,
-     which is the whole point of it — would be cropped off the right. */
+     shrink to its content. */
   width: 100%;
   border-radius: calc(var(--radius-lg) - var(--radius-sm));
   overflow: hidden;

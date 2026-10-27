@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useId, useRef } from 'react';
 
 export interface SliderProps {
   label: string;
@@ -20,6 +20,7 @@ export interface SliderProps {
  */
 export function Slider({ label, value, min, max, step, onChange, format }: SliderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const labelId = useId();
   const dragging = useRef(false);
   const decimals = (String(step).split('.')[1] || '').length;
 
@@ -59,11 +60,15 @@ export function Slider({ label, value, min, max, step, onChange, format }: Slide
   return (
     <div className="slider-row" style={{ ['--fill' as string]: `${pct}%` }}>
       <span className="slider-fill" />
-      <span className="control-name">{label}</span>
+      <span className="control-name" id={labelId}>{label}</span>
       <span className="control-value">{format ? format(value) : value}</span>
       <input
         ref={inputRef}
         type="range"
+        // The visible label names it; a formatted readout ("40%", "1.2 s") is
+        // what a screen reader should say for the value, not the raw number.
+        aria-labelledby={labelId}
+        aria-valuetext={format?.(value)}
         min={min}
         max={max}
         step={step}

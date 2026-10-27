@@ -45,26 +45,31 @@ A running log of bugs and rough edges found in the codebase. File references are
 
 ## Accessibility
 
-9. **Slider range input has no accessible name.** The `.control-name` label
-   (`src/components/Slider.tsx:62`) is a plain span, not associated with the
-   `<input type="range">`, so screen readers announce an unlabeled slider.
+9. ✅ **Fixed (unreleased).** ~~Slider range input has no accessible name.~~ The
+   range input is now `aria-labelledby` its visible `.control-name`, so it is
+   announced as "Focus, slider". With `format`, the formatted readout goes out as
+   `aria-valuetext` ("60%" rather than "0.6"); Chrome ignores `aria-valuetext` on
+   a native range and still reads the raw number.
 
-10. **Vector number fields have no labels.** The `<input type="number">` fields
-    (`src/components/Vector.tsx:71`) have no `aria-label`; announced as unlabeled.
+10. ✅ **Fixed (unreleased).** ~~Vector number fields have no labels.~~ Each field
+    is named X / Y / Z / W (R / G / B / A in `colorMode`), overridable with
+    `fieldLabels`, and the capsule is a `role="group"` named by the new `label`
+    prop.
 
-11. **Section toggle not linked to its body.** `.collapse-head`
-    (`src/components/Section.tsx:15`) has `aria-expanded` but no `aria-controls`
-    pointing at the collapsible region.
+11. ✅ **Fixed (unreleased).** ~~Section toggle not linked to its body.~~
+    `.collapse-head` now carries `aria-controls` pointing at the collapsible
+    region's id.
 
 ## Edge cases / robustness
 
-12. **Vector `colorMode` assumes 3 components.** With a 2-entry value plus
-    `colorMode`, the blue channel is `undefined` → `rgb(r,g,undefined)` (invalid).
-    Only safe for 3-entry rgb values (`src/components/Vector.tsx:62`).
+12. ✅ **Fixed (unreleased).** ~~Vector `colorMode` assumes 3 components.~~ The
+    colour is built from exactly the first three entries, and a missing one reads
+    as 0, so a 2-field value paints `rgb(r,g,0)` instead of nothing.
 
-13. **Vector field can't be cleared while typing.** `onChange` ignores non-numeric
-    input (`src/components/Vector.tsx:83`), so you can't blank the field to retype;
-    intermediate states like `-` or `1.` are rejected mid-entry.
+13. ✅ **Fixed (unreleased).** ~~Vector field can't be cleared while typing.~~ The
+    fields are text inputs that hold their in-progress text while focused, so an
+    empty field, `-` or `1.` survive to the next keystroke; Enter or blur clamps
+    and commits.
 
 14. ✅ **Resolved (v0.2.0-alpha).** ~~Panel collapsed-width can go stale.~~ The
     collapsed hug width was dropped along with `--panel-collapsed-w`; the plate

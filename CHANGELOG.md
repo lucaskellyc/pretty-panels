@@ -9,10 +9,73 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
-Desktop window chrome (`AppShell`, `TitleBar`, `WindowControls`) on a
-`pretty-panels/window` subpath, and the Electron integration behind
-`pretty-panels/electron`, `pretty-panels/preload` and `pretty-panels/main`.
-Neither has shipped in a release yet.
+pretty-panels is a browser library now. The desktop window chrome and the
+Electron integration that were in development alongside it are gone.
+
+### Removed
+
+- **The `pretty-panels/window`, `pretty-panels/electron`,
+  `pretty-panels/preload` and `pretty-panels/main` subpaths**, and everything
+  they exported: `AppShell`, `TitleBar`, `WindowControls` and `detectPlatform`;
+  `useWindowState()`, `useNativeTheme()` and `getWindowBridge()`; the preload's
+  `createWindowBridge()` and `exposeWindowBridge()`; and `panelWindowOptions()`,
+  `attachWindowBridge()`, `stageColor()` and `plateColor()`. None of them were documented as released, but 0.3.x packages
+  did carry these entries in `exports`, so an app importing any of them has to
+  stop before upgrading. The root export and `styles.css` are unaffected.
+- `electron` as an optional peer dependency, and the runnable app under
+  `examples/electron/`.
+
+### Fixed
+
+- **`Vector` fields can be emptied while typing.** They were controlled
+  `type="number"` inputs, which report an empty field — and a lone `-` or `1.` —
+  as `""`, so deleting the last digit was ignored and the digit re-rendered
+  straight back. They now hold their text while focused, the way `Stepper`'s
+  readout does: in-range numbers are reported as they are typed, Enter or
+  clicking away clamps and commits, an empty field falls back to the value it
+  started on, and Escape restores it. Clamping no longer happens mid-entry, so
+  a value below `min` on its way to a valid one (`2` → `25` with `min={10}`) is
+  no longer snapped up. ArrowUp / ArrowDown still step by `step`.
+- **Scrubbing a `Vector` field no longer scrolls the page or selects text on the
+  way** ([#4](https://github.com/lucaskellyc/pretty-panels/issues/4)). Once a
+  mouse drag passes 3px the cursor is locked to the field (Pointer Lock) and
+  hidden until release, so it can't reach a screen edge or wander onto other
+  controls; the value follows raw mouse travel. Where the lock is refused, the
+  page still turns off selection and hover for the length of the drag. Fields
+  take `touch-action: none`, so a touch drag scrubs instead of panning.
+- **Panels no longer clip their controls on narrow screens**
+  ([#6](https://github.com/lucaskellyc/pretty-panels/issues/6)). A
+  `.switch-row` (`Toggle`, `TextField`, `RadioGroup`, `Stepper`, `Select`) whose label and
+  control don't fit side by side now wraps, dropping the control to its own
+  line, still right-aligned, instead of running past the plate's edge where
+  `.panel-body` cut it off. The label gives up width first, so a row only wraps
+  when even its longest word won't fit beside the control. A `GaugeRow` wraps
+  too, and a `Vector`'s fields shrink from 58px when the capsule is wider than
+  its row. Panels wide enough for their rows lay out exactly as before.
+- **Controls no longer stay lit after a tap on a touch screen**
+  ([#2](https://github.com/lucaskellyc/pretty-panels/issues/2)). A touch screen
+  leaves the last-tapped element "hovered" until the next tap lands elsewhere,
+  so buttons, tabs and platter segments held their hover ground after being
+  pressed. Every hover style is now gated to `@media (hover: hover)`. On touch
+  screens (`hover: none`) buttons, tabs, platter segments, stepper buttons and
+  the panel collapse toggle show their hover ground while pressed (`:active`)
+  instead, and drop the browser's rectangular tap flash. A `Tree` row's `⋯`
+  button, which only appeared on hover, is always shown on touch screens.
+- **`Slider`, `Vector` and `Section` are named for assistive tech.** A
+  `Slider`'s range input is labelled by its visible name, and with `format` the
+  formatted readout is its `aria-valuetext`. Each `Vector` field is named
+  X / Y / Z / W (R / G / B / A in `colorMode`), overridable with the new
+  `fieldLabels`, and the capsule is a `role="group"` named by the new `label`.
+  A `Section`'s toggle carries `aria-controls` for the region it folds.
+- **A 2-field `Vector` in `colorMode` paints.** The colour is built from the
+  first three entries with a missing channel read as 0; it used to emit
+  `rgb(r,g,undefined)`, which is invalid and painted nothing.
+
+### Changed
+
+- `--stage-bg`, the ground an app's panels float on, moves from the removed
+  window layer into `colors.css`, so it is still defined under the root
+  stylesheet.
 
 ## [0.3.2-alpha] — 2026-10-17
 

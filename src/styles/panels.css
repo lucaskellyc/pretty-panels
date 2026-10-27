@@ -157,8 +157,8 @@
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
-.slider-row:hover { background: var(--ctl-track-hover); }
-.slider-row:hover .slider-fill { background: var(--ctl-accent-hover); }
+@media (hover: hover) { .slider-row:hover { background: var(--ctl-track-hover); } }
+@media (hover: hover) { .slider-row:hover .slider-fill { background: var(--ctl-accent-hover); } }
 .slider-row input[type="range"] {
   position: absolute;
   inset: 0;
@@ -179,6 +179,7 @@
    and 2.7deg per unit walks the leading end-cap around that same arc. */
 .gauge-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-around;
   align-items: flex-start;
   padding: var(--space-2) 0;
@@ -308,12 +309,20 @@
 /* ---- Switch rows (Toggle) ---- */
 .switch-row {
   display: flex;
+  /* A panel narrower than label + control (a phone, a thin sidebar) drops the
+     control to its own line rather than letting .panel-body clip it. */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
   padding: var(--space-2) 0;
   user-select: none;
 }
+/* …and keeps it right-aligned there, where it sits when the row fits. The
+   label starts at its narrowest (longest word), so the row wraps only when even
+   that won't fit beside the control, not as soon as the label would rewrap. */
+.switch-row > .switch-meta { flex: 1 1 0; min-width: min-content; }
+.switch-row > :not(.switch-meta) { margin-left: auto; }
 .switch-meta { display: flex; flex-direction: column; gap: 2px; }
 .switch-meta .control-name {
   font-weight: var(--fw-bold);
@@ -366,10 +375,10 @@
 }
 .switch input:focus-visible + .track { box-shadow: var(--focus-ring); }
 .switch input:disabled { cursor: default; }
-.switch-row:hover .track { background: var(--ctl-switch-off-hover); }
-.switch-row:hover .track::after { background: var(--ctl-knob-off-hover); }
-.switch-row:hover input:checked + .track { background: var(--ctl-accent-hover); }
-.switch-row:hover input:checked + .track::after { background: var(--ctl-knob-on); }
+@media (hover: hover) { .switch-row:hover .track { background: var(--ctl-switch-off-hover); } }
+@media (hover: hover) { .switch-row:hover .track::after { background: var(--ctl-knob-off-hover); } }
+@media (hover: hover) { .switch-row:hover input:checked + .track { background: var(--ctl-accent-hover); } }
+@media (hover: hover) { .switch-row:hover input:checked + .track::after { background: var(--ctl-knob-on); } }
 
 /* ---- Stepper (−/+ around a readout) ---- */
 .stepper {
@@ -398,10 +407,12 @@
 }
 .stepper-btn svg { display: block; }
 /* Inside a recessed track, hover has to go *darker* than the track to read. */
-.stepper-btn:hover { background: var(--ctl-deep-hover); }
+@media (hover: hover) { .stepper-btn:hover { background: var(--ctl-deep-hover); } }
+@media (hover: none) { .stepper-btn:active { background: var(--ctl-deep-hover); } }
 .stepper-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .stepper-btn:disabled { opacity: 0.5; cursor: default; }
-.stepper-btn:disabled:hover { background: transparent; }
+@media (hover: hover) { .stepper-btn:disabled:hover { background: transparent; } }
+@media (hover: none) { .stepper-btn:disabled:active { background: transparent; } }
 .stepper-value {
   min-width: 56px;
   text-align: center;
@@ -457,7 +468,7 @@
 /* The popup list is drawn by the platform, on its own ground — repaint the
    options for the plate rather than letting them inherit on-track white. */
 .dropdown option { background: var(--ctl-panel); color: var(--ctl-text); }
-.dropdown select:hover { background: var(--ctl-track-hover); }
+@media (hover: hover) { .dropdown select:hover { background: var(--ctl-track-hover); } }
 .dropdown select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .dropdown select:disabled { opacity: 0.5; cursor: default; }
 .dropdown-chevron {
@@ -504,9 +515,9 @@
   background: var(--ctl-track);
   transition: background var(--dur-fast) var(--ease-out);
 }
-.radio:hover .radio-dot { background: var(--ctl-deep-hover); }
+@media (hover: hover) { .radio:hover .radio-dot { background: var(--ctl-deep-hover); } }
 .radio input:checked + .radio-dot { background: var(--ctl-accent); }
-.radio:hover input:checked + .radio-dot { background: var(--ctl-accent-hover); }
+@media (hover: hover) { .radio:hover input:checked + .radio-dot { background: var(--ctl-accent-hover); } }
 .radio input:checked + .radio-dot::after {
   content: "";
   position: absolute;
@@ -516,8 +527,8 @@
 }
 .radio input:focus-visible + .radio-dot { box-shadow: var(--focus-ring); }
 .radio:has(input:disabled) { opacity: 0.5; cursor: default; }
-.radio:has(input:disabled):hover .radio-dot { background: var(--ctl-track); }
-.radio:has(input:checked:disabled):hover .radio-dot { background: var(--ctl-accent); }
+@media (hover: hover) { .radio:has(input:disabled):hover .radio-dot { background: var(--ctl-track); } }
+@media (hover: hover) { .radio:has(input:checked:disabled):hover .radio-dot { background: var(--ctl-accent); } }
 
 /* ---- Text field ---- */
 .text-field {
@@ -538,7 +549,7 @@
   transition: background var(--dur-fast) var(--ease-out);
 }
 .text-field::placeholder { color: var(--ctl-on-track); opacity: 0.55; }
-.text-field:hover { background: var(--ctl-track-hover); }
+@media (hover: hover) { .text-field:hover { background: var(--ctl-track-hover); } }
 .text-field:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .text-field:disabled { opacity: 0.5; cursor: default; }
 .text-field::selection { background: var(--ctl-accent); color: var(--ctl-knob-on); }
@@ -551,10 +562,14 @@
   /* Hug the fields — a stretched capsule would round its corners in the empty
      space past the last field, leaving that field's square edge looking cut off. */
   width: fit-content;
+  /* …but never wider than the row it's in: on a narrow plate the fields give up
+     width (from 58px) instead of running past the edge. */
+  max-width: 100%;
   flex-shrink: 0;
 }
 .vector input {
-  width: 58px;
+  flex: 0 1 58px;
+  min-width: 0;
   height: 100%;
   border: none;
   border-radius: 0;
@@ -566,6 +581,9 @@
   font-variant-numeric: tabular-nums;
   text-align: center;
   cursor: ns-resize;
+  /* A vertical drag is a scrub, not a scroll — without this a touch drag pans
+     the page (and fires pointercancel) instead of changing the value. */
+  touch-action: none;
 }
 /* Round the outer ends so the fused fields read as one capsule; inner edges stay
    square so the 2px gaps divide them. */
@@ -577,13 +595,23 @@
   border-top-right-radius: var(--radius-pill);
   border-bottom-right-radius: var(--radius-pill);
 }
-.vector input:hover { background: var(--ctl-track-hover); }
+@media (hover: hover) { .vector input:hover { background: var(--ctl-track-hover); } }
 .vector input:focus,
 .vector input:focus-visible { outline: none; box-shadow: none; }
-.vector input::-webkit-outer-spin-button,
-.vector input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.vector input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .color-vector input { transition: background var(--dur-fast) var(--ease-out); }
+/* A scrub in progress, set on <html> by the dragged field. The cursor crosses
+   the rest of the page on the way, so nothing else may select or take hover —
+   and the ns-resize cursor holds wherever it is, not only over the field. The
+   drag itself is tracked on `window`, so it needs nothing here to hit. */
+.pp-scrubbing,
+.pp-scrubbing * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: ns-resize !important;
+}
+/* The hover half, on its own class because Safari doesn't get it: WebKit stops
+   sending the drag its moves once nothing under the cursor can be hit. */
+.pp-scrubbing-hover body * { pointer-events: none; }
 
 /* ---- List (stacked rows) ----
    A capsule shape at a slider row's height, but a far quieter ground: rows are
@@ -650,8 +678,8 @@
   touch-action: none;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
-.pp-list-row:hover .pp-list-grip,
 .pp-list-grip:focus-visible { opacity: 1; }
+@media (hover: hover) { .pp-list-row:hover .pp-list-grip { opacity: 1; } }
 .pp-list-row.is-carried .pp-list-grip { opacity: 1; cursor: grabbing; }
 .pp-list-grip.is-locked { cursor: default; }
 .pp-list-grip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -680,13 +708,15 @@
    it is up, and without that the button would fade the moment the menu took
    focus, leaving the menu hanging off nothing. Any trigger of your own drawn
    this way can key off the same attribute. */
-.pp-list-row:hover .pp-list-more,
 .pp-list-row:focus-visible .pp-list-more,
 .pp-list-more[data-pp-anchored],
 .pp-list-more:focus-visible { opacity: 1; }
-.pp-list-more:hover { opacity: 1; }
+@media (hover: hover) { .pp-list-row:hover .pp-list-more { opacity: 1; } }
+@media (hover: hover) { .pp-list-more:hover { opacity: 1; } }
 .pp-list-more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .pp-list-more svg { display: block; }
+/* No pointer to wait for on a touch screen, so the button is simply there. */
+@media (hover: none) { .pp-list-more { opacity: 1; } }
 /* A branch has no button, but still reserves its width so `meta` on every row
    stops on the same rule. */
 .pp-list-more.is-spacer { width: 20px; cursor: default; }
@@ -746,7 +776,7 @@
               opacity var(--dur-fast) var(--ease-out);
 }
 .pp-tree-chevron.is-open { transform: rotate(90deg); }
-.pp-tree-chevron:hover { opacity: 1; }
+@media (hover: hover) { .pp-tree-chevron:hover { opacity: 1; } }
 /* A leaf keeps the chevron's width and nothing else, so every label in a level
    starts on the same rule whether or not the node branches. */
 .pp-tree-chevron.is-leaf { cursor: default; }
@@ -910,7 +940,7 @@
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out);
 }
-.pp-table-sort:hover { color: var(--ctl-text); }
+@media (hover: hover) { .pp-table-sort:hover { color: var(--ctl-text); } }
 .pp-table-sort:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 /* An end-aligned column hangs its caret on the left, so the label still ends
    on the column's rule and the arrow never pushes the digits off it. */
@@ -927,19 +957,18 @@
   transition: opacity var(--dur-fast) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
-.pp-table-sort:hover .pp-table-caret { opacity: 0.4; }
+@media (hover: hover) { .pp-table-sort:hover .pp-table-caret { opacity: 0.4; } }
 .pp-table-sort.is-asc .pp-table-caret,
 .pp-table-sort.is-desc .pp-table-caret { opacity: 1; }
 .pp-table-sort.is-desc .pp-table-caret { transform: rotate(90deg); }
 .pp-table-caret svg { display: block; }
 
 /* ---- Popover (a surface that floats over the work) ----
-   A plate, not glass. `TitleBar`'s sheet makes the same call for the same
-   reason: a veil is worth having where there is live content behind it to wash,
-   and a surface whose whole job is to separate its contents from whatever
-   happens to be underneath cannot let that through. So this is the `--ctl-bar`
-   ground the sheet and the strip's own capsules sit on, with the lit top edge
-   `.panel` wears — this theme's entire vocabulary for a raised surface.
+   A plate, not glass: a veil is worth having where there is live content
+   behind it to wash, and a surface whose whole job is to separate its contents
+   from whatever happens to be underneath cannot let that through. So this is
+   the `--ctl-bar` ground, with the lit top edge `.panel` wears — this theme's
+   entire vocabulary for a raised surface.
 
    Position comes from the component, which measures the anchor and writes
    `left` / `top` here. Everything below is what that measurement needs from CSS
@@ -1033,8 +1062,8 @@
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 }
-.pp-menu-item:hover:not(:disabled) { background: var(--ctl-accent); color: white; }
-.pp-menu-item:hover:not(:disabled) .pp-menu-tick { color: white; }
+@media (hover: hover) { .pp-menu-item:hover:not(:disabled) { background: var(--ctl-accent); color: white; } }
+@media (hover: hover) { .pp-menu-item:hover:not(:disabled) .pp-menu-tick { color: white; } }
 /* Keyboard focus *is* the highlight in a menu, so the focused command takes the
    hover ground rather than wearing a ring beside it — with an accent outline
    held inside the pill, because these rows are flush and an outset one would

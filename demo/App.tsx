@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 // The SVG-only player, as the design canvas used — the default entry also
 // carries the canvas/html renderers, which this page never asks for.
 import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
+import { Code } from './Code';
 import { familiesOf, pages, type DocPage, type Group } from './catalog';
 import { PropsTable } from './pages';
 import { IconButton, Slider, Stepper } from '../src';
@@ -165,6 +166,12 @@ export function App() {
   // where the sidebar is always a visible grid column.
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Name the tab (and the history entry) after the page, so tabs, bookmarks and
+  // a screen reader's page announcement say which component this is.
+  useEffect(() => {
+    document.title = page ? `${page.name} — PrettyPanels` : 'PrettyPanels';
+  }, [page]);
+
   // Close the drawer after navigating (link click or back/forward)...
   useEffect(() => setMenuOpen(false), [slug]);
   // ...and on Escape while it's open.
@@ -293,10 +300,8 @@ function DocPageView({
 
       <section className="doc-section">
         <h2>Import</h2>
-        <pre className="code">
-          {/* The display name carries a space ("Title Bar"); the export doesn't. */}
-          <code>{`import { ${page.name.replace(/\s/g, '')} } from '${page.importFrom ?? 'pretty-panels'}';`}</code>
-        </pre>
+        {/* The display name carries a space ("Title Bar"); the export doesn't. */}
+        <Code lang="tsx">{`import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`}</Code>
       </section>
     </article>
   );
