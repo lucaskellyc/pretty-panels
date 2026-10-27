@@ -1,4 +1,5 @@
 import { type ReactNode, useRef, useState } from 'react';
+import { Code } from './Code';
 import {
   IconButton,
   Gauge,
@@ -971,8 +972,7 @@ export function MenuGuide() {
           decided by the gesture rather than by taste &mdash; a button press has
           an element, a right-click has only the place it happened.
         </p>
-        <pre className="code">
-          <code>{`const [at, setAt] = useState<PopoverPoint | null>(null);
+        <Code lang="tsx">{`const [at, setAt] = useState<PopoverPoint | null>(null);
 
 <div onContextMenu={(e) => { e.preventDefault(); setAt({ x: e.clientX, y: e.clientY }); }}>
   …
@@ -983,8 +983,7 @@ export function MenuGuide() {
   anchor={at}
   items={[{ id: 'duplicate', shortcut: '⌘D' }, { separator: true }, { id: 'delete' }]}
   onSelect={run}
-/>`}</code>
-        </pre>
+/>`}</Code>
         <p className="doc-prose">
           The point <em>is</em> the open state there, so there is no second flag
           to keep in step with it. A button-anchored menu takes a ref instead
@@ -993,8 +992,7 @@ export function MenuGuide() {
           menu only ever measures it, so a box of your own around something else
           works the same way.
         </p>
-        <pre className="code">
-          <code>{`const trigger = useRef<HTMLButtonElement>(null);
+        <Code lang="tsx">{`const trigger = useRef<HTMLButtonElement>(null);
 
 <TextButton
   ref={trigger}
@@ -1004,8 +1002,7 @@ export function MenuGuide() {
 >
   View
 </TextButton>
-<Menu open={open} onClose={() => setOpen(false)} anchor={trigger} … />`}</code>
-        </pre>
+<Menu open={open} onClose={() => setOpen(false)} anchor={trigger} … />`}</Code>
         <p className="doc-prose">
           Pressing the anchor doesn&rsquo;t count as pressing outside, which is
           what lets that button close the menu it opened rather than dismissing
@@ -1123,11 +1120,9 @@ export function PopoverGuide() {
           hanging off nothing. Any trigger of your own that appears on hover can
           key off the same attribute:
         </p>
-        <pre className="code">
-          <code>{`.my-row-action { opacity: 0; }
+        <Code lang="css">{`.my-row-action { opacity: 0; }
 .my-row:hover .my-row-action,
-.my-row-action[data-pp-anchored] { opacity: 1; }`}</code>
-        </pre>
+.my-row-action[data-pp-anchored] { opacity: 1; }`}</Code>
         <p className="doc-prose">
           A data attribute rather than <code>aria-expanded</code>, which is the
           trigger&rsquo;s own claim about itself &mdash; a surface has no business

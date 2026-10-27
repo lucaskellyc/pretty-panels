@@ -69,6 +69,16 @@
      their labels but the rail never moves. A longer component name is the only
      thing that would need this number raised. */
   --doc-sidebar-w: 252px;
+
+  /* Code colours (the <Code> blocks). Each clears 4.5:1 on
+     --doc-surface-recessed in its theme; comments are the quietest. */
+  --code-keyword: hsl(275 60% 36%);
+  --code-string: hsl(150 70% 20%);
+  --code-number: hsl(20 85% 28%);
+  --code-tag: hsl(200 90% 24%);
+  --code-attr: hsl(330 60% 33%);
+  --code-fn: hsl(230 65% 38%);
+  --code-comment: hsl(210 24% 31%);
 }
 
 /* ---- Dark (when the OS prefers it) ---- */
@@ -99,6 +109,14 @@
       0 4px 14px 2px hsl(var(--doc-hue-neutral) 50% 2% / 0.2),
       inset 0 2px 1px var(--doc-highlight);
     --doc-shadow-panel: 0 10px 26px -6px hsl(var(--doc-hue-neutral) 55% 2% / 0.62);
+
+    --code-keyword: hsl(275 75% 80%);
+    --code-string: hsl(140 50% 72%);
+    --code-number: hsl(30 85% 72%);
+    --code-tag: hsl(195 75% 70%);
+    --code-attr: hsl(330 70% 80%);
+    --code-fn: hsl(225 90% 80%);
+    --code-comment: hsl(220 20% 62%);
   }
 }
 
@@ -668,6 +686,13 @@ body {
   color: var(--doc-text);
   white-space: pre;
 }
+.tok-keyword { color: var(--code-keyword); }
+.tok-string { color: var(--code-string); }
+.tok-number { color: var(--code-number); }
+.tok-tag { color: var(--code-tag); }
+.tok-attr { color: var(--code-attr); }
+.tok-fn { color: var(--code-fn); }
+.tok-comment { color: var(--code-comment); font-style: italic; }
 /* `clone` is what keeps a wrapped capsule a capsule: by default an inline box
    that breaks across lines is one box sliced in two, so the break edges lose
    their radius and padding and each fragment ends up half-squared. Cloning

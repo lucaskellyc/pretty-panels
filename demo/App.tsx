@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 // The SVG-only player, as the design canvas used — the default entry also
 // carries the canvas/html renderers, which this page never asks for.
 import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
+import { Code } from './Code';
 import { familiesOf, pages, type DocPage, type Group } from './catalog';
 import { PropsTable } from './pages';
 import { IconButton, Slider, Stepper } from '../src';
@@ -299,10 +300,8 @@ function DocPageView({
 
       <section className="doc-section">
         <h2>Import</h2>
-        <pre className="code">
-          {/* The display name carries a space ("Title Bar"); the export doesn't. */}
-          <code>{`import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`}</code>
-        </pre>
+        {/* The display name carries a space ("Title Bar"); the export doesn't. */}
+        <Code lang="tsx">{`import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`}</Code>
       </section>
     </article>
   );
