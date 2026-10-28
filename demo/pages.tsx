@@ -1,5 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { Code } from './Code';
+import { CopyChip } from './CopyChip';
 import {
   IconButton,
   Gauge,
@@ -34,39 +35,137 @@ import type { PropRow } from './catalog';
 
 // ---- Shared render helpers ------------------------------------------------
 
-/** Renders a component's props as a table. */
-export function PropsTable({ rows }: { rows: PropRow[] }) {
+/** One token of a prop's type or value: a string literal, a built-in or
+ *  boolean literal, a number (with an optional CSS unit, as in `380px`), a
+ *  named type, a callback argument, a separator a long signature may wrap
+ *  after, or other punctuation. Types, options and defaults all go through it,
+ *  so each kind of token reads the same wherever it appears. */
+const TYPE_TOKEN =
+  /('[^']*')|(\b(?:string|number|boolean|null|undefined|void|true|false)\b)|(\b\d+(?:\.\d+)?(?:px|ms|s|%|em|rem)?\b)|([A-Z]\w*)|([a-z]\w*(?=\??:))|(=>|\|)|([()[\]<>,:?])/g;
+
+/** The colour each token kind is drawn in, as the `--code-*` token behind it. */
+const TOKEN_COLOR: Record<string, string> = {
+  'tok-string': 'var(--code-string)',
+  'tok-keyword': 'var(--code-keyword)',
+  'tok-number': 'var(--code-number)',
+  'tok-tag': 'var(--code-tag)',
+};
+
+/** A type's or value's lead colour: its first literal, built-in, number or
+ *  named type. Argument names are skipped, so `(v: number) => void` reads as
+ *  `number`, the word that says what the signature is about. Falls back to
+ *  the plain text ink (a prose default like "from columns"). */
+function leadColor(src: string) {
+  for (const [, lit, prim, num, name] of src.matchAll(TYPE_TOKEN)) {
+    if (lit) return TOKEN_COLOR['tok-string'];
+    if (prim) return TOKEN_COLOR['tok-keyword'];
+    if (num) return TOKEN_COLOR['tok-number'];
+    if (name) return TOKEN_COLOR['tok-tag'];
+  }
+  return 'var(--doc-text)';
+}
+
+/** A prop's type, coloured with the same `--code-*` tokens as the code blocks.
+ *  Breaks are offered only after `|` and `=>`, so a long union wraps between
+ *  its members rather than partway through a name. */
+function TypeSig({ src }: { src: string }) {
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const m of src.matchAll(TYPE_TOKEN)) {
+    const [tok, lit, prim, num, name, arg, sep] = m;
+    if (m.index > last) {
+      // The space before a separator never breaks, so a wrapped line ends on
+      // the `|` or `=>` rather than starting with it.
+      const gap = src.slice(last, m.index);
+      out.push(sep ? gap.replace(/ $/, '\u00a0') : gap);
+    }
+    const cls = lit
+      ? 'tok-string'
+      : prim
+        ? 'tok-keyword'
+        : num
+          ? 'tok-number'
+          : name
+            ? 'tok-tag'
+            : arg
+              ? 'tok-attr'
+              : 'type-punct';
+    out.push(
+      <span key={m.index} className={cls}>
+        {tok}
+      </span>,
+    );
+    if (sep) out.push(<wbr key={`w${m.index}`} />);
+    last = m.index + tok.length;
+  }
+  out.push(src.slice(last));
+  return <code className="type">{out}</code>;
+}
+
+/** A run of a prop block's text, in one box that shrinks to fit it. Without it
+ *  Chrome paints a selection across several blocks past the end of each
+ *  line, so the highlight runs on into the empty space beside the text. */
+function Fit({ children }: { children: ReactNode }) {
+  return <span className="prop-fit">{children}</span>;
+}
+
+/** Renders a component's props as a stack of blocks, one per prop: name and
+ *  type on top, then what it does, then its default if it has one. The name is
+ *  a copy chip — click it to copy — filled with the accent when the prop is
+ *  required and its pale tint when it isn't; the "required" word is there for
+ *  screen readers, since the colour alone tells them nothing. The type, any
+ *  options and the default are copy chips too, unfilled and coloured by token
+ *  the way a code block is. */
+export function PropsList({ rows }: { rows: PropRow[] }) {
   return (
-    <div className="props-scroll">
-      <table className="props">
-        <thead>
-          <tr>
-            <th>Property</th>
-            <th>Type</th>
-            <th>Default</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.name}>
-              <td>
-                <code>{r.name}</code>
-                {r.required && (
-                  <span className="req" title="required" aria-label="required">
-                    *
-                  </span>
-                )}
-              </td>
-              <td>
-                <code className="type">{r.type}</code>
-              </td>
-              <td>{r.default ? <code>{r.default}</code> : <span className="muted">—</span>}</td>
-              <td>{r.description}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="props">
+      {rows.map((r) => (
+        <div className="prop" key={r.name}>
+          <div className="prop-head">
+            <Fit>
+              <CopyChip
+                value={r.name}
+                tone={r.required ? 'solid' : 'soft'}
+                title={r.required ? 'Required · click to copy' : 'Click to copy'}
+              />
+              {r.required && <span className="req"> required</span>}
+            </Fit>
+            <Fit>
+              <CopyChip value={r.type} tone="plain" antsColor={leadColor(r.type)} label={`Copy type ${r.type}`}>
+                <TypeSig src={r.type} />
+              </CopyChip>
+            </Fit>
+          </div>
+          <div className="prop-desc">
+            <Fit>{r.description}</Fit>
+          </div>
+          {r.options && (
+            <div className="prop-meta">
+              <span className="prop-label">Options</span>
+              <span className="prop-options">
+                {r.options.map((o) => (
+                  <CopyChip key={o} value={o} tone="plain" antsColor={leadColor(o)} label={`Copy option ${o}`}>
+                    <TypeSig src={o} />
+                  </CopyChip>
+                ))}
+              </span>
+            </div>
+          )}
+          {r.default && (
+            <div className="prop-meta">
+              <span className="prop-label">Default</span>
+              <CopyChip
+                value={r.default}
+                tone="plain"
+                antsColor={leadColor(r.default)}
+                label={`Copy default ${r.default}`}
+              >
+                <TypeSig src={r.default} />
+              </CopyChip>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -418,7 +517,7 @@ export function PlatterExample() {
       {/* One choice out of several — exactly one segment is ever lit, and the
           tray reports which through `onChange`. */}
       <Platter
-        mode="select"
+        mode="single"
         label="Transport"
         value={transport}
         onChange={setTransport}
@@ -440,7 +539,7 @@ export function PlatterExample() {
         ]}
       />
       <Platter
-        mode="select"
+        mode="single"
         orientation="vertical"
         label="Transform tool"
         value={tool}
@@ -481,7 +580,7 @@ export function ToolbarExample() {
           }
         >
           <Platter
-            mode="select"
+            mode="single"
             label="Transform tool"
             value={tool}
             onChange={setTool}
@@ -501,7 +600,7 @@ export function ToolbarExample() {
           {/* A third item, so the fold has somewhere to go one step at a time
               rather than all at once. */}
           <Platter
-            mode="select"
+            mode="single"
             label="Shading"
             value={shading}
             onChange={setShading}
@@ -604,9 +703,7 @@ export function TableExample() {
   });
 
   return (
-    /* Four columns want more plate than the 340px the examples default to; the
-       min() still lets it give way on a narrow viewport. */
-    <Panel title="Render queue" width="min(460px, 100%)">
+    <Panel title="Render queue">
       <Table
         label="Render queue"
         sort={sort}

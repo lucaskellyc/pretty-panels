@@ -120,19 +120,24 @@
   }
 }
 
+/* Safari still needs the prefix, so both are set — without it the sidebar and
+   headings stay selectable there. */
 * {
   box-sizing: border-box;
+  -webkit-user-select: none;
   user-select: none;
 }
 
-/* Only prose is selectable — headings and paragraphs. */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p {
+/* Only prose is selectable, the props' descriptions included. Headings, the
+   sub-header lines under them and the sidebar stay out of it — they're chrome
+   to navigate by, not text to copy — and so do a prop block's chips (they copy
+   on click) and the block itself, so a selection never paints its divider.
+   A description's descendants are listed too, because `*` above sets `none`
+   on each element directly rather than leaving it to inherit. */
+p:not(.doc-summary, .hero-tagline, .hero-sub),
+.prop-desc,
+.prop-desc * {
+  -webkit-user-select: text;
   user-select: text;
 }
 
@@ -217,7 +222,7 @@ body {
 
 /* Shared capitalized caption treatment. */
 .doc-section h2,
-.props th {
+.props .prop-label {
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -225,13 +230,26 @@ body {
   color: var(--doc-quiet);
 }
 
-/* ---- Shell layout ---- */
+/* ---- Shell layout ----
+   The document never scrolls: the shell is exactly one screen tall and the
+   content column is the scroller. That way a rubber-band overscroll on macOS
+   bounces the content alone, and the sidebar stays where it is instead of
+   being dragged along with the whole page. */
+html {
+  /* The root has nothing to scroll, but Safari still bounces it — and a
+     scroll that runs off the end of the content would chain to it. */
+  overscroll-behavior: none;
+}
 .docs {
   display: grid;
   /* The rail's track sizes to the floating card rather than to a fixed number,
      so a longer component name widens the card instead of overflowing it. */
   grid-template-columns: auto 1fr;
-  min-height: 100vh;
+  /* One row, held to the shell's height. Left as an auto row it grows to the
+     content's height and the document scrolls after all. */
+  grid-template-rows: minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
 }
 /* Home page: no sidebar, so the content spans the full width. */
 .docs.is-home {
@@ -421,11 +439,24 @@ body {
 /* ---- Content ---- */
 .content {
   /* min-width: 0 lets the 1fr grid track shrink below its content's intrinsic
-     width. Without it a wide child (props table, code block, example panel)
+     width. Without it a wide child (prop block, code block, example panel)
      forces the column past the viewport, so the readable width would drift with
      the page's content. This keeps it stable and always within the viewport. */
   min-width: 0;
-  padding: 64px 56px 112px;
+  /* As variables so a full-bleed child (the home hero) can cancel them
+     exactly with negative margins, at every breakpoint. */
+  --pad-top: 64px;
+  --pad-x: 56px;
+  padding: var(--pad-top) var(--pad-x) 112px;
+  /* The page's scroller (see the shell note): it fills the shell's height and
+     scrolls inside it. */
+  height: 100%;
+  overflow-y: auto;
+}
+/* Focusable only so keyboard scrolling has somewhere to land (see App) — it is
+   not a control, so it shows no ring. */
+.content:focus {
+  outline: none;
 }
 .doc {
   max-width: var(--doc-content-w);
@@ -470,8 +501,10 @@ body {
   font-size: 13px;
 }
 
+/* No bottom padding: it used to space the summary off the example below it,
+   and with the example moved above the title it would only stack on top of
+   the next section's own margin. */
 .doc-head {
-  padding-bottom: 32px;
   margin-bottom: 8px;
 }
 .doc-head h1 {
@@ -544,23 +577,28 @@ body {
   margin: 0 0 18px;
 }
 
-/* ---- Live example frame (a recessed well) ---- */
+/* ---- Live example ----
+   Leads the page, above the title, straight on the page ground. */
 .doc-example {
   display: flex;
-  justify-content: center;
-  padding: 48px 32px;
-  border-radius: var(--doc-radius-lg);
-  background:
-    radial-gradient(var(--doc-example-grid) 1px, transparent 1px) 0 0 / 18px 18px,
-    var(--doc-surface-recessed);
-  box-shadow: var(--doc-shadow-inset);
-  margin-top: 24px;
+  /* Flush left with the title and text below it, not centred in the column. */
+  justify-content: flex-start;
+  padding: 48px 0 64px;
+  margin-bottom: 16px;
 }
 .doc-example .panel {
-  /* Cap the plate at the well width via the width *variable* (not `width`) so it
-     never overflows a narrow viewport. */
-  --panel-w: min(340px, 100%);
+  /* The plate fills the column. Set through the width *variable* (not
+     `width`), since the Panel sizes its fixed-width inner body from it too. */
+  --panel-w: 100%;
   box-shadow: var(--doc-shadow-panel);
+}
+/* At the column's width the library's 16px body / 12px header inset leaves
+   the controls hugging the plate's edges, so both widen to one 24px gutter —
+   which also lines the title up with the rows under it. A header holding a
+   tab bar keeps its own zero inset (shell.css). */
+.doc-example .panel-body-inner,
+.doc-example .panel-head:not(:has(> .tab-bar)) {
+  padding-inline: var(--space-6);
 }
 
 .doc-stack {
@@ -590,84 +628,276 @@ body {
   color: var(--ctl-text);
 }
 
-/* ---- Props table ----
-   A rounded surface card. `separate` (not `collapse`) so the table honors
-   border-radius; `overflow: hidden` clips the header + zebra rows to the
-   corners. */
-/* Scroll the props table within its own box on narrow viewports, instead of
-   squeezing the columns or pushing the page wider. */
-.props-scroll {
-  --sb-corner: var(--doc-radius-md);
-  background: rgb(from var(--doc-surface) r g b / 0.2);
-  border-radius: var(--doc-radius-md);
-  border: 1px solid var(--doc-surface-recessed);
-  overflow-x: auto;
-}
+/* ---- Props ----
+   One block per prop, stacked and split by hairline rules, so a long type or
+   description gets the full width instead of a squeezed table column. The
+   rule is a border rather than an <hr>: it's the same line, without a
+   screen reader announcing a separator between every prop. */
 .props {
-  width: 100%;
-  min-width: 30rem;
   font-size: 14px;
-  overflow: hidden;
-  border-spacing: 0;
 }
-.props th {
-  text-align: left;
-  padding: 14px 14px 12px;
-}
-
-.props td {
-  padding: 13px 14px;
-  vertical-align: top;
+.prop {
+  /* Anchors the visually hidden "required" word. Without it that span is
+     placed against the page itself, outside the content scroller, and makes
+     the document taller than the screen. */
+  position: relative;
+  padding: 16px 0;
   color: var(--doc-quiet);
   line-height: 1.5;
+}
+.prop + .prop {
   border-top: 1px solid var(--doc-surface-recessed);
-  text-wrap: balance;
 }
-/* The description column sets the table's width instead of absorbing whatever
-   the other three leave behind. Squeezed into the remainder of a 720px well it
-   wrapped the longer entries to six and seven lines; held at a readable measure
-   it keeps almost all of them inside three, and the table takes the extra width
-   rather than the row taking extra height. `.props-scroll` is already there to
-   carry the overflow, so the cost is a little sideways scroll on the widest
-   pages. One number to tune: raise it to trade scroll for shorter rows. */
-.props td:nth-child(4) {
-  min-width: 40ch;
+/* Name on the left, type pushed to the right. `space-between` rather than an
+   auto margin, because a lone item on a flex line sits at its start: a type
+   too long to share the line wraps underneath and starts from the left. */
+.prop-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 16px;
 }
-/* Zebra: tint every other body row. A text-colored overlay adapts to both
-   themes — a faint darkening in light, a faint lightening in dark. */
-/*.props tbody tr:nth-child(odd) td {
-  background: var(--doc-surface);
+.prop-desc {
+  margin-top: 8px;
+  text-wrap: pretty;
 }
-.props tbody tr:nth-child(even) td {
-  background: var(--doc-surface-recessed);
-}*/
-/*.props td:last-child {
-  background: var(--doc-surface-recessed);
-}*/
+/* A labelled row under the description: a prop's options, its default. */
+.prop-meta {
+  display: flex;
+  align-items: baseline;
+  /* Room for the chips' hover ring, which stands 7px off an unfilled chip's
+     text, so it never touches the label. */
+  gap: 16px;
+  margin-top: 10px;
+}
+.prop-options {
+  display: flex;
+  flex-wrap: wrap;
+  /* Clear of each other's rings too, with the text still reading as one
+     list. */
+  gap: 8px 20px;
+}
 .props code {
   font-family: var(--doc-font-mono);
   font-size: 12.5px;
 }
-.props td:first-child code {
-  color: var(--doc-heading);
-  font-weight: 500;
+/* ---- Copy chip (see CopyChip.tsx) ----
+   A prop name, type or default you click to copy. Solid is the filled accent,
+   for required props — page-background ink holds about 6.5:1 on it in light
+   and 7:1 in dark; soft is the accent's pale tint; plain has no fill. Hover
+   grows the chip and runs marching ants round it; a copy settles the ring —
+   it stops marching and goes solid for a moment. The label never changes and the chip
+   keeps its size, so a copy never shifts the layout. */
+.copy-chip-wrap {
+  position: relative;
+  display: inline-flex;
+  /* So a long type can wrap inside its chip instead of pushing the row wider. */
+  max-width: 100%;
+  border-radius: var(--doc-radius-pill);
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* No capsule on the type column — long signatures wrap and a pill breaks
-   badly across lines. Render it as plain accent-colored sans-serif instead
-   (overriding the monospace that `.props code` sets). */
+.copy-chip-wrap:hover {
+  transform: scale(1.08);
+}
+/* A type can run the full width of the column, where growing would push it
+   past the edge — the ring alone marks the hover there. */
+.copy-chip-wrap:has(.is-plain):hover {
+  transform: none;
+}
+.copy-chip {
+  --chip-pad-x: 8px;
+  position: relative;
+  /* Its own layer, so the fill's z-index: -1 stays behind the text but in
+     front of the page. */
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--chip-pad-x);
+  border: 0;
+  border-radius: var(--doc-radius-pill);
+  background: none;
+  font-family: var(--doc-font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.copy-chip:active {
+  transform: scale(0.97);
+}
+.copy-chip:focus-visible {
+  outline: 2px solid var(--doc-accent);
+  outline-offset: 2px;
+}
+/* The chip's visible shape, a layer behind its text. */
+.copy-chip-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--doc-radius-pill);
+  transition: background-color 90ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.copy-chip.is-solid {
+  color: var(--doc-bg);
+}
+.copy-chip.is-solid .copy-chip-fill {
+  background: var(--doc-accent);
+}
+.copy-chip.is-soft {
+  color: var(--doc-heading);
+}
+.copy-chip.is-soft .copy-chip-fill {
+  background: var(--doc-accent-dim);
+}
+@media (hover: hover) {
+  .copy-chip.is-solid:hover .copy-chip-fill {
+    background: color-mix(in srgb, var(--doc-accent) 88%, white);
+  }
+  .copy-chip.is-soft:hover .copy-chip-fill {
+    background: color-mix(in srgb, var(--doc-accent-dim) 88%, white);
+  }
+}
+/* No fill: the type chip. Its text carries its own colours, and the ants take
+   the type's lead colour (see `leadColor`). Long signatures still wrap, so it
+   drops the one-line height. */
+.copy-chip.is-plain {
+  /* No fill, so no inner padding either: the text lines up with the column's
+     edges like the prose around it. The ring stands off further instead. */
+  --chip-pad-x: 0px;
+  max-width: 100%;
+  /* A one-character value (a default of `0`) is barely wider than its ring is
+     tall, and with ends of half its height the capsule closed up into a
+     circle. Held to a minimum width with the text centred, the chip keeps a
+     capsule ring — and since the room is in the chip's own box, the ring
+     still overhangs it only by its usual inset rather than reaching into the
+     label beside it. */
+  min-width: 2.25em;
+  justify-content: center;
+  /* The chip's line-height: 1 is for one-line pills; a wrapped signature
+     needs room between its lines. */
+  line-height: 1.4;
+  color: var(--doc-text);
+  text-align: left;
+}
+.copy-chip.is-plain .copy-chip-track {
+  height: auto;
+}
+.copy-chip.is-plain .copy-chip-label {
+  /* Allowed to shrink, which is what lets a long signature wrap at all. */
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+}
+/* The label is what sizes the chip, so each chip hugs its own text. */
+.copy-chip-track {
+  display: flex;
+  align-items: center;
+  height: 1.4em;
+}
+.copy-chip-track > span {
+  flex: none;
+  white-space: nowrap;
+}
+/* The hover ring: a dashed outline a few px off the fill, marching while the
+   pointer is over it. CopyChip fits the dash to the outline's length. */
+.copy-chip-ants {
+  --ring-x: 4px;
+  --ring-y: 4px;
+  position: absolute;
+  top: calc(-1 * var(--ring-y));
+  left: calc(-1 * var(--ring-x));
+  width: calc(100% + 2 * var(--ring-x));
+  height: calc(100% + 2 * var(--ring-y));
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms linear;
+}
+.copy-chip.is-plain .copy-chip-ants {
+  --ring-x: 7px;
+  --ring-y: 3px;
+}
+.copy-chip-ants rect {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ants-color, var(--doc-accent)) 80%, transparent);
+  stroke-width: 1.5px;
+  animation: copy-chip-march 500ms linear infinite;
+  animation-play-state: paused;
+}
+.copy-chip-wrap:hover .copy-chip-ants {
+  opacity: 1;
+}
+.copy-chip-wrap:hover .copy-chip-ants rect {
+  animation-play-state: running;
+}
+@keyframes copy-chip-march {
+  to { stroke-dashoffset: var(--ants-period, -10px); }
+}
+/* The copy confirmation: the ring stops marching and goes solid for a moment
+   (CopyChip holds `is-copied`), then the chip goes back to how it was.
+   `!important` because the dash pattern is an inline style (CopyChip fits it
+   to the outline). */
+.copy-chip.is-copied .copy-chip-ants {
+  opacity: 1;
+}
+.copy-chip.is-copied .copy-chip-ants rect {
+  stroke-dasharray: none !important;
+  stroke-width: 2px;
+  animation: none;
+}
+.copy-chip-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .copy-chip-wrap,
+  .copy-chip-wrap * {
+    transition-duration: 1ms !important;
+    animation: none !important;
+  }
+}
+/* No capsule on the type — long signatures wrap and a pill breaks badly
+   across lines. Instead it stays monospace and is coloured by token (see
+   `TypeSig`), with the punctuation stepped back so the names lead. */
+/* An inline-block of its own too, not just inside `Fit`: as a plain inline
+   box Chrome still ran its selection a few pixels past the last character. */
 .props .type {
-  font-family: var(--doc-font-body);
-  color: var(--doc-accent);
-  padding: 0;
+  display: inline-block;
+  max-width: 100%;
+  color: var(--doc-text);
   border-radius: 0;
   background: none;
+  /* A signature that has to wrap splits into even lines rather than a full
+     line and a stub, and every line after the first hangs in by 2ch, so it
+     reads as the same type carrying on rather than a second one starting. */
+  text-wrap: balance;
+  padding: 0 0 0 2ch;
+  text-indent: -2ch;
 }
-.props .req {
-  margin-left: 3px;
-  color: var(--doc-accent);
-}
-.props .muted {
+.props .type-punct {
   color: var(--doc-quiet);
+}
+/* See `Fit` in pages.tsx: an inline-block ends a selection at the text,
+   instead of a strip running on into the empty space after it. */
+.prop-fit {
+  display: inline-block;
+  max-width: 100%;
+}
+/* Visually hidden, still read aloud. */
+.props .req {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* ---- Code blocks (recessed) ---- */
@@ -715,24 +945,50 @@ body {
    here; everything below stays quiet.
    ============================================================ */
 
-/* Home shares the same readable width as the component pages. */
-.home {
+/* Home shares the same readable width as the component pages — all but the
+   hero, which runs full-bleed. */
+.home > :not(.hero-poster) {
   max-width: var(--doc-content-w);
-  margin: 0 auto;
+  margin-inline: auto;
+}
+/* Its own snapshot, so a jump to or from a component page can fade the home
+   page out or in on its own, not leave it sitting under the other page (see
+   the `vt-home` transition). */
+.home {
+  view-transition-name: home-page;
 }
 
-/* ---- Hero poster (a centred display plate) ---- */
+/* ---- Hero (a full-bleed dotted stage) ----
+   The negative margins cancel the content's padding, so the dotted ground
+   reaches the window's top edge and both sides, then fades out downward into
+   the page instead of ending at an edge. The padding adds the same amounts
+   back, so the hero's contents stay where the poster used to hold them. */
 .hero-poster {
-  background: radial-gradient(var(--doc-example-grid) 1px, transparent 1px) 0 0 / 18px 18px,
-  var(--doc-surface-recessed);
-  border: 2px solid var(--doc-border-quiet);
-  border-radius: 45px;
-  box-shadow: var(--doc-shadow-inset);
+  --hero-top: 32px;
+  --hero-x: 48px;
+  position: relative;
+  /* Keeps the backdrop's z-index: -1 behind the hero's own content without
+     dropping it behind the page. */
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: -25px auto;
-  padding: 32px 48px 40px;
+  margin: calc(-1 * var(--pad-top)) calc(-1 * var(--pad-x)) 0;
+  padding: calc(var(--pad-top) + var(--hero-top)) calc(var(--pad-x) + var(--hero-x)) 40px;
+}
+/* The ground lives on a pseudo-element so the fade can be a mask: masking the
+   hero itself would fade the live controls out with it. */
+.hero-poster::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(var(--doc-example-grid) 1px, transparent 1px) 0 0 / 18px 18px,
+    var(--doc-surface-recessed);
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent);
+  pointer-events: none;
 }
 
 /* The two Lottie stages, side by side on wide posters and stacked once they
@@ -975,7 +1231,8 @@ body {
 /* ---- Home: tighten the poster's padding on narrow screens. ---- */
 @media (max-width: 560px) {
   .hero-poster {
-    padding: 40px 24px 32px;
+    --hero-top: 40px;
+    --hero-x: 24px;
   }
   /* Too narrow for all three on one line — the seeker would be squeezed to a
      sliver — so the button and stepper share a line and the seeker runs the
@@ -988,10 +1245,17 @@ body {
     flex-basis: 100%;
     order: 1;
   }
-  /* The well's side padding is most of what squeezes an example panel on a
-     phone; the plate's own shadow is all the inset it needs. */
+  /* Less room above and below on a phone; there's no side padding to trim,
+     since the example sits flush with the column. */
   .doc-example {
-    padding: 32px 12px;
+    padding: 32px 0 48px;
+  }
+  /* A phone's column is already narrow; the library's own inset is enough. */
+  .doc-example .panel-body-inner {
+    padding-inline: var(--space-4);
+  }
+  .doc-example .panel-head:not(:has(> .tab-bar)) {
+    padding-inline: var(--space-3);
   }
 }
 
@@ -1036,8 +1300,11 @@ body {
     transform: translateX(0);
   }
   .content {
-    padding: 40px 22px 80px;
+    --pad-top: 40px;
+    --pad-x: 22px;
+    padding-bottom: 80px;
   }
+
   .doc-head h1 {
     font-size: 2.25rem;
   }
@@ -1090,11 +1357,19 @@ html.vt-up .sidebar {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html.vt-home::view-transition-new(doc-page) {
-    animation: doc-page-fade 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  /* To/from home the two pages take turns rather than cross-fading: the one
+     leaving fades out, and only then does the one arriving fade in. Each has
+     its own snapshot (`doc-page`, `home-page`), so neither is ever left at
+     full strength under the other — with home sitting in the root, which
+     doesn't animate, the leaving article used to fade out over the finished
+     home page, and for a moment the two pages overlapped. */
+  html.vt-home::view-transition-old(doc-page),
+  html.vt-home::view-transition-old(home-page) {
+    animation: doc-page-fade 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both reverse;
   }
-  html.vt-home::view-transition-old(doc-page) {
-    animation: doc-page-fade 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both reverse;
+  html.vt-home::view-transition-new(doc-page),
+  html.vt-home::view-transition-new(home-page) {
+    animation: doc-page-fade 220ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms both;
   }
 
   /* Sidebar slides in / out along its left edge. */

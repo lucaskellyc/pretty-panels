@@ -66,6 +66,14 @@ ground that stays deep, so those five tokens take hue and saturation from the
 knobs but keep their own lightness. It means capsules look much the same on a
 light plate as a dark one: the plate changes, the hardware on it doesn't.
 
+Value fields are the one capsule that switches sides. `TextField`, `Vector`,
+`Stepper`, `Slider` and `Select` use `--ctl-field`, `--ctl-field-hover`, `--ctl-field-deep-hover` and
+`--ctl-field-text`. On a dark plate they match the pinned track with white text,
+and on a light plate they ride the ramp with dark text, because a value you
+read closely shouldn't be the weakest pairing in the set. A `Vector` in
+`colorMode` ignores them and paints its own colors, and a `Slider`'s text
+turns white wherever the accent fill sits under it.
+
 Useful range for `--mono-l` is **0–30 or 66–95**. Between those the plate sits
 near mid-grey, both ends of the ramp clamp toward the middle, and tab labels
 drop below 4.5:1 contrast; above 95 the hint text does the same.
@@ -133,7 +141,7 @@ Alphabetical within each family.
 | Component    | What it is                                           |
 | ------------ | ---------------------------------------------------- |
 | `RadioGroup` | Row of dot-and-label choices over real radio inputs. |
-| `Select`     | Native `<select>` restyled as a track capsule.       |
+| `Select`     | Track capsule that opens its choices as a `Menu`.    |
 | `Toggle`     | Capsule on/off switch with optional label + hint.    |
 
 **Atoms · Monitors**
@@ -166,7 +174,7 @@ Alphabetical within each family.
 | ---------- | ------------------------------------------------------------------------- |
 | `GaugeRow` | Evenly-spaced strip of `Gauge` dials.                                     |
 | `Menu`     | Commands on a floating sheet: a context menu, or the menu a `⋯` button opens. Ticks, keystroke hints, the ARIA keyboard. |
-| `Platter`  | Capsule tray of icon / text buttons, row or column. `mode="select"` makes it one choice instead of many. |
+| `Platter`  | Capsule tray of icon / text buttons, row or column. `mode="single"` makes it one choice instead of many. |
 
 **Molecules · Layout**
 

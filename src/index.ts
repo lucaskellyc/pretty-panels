@@ -30,8 +30,8 @@ export { Platter } from './components/Platter';
 export type {
   PlatterProps,
   PlatterItem,
-  PlatterStandardProps,
-  PlatterSelectProps,
+  PlatterMultiProps,
+  PlatterSingleProps,
 } from './components/Platter';
 
 export { Popover } from './components/Popover';

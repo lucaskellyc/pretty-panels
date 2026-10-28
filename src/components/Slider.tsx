@@ -39,7 +39,9 @@ export function Slider({ label, value, min, max, step, onChange, format }: Slide
     if (e.button !== 0) return;
     e.preventDefault(); // suppress the native drag so it can never get stuck
     e.currentTarget.setPointerCapture(e.pointerId);
-    e.currentTarget.focus(); // preventDefault dropped the implicit focus
+    // preventDefault dropped the implicit focus. Not a keyboard focus, so no
+    // ring — engines without the option fall back to their own heuristic.
+    e.currentTarget.focus({ focusVisible: false } as FocusOptions);
     dragging.current = true;
     onChange(valueFromClientX(e.clientX));
   };
@@ -57,11 +59,18 @@ export function Slider({ label, value, min, max, step, onChange, format }: Slide
   };
 
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+  const shown = format ? format(value) : value;
   return (
     <div className="slider-row" style={{ ['--fill' as string]: `${pct}%` }}>
       <span className="slider-fill" />
       <span className="control-name" id={labelId}>{label}</span>
-      <span className="control-value">{format ? format(value) : value}</span>
+      <span className="control-value">{shown}</span>
+      {/* The same label and value again in on-accent ink, clipped to the fill,
+          so text flips colour exactly where the accent edge crosses it. */}
+      <span className="slider-ink" aria-hidden="true">
+        <span className="control-name">{label}</span>
+        <span className="control-value">{shown}</span>
+      </span>
       <input
         ref={inputRef}
         type="range"

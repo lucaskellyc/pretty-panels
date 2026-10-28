@@ -130,7 +130,8 @@
   height: 32px;
   padding: 0 var(--space-3);
   margin: var(--space-2) 0;
-  background: var(--ctl-track);
+  background: var(--ctl-field);
+  color: var(--ctl-field-text);
   border-radius: 50px;
   overflow: hidden;
   user-select: none;
@@ -157,7 +158,26 @@
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
-@media (hover: hover) { .slider-row:hover { background: var(--ctl-track-hover); } }
+/* The track carries field ink (dark on a light plate), but the accent fill is
+   pinned deep and needs on-track white. .slider-ink is a second copy of the
+   label and value laid out identically on top, clipped to the fill's width, so
+   the two inks meet exactly at the accent's edge — even mid-glyph. On a dark
+   plate both inks are white and the overlay is invisible. */
+.slider-row .control-name,
+.slider-row .control-value { color: inherit; }
+.slider-ink {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-3);
+  color: var(--ctl-on-track);
+  clip-path: inset(0 calc(100% - var(--fill, 50%)) 0 0);
+  pointer-events: none;
+}
+@media (hover: hover) { .slider-row:hover { background: var(--ctl-field-hover); } }
 @media (hover: hover) { .slider-row:hover .slider-fill { background: var(--ctl-accent-hover); } }
 .slider-row input[type="range"] {
   position: absolute;
@@ -171,7 +191,9 @@
   cursor: ew-resize;
   margin: 0;
 }
-.slider-row:focus-within { box-shadow: var(--focus-ring); }
+/* Keyboard focus only. A click focuses the hidden range input too (so arrows
+   work after a drag), and :focus-within would leave the ring on from then on. */
+.slider-row:has(input:focus-visible) { box-shadow: var(--focus-ring); }
 
 /* ---- Arc gauges (read-only 270° dials) ----
    `--fill` is a unitless 0–100 number here, not the slider's percentage, because
@@ -386,7 +408,7 @@
   align-items: center;
   height: var(--control-md);
   padding: 0 var(--space-1);
-  background: var(--ctl-track);
+  background: var(--ctl-field);
   border-radius: var(--radius-pill);
   flex-shrink: 0;
   user-select: none;
@@ -401,14 +423,14 @@
   border: none;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--ctl-on-track);
+  color: var(--ctl-field-text);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 }
 .stepper-btn svg { display: block; }
 /* Inside a recessed track, hover has to go *darker* than the track to read. */
-@media (hover: hover) { .stepper-btn:hover { background: var(--ctl-deep-hover); } }
-@media (hover: none) { .stepper-btn:active { background: var(--ctl-deep-hover); } }
+@media (hover: hover) { .stepper-btn:hover { background: var(--ctl-field-deep-hover); } }
+@media (hover: none) { .stepper-btn:active { background: var(--ctl-field-deep-hover); } }
 .stepper-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .stepper-btn:disabled { opacity: 0.5; cursor: default; }
 @media (hover: hover) { .stepper-btn:disabled:hover { background: transparent; } }
@@ -420,7 +442,7 @@
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
-  color: var(--ctl-on-track);
+  color: var(--ctl-field-text);
 }
 /* The readout is also the way in — double-click it to type a value. The caret is
    the only thing advertising that, so it is worth the cursor change. */
@@ -441,36 +463,53 @@
 .stepper-input:focus-visible { outline: none; box-shadow: none; }
 
 /* ---- Dropdown (Select) ----
-   The chevron is a real sibling <svg> rather than a background image, so it
-   inherits the capsule's color and retints with the --ctl-* tokens. */
+   A track capsule showing the current choice; the choices open as a Menu. The
+   chevron is a real <svg> inside the capsule rather than a background image, so
+   it inherits the capsule's color and retints with the --ctl-* tokens. */
 .dropdown {
   position: relative;
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  color: var(--ctl-on-track);
+  color: var(--ctl-field-text);
 }
-.dropdown select {
-  appearance: none;
-  -webkit-appearance: none;
+.dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  max-width: 240px;
   height: var(--control-md);
-  padding: 0 var(--space-6) 0 var(--space-3);
+  /* Room on the right for the chevron (10px, inset --space-3) plus a --space-2
+     gap before the text — what the native select's own inner spacing used to
+     supply. */
+  padding: 0 calc(var(--space-3) + 10px + var(--space-2)) 0 var(--space-3);
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--ctl-track);
+  background: var(--ctl-field);
   color: inherit;
   font: var(--type-code);
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
+  text-align: left;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 }
-/* The popup list is drawn by the platform, on its own ground — repaint the
-   options for the plate rather than letting them inherit on-track white. */
-.dropdown option { background: var(--ctl-panel); color: var(--ctl-text); }
-@media (hover: hover) { .dropdown select:hover { background: var(--ctl-track-hover); } }
-.dropdown select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.dropdown select:disabled { opacity: 0.5; cursor: default; }
+/* A long choice clips rather than stretching the row. */
+.dropdown-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropdown-trigger.is-open { background: var(--ctl-field-hover); }
+@media (hover: hover) { .dropdown-trigger:hover:not(:disabled) { background: var(--ctl-field-hover); } }
+@media (hover: none) { .dropdown-trigger:active:not(:disabled) { background: var(--ctl-field-hover); } }
+.dropdown-trigger:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.dropdown-trigger:disabled { opacity: 0.5; cursor: default; }
+/* The list is at least as wide as the capsule it opened from. `--pp-select-w`
+   is measured on open and set on `.dropdown`; it reaches the menu by plain
+   inheritance, top layer or not. Doubled class to outrank `.pp-menu`, which is
+   declared further down. */
+.pp-menu.pp-select-menu { min-width: max(180px, var(--pp-select-w, 0px)); }
 .dropdown-chevron {
   position: absolute;
   top: 50%;
@@ -512,10 +551,10 @@
   width: 16px;
   height: 16px;
   border-radius: var(--radius-pill);
-  background: var(--ctl-track);
+  background: var(--ctl-radio);
   transition: background var(--dur-fast) var(--ease-out);
 }
-@media (hover: hover) { .radio:hover .radio-dot { background: var(--ctl-deep-hover); } }
+@media (hover: hover) { .radio:hover .radio-dot { background: var(--ctl-radio-hover); } }
 .radio input:checked + .radio-dot { background: var(--ctl-accent); }
 @media (hover: hover) { .radio:hover input:checked + .radio-dot { background: var(--ctl-accent-hover); } }
 .radio input:checked + .radio-dot::after {
@@ -527,7 +566,7 @@
 }
 .radio input:focus-visible + .radio-dot { box-shadow: var(--focus-ring); }
 .radio:has(input:disabled) { opacity: 0.5; cursor: default; }
-@media (hover: hover) { .radio:has(input:disabled):hover .radio-dot { background: var(--ctl-track); } }
+@media (hover: hover) { .radio:has(input:disabled):hover .radio-dot { background: var(--ctl-radio); } }
 @media (hover: hover) { .radio:has(input:checked:disabled):hover .radio-dot { background: var(--ctl-accent); } }
 
 /* ---- Text field ---- */
@@ -538,8 +577,8 @@
   border: none;
   border-radius: var(--radius-pill);
   padding: 0 var(--space-3);
-  background: var(--ctl-track);
-  color: var(--ctl-on-track);
+  background: var(--ctl-field);
+  color: var(--ctl-field-text);
   font: var(--type-code);
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
@@ -548,8 +587,8 @@
   -webkit-user-select: text;
   transition: background var(--dur-fast) var(--ease-out);
 }
-.text-field::placeholder { color: var(--ctl-on-track); opacity: 0.55; }
-@media (hover: hover) { .text-field:hover { background: var(--ctl-track-hover); } }
+.text-field::placeholder { color: var(--ctl-field-text); opacity: 0.55; }
+@media (hover: hover) { .text-field:hover { background: var(--ctl-field-hover); } }
 .text-field:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .text-field:disabled { opacity: 0.5; cursor: default; }
 .text-field::selection { background: var(--ctl-accent); color: var(--ctl-knob-on); }
@@ -573,8 +612,8 @@
   height: 100%;
   border: none;
   border-radius: 0;
-  background: var(--ctl-track);
-  color: var(--ctl-on-track);
+  background: var(--ctl-field);
+  color: var(--ctl-field-text);
   font: var(--type-code);
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
@@ -595,7 +634,7 @@
   border-top-right-radius: var(--radius-pill);
   border-bottom-right-radius: var(--radius-pill);
 }
-@media (hover: hover) { .vector input:hover { background: var(--ctl-track-hover); } }
+@media (hover: hover) { .vector input:hover { background: var(--ctl-field-hover); } }
 .vector input:focus,
 .vector input:focus-visible { outline: none; box-shadow: none; }
 .color-vector input { transition: background var(--dur-fast) var(--ease-out); }
@@ -759,7 +798,20 @@
 .pp-tree .pp-list-row.has-children { background: var(--ctl-row-parent); }
 /* Indent changes are part of the drop, so they settle with the push. */
 .pp-tree.is-dragging .pp-list-row { transition: transform var(--dur-base) var(--ease-out); }
-.pp-tree.is-dragging .pp-list-row.is-carried { transition: none; }
+/* Picked up, the row draws in to hug what it says — a capsule of its own in
+   the hand rather than a stretch of the column. Still capped at the column's
+   width, past which the label clips as it always does. The ⋯ and its spacer
+   step out: nothing in a carried row can be pressed. Where the browser can
+   animate to a content size, the draw-in eases; elsewhere it snaps. Only the
+   width: the carried row's transform has to land on the pointer, not chase it. */
+.pp-tree.is-dragging .pp-list-row.is-carried {
+  interpolate-size: allow-keywords;
+  width: fit-content;
+  max-width: calc(100% - var(--depth, 0) * var(--tree-indent));
+  transition: width var(--dur-base) var(--ease-out);
+}
+.pp-tree.is-dragging .pp-list-row.is-carried .pp-list-label { flex: 0 1 auto; }
+.pp-tree.is-dragging .pp-list-row.is-carried .pp-list-more { display: none; }
 
 .pp-tree-chevron {
   flex: none;
@@ -1000,8 +1052,7 @@
   max-height: var(--pp-popover-room, none);
   max-width: var(--pp-popover-span, none);
   overflow: auto;
-  /* Don't hand the scroll off to whatever is behind the surface at either end —
-     the same call the strip's sheet makes. */
+  /* Don't hand the scroll off to whatever is behind the surface at either end. */
   overscroll-behavior: contain;
   padding: var(--space-2);
   border: solid 2px var(--ctl-row);
@@ -1075,6 +1126,26 @@
   background: var(--ctl-row);
 }
 .pp-menu-item:disabled { opacity: 0.5; cursor: default; }
+/* A chosen command blinks before it is reported — the native menu's way of
+   saying "that one". It holds the hover ground whether or not the pointer is
+   still on it, drops it for the first half of each beat, and ends lit, which is
+   how the menu leaves. Two 150ms beats: BLINK_MS in Menu.tsx waits them out. */
+.pp-menu-item[data-blink],
+.pp-menu-item[data-blink]:focus-visible {
+  background: var(--ctl-accent);
+  color: white;
+  outline: none;
+  transition: none;
+  animation: pp-menu-blink 150ms steps(1) 2;
+}
+.pp-menu-item[data-blink] .pp-menu-tick { color: inherit; }
+@keyframes pp-menu-blink {
+  0% { background: transparent; color: var(--ctl-text); }
+  50% { background: var(--ctl-accent); color: white; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-menu-item[data-blink] { animation: none; }
+}
 
 /* The tick's column, held open on every command as soon as one of them is
    checkable — the same call a Tree branch's spacer makes, so the labels stay on

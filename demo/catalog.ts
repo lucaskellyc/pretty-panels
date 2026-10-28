@@ -62,6 +62,9 @@ export type Family = (typeof FAMILIES)[number];
 export interface PropRow {
   name: string;
   type: string;
+  /** The string values a prop also takes besides `type`, listed on a row of
+   *  their own ("Options") rather than spelled into the type as a long union. */
+  options?: string[];
   required?: boolean;
   default?: string;
   description: string;
@@ -134,7 +137,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'string', description: 'Accessible name + tooltip.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the button and block interaction.' },
       { name: 'ref', type: 'Ref<HTMLButtonElement>', description: 'Forwarded to the underlying button — what a Menu or Popover anchors to when this is the control that opens one.' },
-      { name: 'aria-haspopup', type: "boolean | 'menu' | 'dialog' | 'listbox' | 'tree' | 'grid'", description: 'Says this button opens a floating surface: menu for a Menu, dialog for a Popover holding a form. The surface cannot set it — it never sees the control that opened it.' },
+      { name: 'aria-haspopup', type: 'boolean', options: ["'menu'", "'dialog'", "'listbox'", "'tree'", "'grid'"], description: 'Says this button opens a floating surface: menu for a Menu, dialog for a Popover holding a form. The surface cannot set it — it never sees the control that opened it.' },
       { name: 'aria-expanded', type: 'boolean', description: 'Whether the surface this button opens is currently up. Pair it with aria-haspopup; without it a screen reader announces a plain button and never says the menu is open.' },
       { name: 'className', type: 'string', description: 'Extra class names on the button.' },
     ],
@@ -171,8 +174,8 @@ export const pages: DocPage[] = [
       { name: 'onClose', type: '() => void', required: true, description: 'Called when the menu asks to close \u2014 Escape, Tab, a press outside it, or a command being chosen.' },
       { name: 'anchor', type: 'RefObject<HTMLElement | null> | HTMLElement | PopoverPoint | null', required: true, description: "What the menu hangs off: an element, by ref or in the hand, or a viewport point \u2014 a right-click's clientX / clientY. A point keeps no gap from its anchor, so a context menu opens with its corner at the cursor. See Popover." },
       { name: 'items', type: 'MenuEntry[]', required: true, description: 'The commands, top to bottom. A bare string is shorthand for { id: theString }; an object adds label, icon, shortcut, checked and disabled, and { separator: true } fences off a run. One checkable command gives the whole menu a tick column; give every command an icon or none, since a mixed menu starts its labels on two different rules.' },
-      { name: 'onSelect', type: '(id: string) => void', required: true, description: "Called with the chosen command's id. One handler for the menu rather than one per item: what a menu does is a single switch, and splitting it across the items would hide half of it in the data." },
-      { name: 'closeOnSelect', type: 'boolean', default: 'true', description: 'Whether choosing a command dismisses the menu \u2014 which is what a menu is. Turn it off for a menu of checkboxes, where the point is to set several without reopening it each time.' },
+      { name: 'onSelect', type: '(id: string) => void', required: true, description: "Called with the chosen command's id, once its confirming blink has played (about 300ms; at once with closeOnSelect off or under reduced motion). One handler for the menu rather than one per item: what a menu does is a single switch, and splitting it across the items would hide half of it in the data." },
+      { name: 'closeOnSelect', type: 'boolean', default: 'true', description: 'Whether choosing a command dismisses the menu, after a brief blink \u2014 which is what a menu is. Turn it off for a menu of checkboxes, where the point is to set several without reopening it each time \u2014 choices then land at once, with no blink.' },
       { name: 'side', type: "'top' | 'right' | 'bottom' | 'left'", default: "'bottom'", description: "Preferred edge of the anchor. Flips to the opposite one when the room isn't there." },
       { name: 'align', type: "'start' | 'center' | 'end'", default: "'start'", description: 'Which way the menu lines up along that edge. Shifts along it to stay on screen.' },
       { name: 'label', type: 'string', description: "Accessible name for the menu (the menu's aria-label)." },
@@ -202,14 +205,14 @@ export const pages: DocPage[] = [
     name: 'Platter',
     group: 'molecules',
     family: 'Groups',
-    summary: 'A capsule tray holding a row or column of icon and text buttons. It rests on the same quiet ground a standalone button does — a platter is a tray of buttons — and a segment paints the accent when lit. Two modes share the shape: standard for independent actions and toggles, select for one choice out of several, a radio group wearing the tray’s clothes.',
+    summary: 'A capsule tray holding a row or column of icon and text buttons. It rests on the same quiet ground a standalone button does — a platter is a tray of buttons — and a segment paints the accent when lit. Two modes share the shape: multi for independent actions and toggles, single for one choice out of several, a radio group wearing the tray’s clothes.',
     Example: PlatterExample,
     props: [
-      { name: 'items', type: 'PlatterItem[]', required: true, description: 'The segments. Each has an optional icon and/or text, plus disabled and an a11y label. A select tray identifies a segment by value; a standard tray gives each its own onClick and active.' },
-      { name: 'mode', type: "'standard' | 'select'", default: "'standard'", description: 'What the tray is. standard holds independent actions — any number may be active, and the tray is a toolbar. select is a single choice over real radio inputs: exactly one segment is lit, and the tray is a radiogroup.' },
-      { name: 'value', type: 'string', description: "Select mode only (required there): the selected segment's value. Fully controlled." },
-      { name: 'onChange', type: '(value: string) => void', description: "Select mode only (required there). Called with the newly selected segment's value." },
-      { name: 'name', type: 'string', description: 'Select mode only. Shared name for the underlying radios. Generated when omitted — pass one only to join a wider native group.' },
+      { name: 'items', type: 'PlatterItem[]', required: true, description: 'The segments. Each has an optional icon and/or text, plus disabled and an a11y label. A single tray identifies a segment by value; a multi tray gives each its own onClick and active.' },
+      { name: 'mode', type: "'multi' | 'single'", default: "'multi'", description: 'What the tray is. multi holds independent actions — any number may be active, and the tray is a toolbar. single is one choice over real radio inputs: exactly one segment is lit, and the tray is a radiogroup.' },
+      { name: 'value', type: 'string', description: "Single mode only (required there): the selected segment's value. Fully controlled." },
+      { name: 'onChange', type: '(value: string) => void', description: "Single mode only (required there). Called with the newly selected segment's value." },
+      { name: 'name', type: 'string', description: 'Single mode only. Shared name for the underlying radios. Generated when omitted — pass one only to join a wider native group.' },
       { name: 'orientation', type: "'horizontal' | 'vertical'", default: "'horizontal'", description: 'Lay the segments in a row or a column.' },
       { name: 'label', type: 'string', description: 'Accessible name for the group.' },
       { name: 'className', type: 'string', description: 'Extra class names on the tray.' },
@@ -242,7 +245,7 @@ export const pages: DocPage[] = [
     Example: RadioGroupExample,
     props: [
       { name: 'value', type: 'string', required: true, description: 'Currently selected value (controlled).' },
-      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the newly selected value.' },
+      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the newly selected value, once the menu\u2019s blink has played. Choosing the current value again does not call it.' },
       { name: 'options', type: '(string | RadioOption)[]', required: true, description: 'The choices. A bare string is shorthand for { value: theString }; an object adds label and disabled.' },
       { name: 'name', type: 'string', description: 'Shared name for the underlying radios. Generated when omitted — pass one only to join a wider native group.' },
       { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
@@ -282,11 +285,11 @@ export const pages: DocPage[] = [
     name: 'Select',
     group: 'atoms',
     family: 'Choices',
-    summary: 'A native select restyled as a track capsule. The chevron is a real sibling element, so it retints with the rest of the control.',
+    summary: 'A track capsule showing the current choice, which opens the choices as a Menu hung off it \u2014 the current one ticked, the way a platform popup button lists them. Drawn by the kit rather than the platform, so the list takes the theme too; choosing gets the menu\u2019s confirming blink before onChange fires.',
     Example: SelectExample,
     props: [
       { name: 'value', type: 'string', required: true, description: 'Currently selected value (controlled).' },
-      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the newly selected value.' },
+      { name: 'onChange', type: '(v: string) => void', required: true, description: 'Called with the newly selected value, once the menu\u2019s blink has played. Choosing the current value again does not call it.' },
       { name: 'options', type: '(string | SelectOption)[]', required: true, description: 'The choices. A bare string is shorthand for { value: theString }; an object adds label and disabled.' },
       { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
       { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
@@ -379,7 +382,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'string', description: 'Tooltip + accessible-name override. Defaults to the visible label.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the button and block interaction.' },
       { name: 'ref', type: 'Ref<HTMLButtonElement>', description: 'Forwarded to the underlying button — what a Menu or Popover anchors to when this is the control that opens one.' },
-      { name: 'aria-haspopup', type: "boolean | 'menu' | 'dialog' | 'listbox' | 'tree' | 'grid'", description: 'Says this button opens a floating surface: menu for a Menu, dialog for a Popover holding a form. The surface cannot set it — it never sees the control that opened it.' },
+      { name: 'aria-haspopup', type: 'boolean', options: ["'menu'", "'dialog'", "'listbox'", "'tree'", "'grid'"], description: 'Says this button opens a floating surface: menu for a Menu, dialog for a Popover holding a form. The surface cannot set it — it never sees the control that opened it.' },
       { name: 'aria-expanded', type: 'boolean', description: 'Whether the surface this button opens is currently up. Pair it with aria-haspopup; without it a screen reader announces a plain button and never says the menu is open.' },
       { name: 'className', type: 'string', description: 'Extra class names on the button.' },
     ],
