@@ -23,7 +23,9 @@ export function DockPanel({
   children,
 }: {
   className: string;
-  title: string;
+  /** A string, or a node such as a `Tabs` strip, which the Panel makes its
+   *  header. Only a string title can be rolled up to — see the measurement. */
+  title: ReactNode;
   /** The plate's open width, which its content is laid out at. */
   width?: number;
   collapsed: boolean;

@@ -365,21 +365,25 @@ export function App() {
         <div className="pt-dock is-left" style={{ width: SIDEBAR_W }}>
           <DockPanel
             className="pt-dock-slot is-scrolling"
-            title={onCanvas ? 'Canvas' : 'Glyphs'}
+            /* Open, the tabs are the header — the strip and the roll-up share
+               one row. Rolled up, the plate hugs a plain title instead: a tab
+               strip has no width of its own to draw in to. */
+            title={
+              sidebarCollapsed ? (
+                onCanvas ? 'Canvas' : 'Glyphs'
+              ) : (
+                <Tabs
+                  items={VIEW_TABS}
+                  value={studioView}
+                  onChange={(id) => setStudioView(id as StudioView)}
+                  label="Sidebar"
+                />
+              )
+            }
             width={SIDEBAR_W}
             collapsed={sidebarCollapsed}
             onCollapsedChange={setSidebarCollapsed}
           >
-            {/* The plate's header is its title and roll-up; the tabs lead its
-                body instead. */}
-            <div className="pt-dock-tabs">
-              <Tabs
-                items={VIEW_TABS}
-                value={studioView}
-                onChange={(id) => setStudioView(id as StudioView)}
-                label="Sidebar"
-              />
-            </div>
             {onCanvas ? (
               <CanvasControls
                 settings={canvas}

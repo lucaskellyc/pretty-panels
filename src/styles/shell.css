@@ -51,7 +51,9 @@
   background: var(--ctl-panel);
   user-select: none;
 }
-.panel-head:has(> .tab-bar) { padding: 0; background: var(--ctl-bar); }
+/* No ground of its own: the strip paints the plate's, and a bar-coloured head
+   behind it would show only around a collapse toggle, as a block. */
+.panel-head:has(> .tab-bar) { padding: 0; }
 .panel-head > .tab-bar { flex: 1; min-width: 0; }
 /* Panel's collapse toggle shares the strip when both are used — keep it off the
    plate's edge. */
@@ -214,8 +216,8 @@
    action in a cluster worth pressing, and a platter is a closed set of peers
    with no primary among them.
 
-   One shape, two modes: `standard` fills the tray with independent <button>s,
-   `select` with <label>s over real radios. The segment rules below are written
+   One shape, two modes: `multi` fills the tray with independent <button>s,
+   `single` with <label>s over real radios. The segment rules below are written
    against `.pp-platter-btn`, which both carry, so the two modes cannot drift
    apart — only the state selectors differ, because a label has no `:disabled`
    and no pressed state of its own to match on. */
@@ -265,7 +267,7 @@
    the button share a resting ground. */
 @media (hover: hover) { .pp-platter-btn:hover { background: var(--ctl-btn-hover); } }
 @media (hover: none) { .pp-platter-btn:active { background: var(--ctl-btn-hover); } }
-/* Lit — a standard-mode toggle that is on. The accent carries on-track text, so
+/* Lit — a multi-mode toggle that is on. The accent carries on-track text, so
    the label flips bright with the ground rather than staying plate ink on it. */
 .pp-platter-btn.is-active {
   background: var(--ctl-accent);
@@ -277,7 +279,7 @@
 @media (hover: hover) { .pp-platter-btn:disabled:hover { background: transparent; } }
 @media (hover: none) { .pp-platter-btn:disabled:active { background: transparent; } }
 
-/* Select mode — the selected segment is whichever radio is checked, so the
+/* Single mode — the selected segment is whichever radio is checked, so the
    accent is painted off `:has(input:checked)` rather than a class. Each of
    these lands one step more specific than the `.pp-platter-btn` rule it mirrors
    (the `:has()` argument counts), which is what keeps the pair in step however

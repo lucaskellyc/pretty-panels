@@ -264,7 +264,7 @@ export function Toolbar({
       aria-label={label}
       aria-orientation={label ? orientation : undefined}
       /* Something is folded away right now — a hook for a bar that wants to say
-         so, the way the strip's `data-collapsed` does. */
+         so. */
       data-collapsed={folded.length > 0 ? '' : undefined}
     >
       {overflow
@@ -309,13 +309,17 @@ export function Toolbar({
             className="pp-toolbar-sheet"
             role="group"
             aria-label={overflowLabel}
-            /* Pressing a button in the sheet is the user finishing with it — the
-               same call the strip's sheet makes, and it keeps a tool pick from
+            /* Pressing a button in the sheet is the user finishing with it, and
+               closing on it keeps a tool pick from
                leaving a stale sheet over the work. Anything you set rather than
                press — a slider, a toggle, a field — stays open, because one turn
-               of a value is rarely the only one. */
+               of a value is rarely the only one. A toggle is a <button> too,
+               so it is told apart by `aria-pressed`, which every toggle in the
+               kit carries (a multi `Platter`'s segments, `IconButton` and
+               `TextButton` in toggle mode) and no action does. */
             onClick={(e) => {
-              if ((e.target as HTMLElement).closest('button, a, [role="button"]')) setOpen(false);
+              const pressed = (e.target as HTMLElement).closest('button, a, [role="button"]');
+              if (pressed && !pressed.hasAttribute('aria-pressed')) setOpen(false);
             }}
           >
             {folded}

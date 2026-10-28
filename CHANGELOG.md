@@ -9,6 +9,8 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+## [0.3.3-alpha] — 2026-10-27
+
 pretty-panels is a browser library now. The desktop window chrome and the
 Electron integration that were in development alongside it are gone.
 
@@ -27,6 +29,19 @@ Electron integration that were in development alongside it are gone.
 
 ### Fixed
 
+- **Toggles folded into a `Toolbar`'s overflow sheet no longer close it.** The
+  sheet closed on any button press, which caught a multi `Platter`'s segments
+  and toggle-mode `IconButton` / `TextButton`s along with actions, so each
+  toggle took a reopen. It now closes only for buttons without `aria-pressed`,
+  which is how the kit marks every toggle.
+- **Clicking a `Slider` no longer leaves a focus ring on it.** The ring keyed
+  off `:focus-within`, and a click focuses the range input so the arrow keys
+  work afterwards, so the ring stayed until focus moved elsewhere. It now shows
+  only for keyboard focus (`:focus-visible`), like every other control.
+- **A `Panel` with `Tabs` for a title and `collapsible` no longer draws a dark
+  block behind the −/+.** The header took the bar colour while the strip
+  painted the plate's over it, so the only place the bar showed was around the
+  toggle. The header now has no ground of its own.
 - **`Vector` fields can be emptied while typing.** They were controlled
   `type="number"` inputs, which report an empty field — and a lone `-` or `1.` —
   as `""`, so deleting the last digit was ignored and the digit re-rendered
@@ -73,6 +88,46 @@ Electron integration that were in development alongside it are gone.
 
 ### Changed
 
+- **`Platter`'s modes are renamed: `select` is now `single` and `standard` is
+  now `multi`** (still the default), naming what each one allows instead of how
+  it is built. The exported types follow: `PlatterSelectProps` is now
+  `PlatterSingleProps` and `PlatterStandardProps` is now `PlatterMultiProps`.
+  Breaking — replace `mode="select"` with `mode="single"`; a platter that never
+  set `mode` needs no change. `IconButton` and `TextButton` keep their own
+  `standard` mode.
+- **`TextField`, `Vector`, `Stepper`, `Slider` and `Select` carry dark text on a light plate.** They
+  draw from four new tokens — `--ctl-field`, `--ctl-field-hover`,
+  `--ctl-field-deep-hover` and `--ctl-field-text` — which follow the plate
+  ramp in light mode (a step below the plate, with `--ctl-text` ink, at least
+  5.7:1) and match the pinned track and white `--ctl-on-track` in dark mode,
+  so dark panels look as before. A `Vector` in `colorMode` still paints its own
+  ground and picks its ink from the live rgb. A `Slider`'s label and value
+  turn white where the accent fill runs under them, splitting mid-glyph at the
+  fill's edge; it does this with a second, `aria-hidden` copy of the label and
+  value (`.slider-ink`) clipped to the fill. An app that overrode
+  `--ctl-track` or `--ctl-on-track` to restyle these five now needs the
+  `--ctl-field*` tokens instead.
+- **A row carried in a `Tree` drag draws in to hug its content** — grip,
+  chevron, icon, label and meta — instead of spanning the column, and drops its
+  `⋯` while carried. It eases in where the browser can animate to a content
+  size (`interpolate-size`) and snaps elsewhere; a long label still clips at the
+  column's width.
+- **`Select` opens a `Menu` instead of a native `<select>`.** The capsule is now
+  a button showing the current choice; pressing it (or Enter, Space, ArrowDown,
+  ArrowUp) opens the choices as a `Menu` at least as wide as the capsule, with
+  the current one ticked and focused. The list is drawn by the kit, so it takes
+  the theme like everything else, and choosing gets the menu's blink before
+  `onChange` fires. What a native select did for free and this does not: the
+  platform's own picker on touch devices, type-to-jump, and form participation
+  (`Select` never took a `name`, so nothing submitted it before either). The
+  row is no longer a `<label>`; the capsule is named by `aria-labelledby`.
+- **`Menu` blinks the chosen command before acting on it**, the way a native
+  menu confirms a choice: two quick off/on beats on the highlighted row, then
+  `onSelect` fires and the menu closes. That puts `onSelect` about 300ms after
+  the click or keypress instead of on it. Dismissing the menu mid-blink
+  abandons the choice. A menu that stays open (`closeOnSelect={false}`) doesn't
+  blink, and neither does any menu under `prefers-reduced-motion`; both fire
+  `onSelect` at once, as before.
 - `--stage-bg`, the ground an app's panels float on, moves from the removed
   window layer into `colors.css`, so it is still defined under the root
   stylesheet.
@@ -370,7 +425,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...HEAD
+[0.3.3-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...v0.3.3-alpha
 [0.3.2-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...v0.3.2-alpha
 [0.3.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.0-alpha...v0.3.1-alpha
 [0.3.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.2.0-alpha...v0.3.0-alpha

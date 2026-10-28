@@ -98,12 +98,17 @@
      reserved for the two lit states, a prominent action and a toggle that is
      on. Being the quiet tier is what lets those two mean something.
 
-     It steps deeper than a row deliberately. A List row is something you read
-     down a column of; a button is something you aim at, and one that landed on
-     the row ground would borrow its stillness. Hover goes one step further in,
-     the direction every hover in this set travels. */
-  --ctl-btn:              hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 16 * var(--mono-sgn)) * 1%), 100%));
-  --ctl-btn-hover:        hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 24 * var(--mono-sgn)) * 1%), 100%));
+     On a light plate it steps deeper than a row deliberately. A List row is
+     something you read down a column of; a button is something you aim at, and
+     one that landed on the row ground would borrow its stillness. On a dark
+     plate it rests at a readout's depth instead, the same ground the value
+     fields take (see that block below): sixteen steps up, a button glared out
+     of a dark panel beside the quieted steppers and sliders. Hover goes one
+     step further in, the direction every hover in this set travels. Written as
+     a --mono-lit blend (defined with the value fields) so each side lands
+     exactly on its own offset. */
+  --ctl-btn:              hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * clamp(0, var(--mono-l) - 16, 100) + (1 - var(--mono-lit)) * (var(--mono-l) + 5)) * 1%));
+  --ctl-btn-hover:        hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * clamp(0, var(--mono-l) - 24, 100) + (1 - var(--mono-lit)) * (var(--mono-l) + 10)) * 1%));
 
   /* ---- Capsule surfaces (pinned, not plate-relative) ----
      Everything here carries --ctl-on-track text, and that token is itself
@@ -128,6 +133,39 @@
   --ctl-deep-hover:       hsl(var(--mono-h) var(--mono-s) 26%);
   --ctl-accent:           hsl(var(--mono-h) var(--mono-sa) 44%);
   --ctl-accent-hover:     hsl(var(--mono-h) calc(var(--mono-sa) * 1.2) 38%);
+
+  /* ---- Value fields (TextField, Vector, Stepper, Slider, Select) ----
+     The capsules you type or drag a value into. On a dark plate they rest at a
+     readout's depth — the --ctl-row step just off the plate — rather than on
+     the pinned mid-grey track, which glared out of a dark panel and made every
+     value field the loudest thing on it. They keep the bright on-track ink,
+     which only gains contrast on a ground this deep. Hover steps further in,
+     i.e. lighter, like every plate-relative hover on a dark ramp. All three
+     are capped at the old pinned track, so a lighter custom dark plate never
+     ends up worse off than before. On a light plate they leave the pinned set
+     for the plate ramp and carry dark ink: a value is something you read
+     closely, and white on a mid-grey track is the weakest pairing in the set
+     (see the capsule note).
+
+     --mono-lit is the polarity as a 0/1 switch, so each token is a blend that
+     lands exactly on one side or the other. The light-side grounds step below
+     the plate like a button does, but are floored so that past the midpoint —
+     where --ctl-text bottoms out at black — the ink still clears 4.5:1 (5.7:1
+     at rest, 7.7:1 on the default plate). A Vector in colorMode paints its own
+     ground and ink inline and ignores these. */
+  --mono-lit:             clamp(0, var(--mono-sgn), 1);
+  --ctl-field:            hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * max(var(--mono-l) - 14, 54) + (1 - var(--mono-lit)) * min(var(--mono-l) + 5, 54)) * 1%));
+  --ctl-field-hover:      hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * max(var(--mono-l) - 20, 50) + (1 - var(--mono-lit)) * min(var(--mono-l) + 10, 54)) * 1%));
+  --ctl-field-deep-hover: hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * max(var(--mono-l) - 28, 46) + (1 - var(--mono-lit)) * min(var(--mono-l) + 16, 54)) * 1%));
+  --ctl-field-text:       hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * clamp(0, var(--mono-l) - 72, 100) + (1 - var(--mono-lit)) * 96) * 1%));
+
+  /* An unchecked radio dot. The same dark-plate ground as a value field, so a
+     radio group sits as quietly as the steppers and sliders around it; on a
+     light plate it keeps the pinned track and its deep hover. Hover takes the
+     field's deeper step rather than its first one, because on a 16px dot the
+     first step is too small to see. */
+  --ctl-radio:            hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 54 + (1 - var(--mono-lit)) * min(var(--mono-l) + 5, 54)) * 1%));
+  --ctl-radio-hover:      hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 26 + (1 - var(--mono-lit)) * min(var(--mono-l) + 16, 54)) * 1%));
 
   --ctl-text:             hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 72 * var(--mono-sgn)) * 1%), 100%));
   --ctl-hint:             hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) - 50 * var(--mono-sgn)) * 1%), 100%));

@@ -1,4 +1,4 @@
-import React, { type ReactNode, useRef } from 'react';
+import React, { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   Popover,
   type PopoverAlign,
@@ -64,9 +64,9 @@ export interface MenuProps {
   className?: string;
 }
 
-/* The tick a checkable command states itself with. Drawn rather than typed, for
-   the reason the strip's ellipsis is: `✓` is a different glyph, at a different
-   weight, on every platform this renders on. */
+/* The tick a checkable command states itself with. Drawn rather than typed:
+   `✓` is a different glyph, at a different weight, on every platform this
+   renders on. */
 const TICK = (
   <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
     <path
@@ -79,6 +79,10 @@ const TICK = (
     />
   </svg>
 );
+
+/** How long a chosen command blinks before it is reported — two off/on beats,
+ *  matched by the `pp-menu-blink` animation in panels.css. */
+const BLINK_MS = 300;
 
 /** Normalize the `string | MenuItem` shorthand. */
 const toEntry = (e: MenuEntry): MenuItem | MenuSeparator => (typeof e === 'string' ? { id: e } : e);
@@ -101,6 +105,11 @@ const isSeparator = (e: MenuItem | MenuSeparator): e is MenuSeparator => 'separa
  * real buttons — the platform does that part), Escape dismisses, and Tab leaves:
  * a menu is not somewhere to tab *through*, so the focus moving on closes it.
  * Disabled commands are skipped rather than landed on.
+ *
+ * A choice that closes the menu, by pointer or key, is confirmed the way a
+ * native menu confirms it: the command blinks twice and only then is it
+ * reported and the menu closed. With `closeOnSelect` off, or under reduced
+ * motion, there is no blink and the choice is reported at once.
  *
  * Submenus are deliberately absent for now — nesting one menu's dismissal inside
  * another's is a different problem from this one, and a flat menu with a
@@ -142,12 +151,50 @@ export function Menu({
     }
   };
 
-  const choose = (item: MenuItem) => {
-    onSelect(item.id);
+  /** The command mid-blink, if any. Held as state so its row can wear the
+   *  blink, and so a second click while it plays has nothing to start. */
+  const [blinking, setBlinking] = useState<string | null>(null);
+
+  const report = (id: string) => {
+    onSelect(id);
     if (closeOnSelect) onClose();
   };
 
+  const choose = (item: MenuItem) => {
+    if (blinking) return;
+    // The blink is the menu's goodbye, so a menu that stays open — a run of
+    // checkboxes — reports the choice at once and lets the tick say it.
+    if (!closeOnSelect || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      report(item.id);
+      return;
+    }
+    setBlinking(item.id);
+  };
+
+  // The blink plays out, then the choice lands. Re-armed per choice; clearing
+  // `blinking` (below) is what cancels it.
+  useEffect(() => {
+    if (!blinking) return;
+    const t = setTimeout(() => {
+      setBlinking(null);
+      report(blinking);
+    }, BLINK_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blinking]);
+
+  // Dismissed mid-blink — Escape, a press outside — means the choice was
+  // abandoned, not made: drop it rather than report it into a closed menu.
+  useEffect(() => {
+    if (!open) setBlinking(null);
+  }, [open]);
+
   const onKeyDown = (i: number) => (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    // The focus stays on the command that is blinking; it is the one chosen.
+    if (blinking && e.key !== 'Tab' && e.key !== 'Escape') {
+      e.preventDefault();
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         step(i, 1);
@@ -198,6 +245,7 @@ export function Menu({
               role={entry.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
               aria-checked={entry.checked}
               disabled={entry.disabled}
+              data-blink={blinking === entry.id || undefined}
               tabIndex={i === stop ? 0 : -1}
               onClick={() => choose(entry)}
               onKeyDown={onKeyDown(i)}

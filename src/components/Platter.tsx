@@ -10,15 +10,15 @@ export interface PlatterItem {
   /** Accessible name + tooltip. Required for icon-only segments; falls back to a
    *  string `text`. */
   label?: string;
-  /** Identifies the segment in a `select` platter — this is what `onChange`
+  /** Identifies the segment in a `single` platter — this is what `onChange`
    *  reports. Falls back to `label`, then to a string `text`. Unused in the
-   *  default `standard` mode. */
+   *  default `multi` mode. */
   value?: string;
-  /** `standard` mode only. A select platter reports through the group's
+  /** `multi` mode only. A single platter reports through the group's
    *  `onChange` instead, so the segments need no handler of their own. */
   onClick?: () => void;
-  /** `standard` mode only — paints the accent and sets `aria-pressed`. Which
-   *  segment is lit in a select platter is settled by the group's `value`. */
+  /** `multi` mode only — paints the accent and sets `aria-pressed`. Which
+   *  segment is lit in a single platter is settled by the group's `value`. */
   active?: boolean;
   disabled?: boolean;
 }
@@ -33,19 +33,19 @@ interface PlatterBaseProps {
   className?: string;
 }
 
-export interface PlatterStandardProps extends PlatterBaseProps {
+export interface PlatterMultiProps extends PlatterBaseProps {
   /** Independent buttons — press one and nothing happens to the others. Each
    *  segment carries its own `onClick`, and any number of them may be `active`. */
-  mode?: 'standard';
+  mode?: 'multi';
   value?: never;
   onChange?: never;
   name?: never;
 }
 
-export interface PlatterSelectProps extends PlatterBaseProps {
+export interface PlatterSingleProps extends PlatterBaseProps {
   /** A single choice across the whole tray, the way a radio group is one
    *  choice: exactly one segment is selected, and picking another releases it. */
-  mode: 'select';
+  mode: 'single';
   /** The selected segment's `value` (fully controlled). */
   value: string;
   /** Called with the newly selected segment's `value`. */
@@ -56,9 +56,9 @@ export interface PlatterSelectProps extends PlatterBaseProps {
   name?: string;
 }
 
-/** `select` brings `value` / `onChange` with it and `standard` refuses them, so
+/** `single` brings `value` / `onChange` with it and `multi` refuses them, so
  *  the mode a platter is in decides which props it will even accept. */
-export type PlatterProps = PlatterStandardProps | PlatterSelectProps;
+export type PlatterProps = PlatterMultiProps | PlatterSingleProps;
 
 /**
  * A capsule platter — a tray holding a row or column of icon and text buttons.
@@ -69,23 +69,23 @@ export type PlatterProps = PlatterStandardProps | PlatterSelectProps;
  * The tray comes in two modes, because the same shape is used for two different
  * jobs and they answer to different props:
  *
- * - **`standard`** (the default) — independent actions and toggles. Each segment
+ * - **`multi`** (the default) — independent actions and toggles. Each segment
  *   has its own `onClick`, and any number of them can be `active`. The tray is a
  *   `toolbar`.
- * - **`select`** — one choice out of several, like a radio group wearing the
+ * - **`single`** — one choice out of several, like a radio group wearing the
  *   tray's clothes. The group takes `value` / `onChange`, exactly one segment is
  *   ever lit, and the tray is a `radiogroup`.
  *
- * Select mode is built over real radio inputs, so arrow-key roving, the single
+ * Single mode is built over real radio inputs, so arrow-key roving, the single
  * tab stop and form semantics all come from the platform rather than from key
  * handlers here — the same trade `RadioGroup` makes.
  */
 export function Platter(props: PlatterProps) {
   const { items, orientation = 'horizontal', label, className } = props;
-  // Narrowed once, into a `const`, so the select branch's props stay narrowed
+  // Narrowed once, into a `const`, so the single branch's props stay narrowed
   // inside the map callback below (a parameter's narrowing would not survive the
   // nested function).
-  const sel = props.mode === 'select' ? props : undefined;
+  const sel = props.mode === 'single' ? props : undefined;
   const id = useId();
 
   return (
@@ -108,8 +108,8 @@ export function Platter(props: PlatterProps) {
           'pp-platter-btn',
           sel && 'pp-platter-seg',
           hasText && 'has-text',
-          // A select platter lights the segment `value` points at; `active` is
-          // the standard-mode switch and is deliberately ignored here.
+          // A single platter lights the segment `value` points at; `active` is
+          // the multi-mode switch and is deliberately ignored here.
           !sel && item.active && 'is-active',
         );
 

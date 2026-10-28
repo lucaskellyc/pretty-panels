@@ -31,26 +31,15 @@ body {
   --artboard-edge: color-mix(in srgb, #7a6cff 45%, transparent);
   --guide-ink: #35c8e0;
 
-  --mono-h: 200;
-  --mono-s: 15%;
-  --mono-l: 85;
+  /* Colour is the kit's own theme, as the docs examples wear it: no --mono-*
+     dial of its own, and the kit's dark tracks under white labels. The ground
+     is the studio's own — white, or near-black in the dark — so the artboards
+     read as paper rather than as one more panel. */
   --stage-bg: white;
-
-  /* The capsules follow the plate's polarity rather than the kit's pinned
-     white-on-track: on a light plate a pale track and a lighter accent under
-     dark labels, and the mirror image on a dark one — a deep track and a
-     darker accent under white. Each lightness swings about 50% by
-     --mono-sgn (+1 light, -1 dark), so the two modes are reflections. */
-  --ctl-track:        hsl(var(--mono-h) var(--mono-s) calc((50 + 24 * var(--mono-sgn)) * 1%));
-  --ctl-track-hover:  hsl(var(--mono-h) var(--mono-s) calc((50 + 18 * var(--mono-sgn)) * 1%));
-  --ctl-accent:       hsl(var(--mono-h) var(--mono-sa) calc((50 + 12 * var(--mono-sgn)) * 1%));
-  --ctl-accent-hover: hsl(var(--mono-h) calc(var(--mono-sa) * 1.2) calc((50 + 6 * var(--mono-sgn)) * 1%));
-  --ctl-on-track:     hsl(var(--mono-h) var(--mono-s) calc((53 - 41 * var(--mono-sgn)) * 1%));
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --mono-l: 18;
     --stage-bg: #222;
   }
 }
@@ -66,6 +55,15 @@ body {
   background: var(--stage-bg);
   color: var(--ctl-text);
   font: var(--type-ui);
+
+  /* The timeline's canvas and timecode and the inspector's key gutter are
+     painted with the kit's pinned capsule track. On a dark plate that mid-grey
+     glares out of the dock, so here it drops to a readout's depth instead —
+     the same move the kit made for its value fields — while a light plate
+     keeps the pinned track, whose bright ticks and labels need it. Capped at
+     the pinned values, so a lighter custom dark plate is never worse off. */
+  --ctl-track: hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 54 + (1 - var(--mono-lit)) * min(var(--mono-l) + 5, 54)) * 1%));
+  --ctl-track-hover: hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 46 + (1 - var(--mono-lit)) * min(var(--mono-l) + 10, 54)) * 1%));
 }
 .pt-app *,
 .pt-app *::before,
@@ -476,9 +474,4 @@ body {
 .pt-canvas-dims-label {
   font: var(--type-label);
   color: var(--ctl-text);
-}
-
-/* Docked, the tabs lead the plate's body, under its own header. */
-.pt-dock-tabs {
-  margin: 0 calc(var(--space-3) * -1) var(--space-2);
 }

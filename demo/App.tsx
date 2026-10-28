@@ -5,7 +5,7 @@ import { flushSync } from 'react-dom';
 import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
 import { Code } from './Code';
 import { familiesOf, pages, type DocPage, type Group } from './catalog';
-import { PropsTable } from './pages';
+import { PropsList } from './pages';
 import { IconButton, Slider, Stepper } from '../src';
 import { version } from '../package.json';
 // Imported as URLs, not as modules: these two compositions are ~340KB of JSON
@@ -104,7 +104,7 @@ function useHashSlug() {
       ).startViewTransition;
       if (!startViewTransition) {
         setSlug(next);
-        window.scrollTo(0, 0);
+        scrollContentToTop();
         return;
       }
 
@@ -131,7 +131,7 @@ function useHashSlug() {
         // to the top before the new page paints.
         const transition = startViewTransition.call(document, () => {
           flushSync(() => setSlug(next));
-          window.scrollTo(0, 0);
+          scrollContentToTop();
         });
         transition.finished.then(clear, clear);
         return;
@@ -140,7 +140,7 @@ function useHashSlug() {
       // Page → page slides doc-page vertically. Reset scroll *before* the old
       // snapshot is captured so old and new share a scroll position; otherwise the
       // transition group lurches the full scroll height instead of a small slide.
-      window.scrollTo(0, 0);
+      scrollContentToTop();
       const transition = startViewTransition.call(document, () =>
         flushSync(() => setSlug(next)),
       );
@@ -171,6 +171,15 @@ export function App() {
   useEffect(() => {
     document.title = page ? `${page.name} — PrettyPanels` : 'PrettyPanels';
   }, [page]);
+
+  // The content column is the page's scroller, not the document (see the shell
+  // note in demo.css). With nothing focused, Chrome sends PageDown / Space /
+  // arrow keys to the document — which has nothing to scroll — so start focus
+  // on the content, as long as nothing else has claimed it.
+  const contentRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (document.activeElement === document.body) contentRef.current?.focus({ preventScroll: true });
+  }, []);
 
   // Close the drawer after navigating (link click or back/forward)...
   useEffect(() => setMenuOpen(false), [slug]);
@@ -234,7 +243,7 @@ export function App() {
         </>
       )}
 
-      <main className="content">
+      <main className="content" ref={contentRef} tabIndex={-1}>
         {page ? (
           <DocPageView
             page={page}
@@ -250,6 +259,12 @@ export function App() {
   );
 }
 
+/** The content column is the page's scroller, not the window (see the shell
+ *  note in demo.css), so a new page starts at the top of that. */
+function scrollContentToTop() {
+  document.querySelector('.content')?.scrollTo(0, 0);
+}
+
 function DocPageView({
   page,
   menuOpen,
@@ -263,6 +278,14 @@ function DocPageView({
   const dir = GROUPS.find((g) => g.id === page.group)?.label ?? page.group;
   return (
     <article className="doc">
+      {/* The live example leads the page, above the title. Optional per page —
+          Panel has no example, so this must not render an undefined component. */}
+      {Example && (
+        <div className="doc-example">
+          <Example />
+        </div>
+      )}
+
       <header className="doc-head">
         <h1 className="doc-title">
           {/* The parent dir doubles as the sidebar toggle (narrow only; hidden
@@ -282,20 +305,13 @@ function DocPageView({
           <span className="doc-title-name">{page.name}</span>
         </h1>
         <p className="doc-summary">{page.summary}</p>
-        {/* Optional per page — Panel has no example, so this must not render
-            an undefined component. */}
-        {Example && (
-          <div className="doc-example">
-            <Example />
-          </div>
-        )}
       </header>
 
       {Guide && <Guide />}
 
       <section className="doc-section">
         <h2>Properties</h2>
-        <PropsTable rows={page.props} />
+        <PropsList rows={page.props} />
       </section>
 
       <section className="doc-section">
