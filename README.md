@@ -155,8 +155,8 @@ Alphabetical within each family.
 
 | Component   | What it is                                                           |
 | ----------- | -------------------------------------------------------------------- |
-| `Slider`    | Label + value + capsule track; pointer-capture drag, keyboard arrows. |
-| `Stepper`   | −/+ around a readout; bounds disable the buttons, double-click types. |
+| `Slider`    | Label + value + capsule track; relative drag, click to type, keyboard arrows. |
+| `Stepper`   | −/+ around a readout; bounds disable the buttons, click the value to type. |
 | `TextField` | Track capsule for free-form entry, set in the mono face.              |
 | `Vector`    | 2–4 fused numeric fields; drag-to-scrub, optional color mode.         |
 

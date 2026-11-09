@@ -36,7 +36,7 @@ const PLUS = (
  * tabular readout. For values that move in discrete increments (and so want a
  * click target rather than a Slider's continuous drag).
  *
- * **Double-click the readout to type a value**, for the two things a stepper is
+ * **Click the readout to type a value**, for the two things a stepper is
  * bad at: distance — twenty presses to cross a second is the cost of a step fine
  * enough to place one by ear — and precision, since a typed value is clamped to
  * the bounds but *not* rounded onto the step. Enter or clicking away commits,
@@ -126,7 +126,7 @@ export function Stepper({
         {draft === null ? (
           <span
             className={cx('stepper-value', !disabled && 'is-editable')}
-            onDoubleClick={open}
+            onClick={open}
           >
             {format ? format(value) : value}
           </span>

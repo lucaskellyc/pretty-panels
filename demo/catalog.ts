@@ -301,7 +301,7 @@ export const pages: DocPage[] = [
     name: 'Slider',
     group: 'atoms',
     family: 'Values',
-    summary: 'Label + value + capsule track in one object. Pointer-capture drag, keyboard arrows, optional value formatting.',
+    summary: 'Label + value + capsule track in one object. Drag sideways to nudge the value (Shift for fine), click or press Enter to type one, arrows to step. Set mode="absolute" for a seek bar that jumps to the pointer.',
     Example: SliderExample,
     props: [
       { name: 'label', type: 'string', required: true, description: 'Text shown on the left of the track.' },
@@ -311,6 +311,7 @@ export const pages: DocPage[] = [
       { name: 'step', type: 'number', required: true, description: 'Increment / snap grid.' },
       { name: 'onChange', type: '(v: number) => void', required: true, description: 'Called with the new value on drag or keypress.' },
       { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
+      { name: 'mode', type: "'relative' | 'absolute'", default: "'relative'", description: 'relative: a drag nudges the value from where it is and a click opens a field to type into. absolute: a press jumps to the pointer and a drag follows it, for seek bars.' },
     ],
   },
   {

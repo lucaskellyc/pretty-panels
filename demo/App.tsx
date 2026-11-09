@@ -480,6 +480,7 @@ function HeroBench() {
             step={0.01}
             onChange={seek}
             format={(v) => `${v.toFixed(2)}s`}
+            mode="absolute"
           />
         </div>
         {/* Stepped by index, not by fps — the rate ladder isn't evenly spaced.

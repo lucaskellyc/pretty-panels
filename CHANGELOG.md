@@ -9,6 +9,26 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+### Added
+
+- **Type a value into a `Slider`.** Click the row, or press Enter while it
+  has focus, to swap the readout for a field. Enter or blur commits (snapped
+  to `step` and clamped to `min`/`max`), Escape cancels, and anything that
+  isn't a number is ignored.
+- **`Slider` `mode="absolute"`** keeps the old pointer behaviour for seek
+  bars: a press jumps the value to the pointer and a drag follows it. Enter
+  still opens the field.
+
+### Changed
+
+- **`Slider` drags are relative.** A press no longer jumps the value to the
+  pointer. Drag sideways and the value moves from where it is, one track width
+  covering the full range; hold Shift for a tenth of the speed. A press that
+  doesn't move at least 3 px counts as a click (see above), and a mostly
+  vertical drag is ignored, so on touch the page scrolls instead.
+- **`Stepper` opens its value field on a single click** of the readout, not a
+  double-click, matching `Slider`.
+
 ## [0.3.3-alpha] — 2026-10-27
 
 pretty-panels is a browser library now. The desktop window chrome and the

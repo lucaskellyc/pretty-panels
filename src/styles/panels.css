@@ -190,10 +190,64 @@
   opacity: 0;
   cursor: ew-resize;
   margin: 0;
+  /* Vertical swipes scroll the page; only sideways drags reach the slider. */
+  touch-action: pan-y;
 }
 /* Keyboard focus only. A click focuses the hidden range input too (so arrows
    work after a drag), and :focus-within would leave the ring on from then on. */
-.slider-row:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+.slider-row:has(input[type="range"]:focus-visible) { box-shadow: var(--focus-ring); }
+/* A press is a click until it moves; the accent brightens once it's a drag. */
+.slider-row.is-scrubbing .slider-fill { background: var(--ctl-accent-hover); }
+/* A click swaps the readout for a field that looks just like it — same face,
+   same ink, same spot — so typing reads as editing the number in place. */
+.slider-edit {
+  position: relative;
+  width: 8ch;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  /* Same two inks as the readout and its .slider-ink copy, meeting at the
+     fill's edge (--edge, measured in Slider). */
+  background: linear-gradient(to right,
+    var(--ctl-on-track) var(--edge, 0px),
+    var(--ctl-field-text) var(--edge, 0px));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--ctl-field-text);
+  caret-color: var(--ctl-field-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.slider-edit:focus { outline: none; }
+.slider-edit.is-on-fill { caret-color: var(--ctl-on-track); }
+/* Selected text is one solid ink. WebKit won't recolour gradient-clipped
+   glyphs inside a selection, so while there is one (.has-selection, set in
+   Slider) the field drops the clip for plain ink on the side the
+   right-aligned digits sit on. */
+.slider-edit.has-selection {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.slider-edit.has-selection.is-on-fill { color: var(--ctl-on-track); }
+.slider-edit::selection {
+  background: var(--ctl-accent);
+  color: var(--ctl-knob-on);
+  -webkit-text-fill-color: var(--ctl-knob-on);
+}
+/* On the fill an accent band would vanish, so darken it instead. Translucent
+   on purpose: WebKit washes opaque selection colours out anyway, and a light
+   band there left the light digits unreadable. */
+.slider-edit.is-on-fill::selection {
+  background: hsl(var(--mono-h) var(--mono-s) 8% / 0.45);
+  color: var(--ctl-on-track);
+  -webkit-text-fill-color: var(--ctl-on-track);
+}
 
 /* ---- Arc gauges (read-only 270° dials) ----
    `--fill` is a unitless 0–100 number here, not the slider's percentage, because
@@ -444,7 +498,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--ctl-field-text);
 }
-/* The readout is also the way in — double-click it to type a value. The caret is
+/* The readout is also the way in — click it to type a value. The caret is
    the only thing advertising that, so it is worth the cursor change. */
 .stepper-value.is-editable { cursor: text; }
 /* Typing into it keeps that class, so the metrics and the face are already
