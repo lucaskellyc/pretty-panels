@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef } from 'react';
+import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { pxVar } from './ListRow';
 import { clamp, cx } from './util';
 
@@ -212,7 +212,7 @@ function place(
  * `aria-haspopup` belong on the control that opens the surface, which this
  * component never sees.
  */
-export function Popover({
+export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover({
   open,
   onClose,
   anchor,
@@ -220,8 +220,11 @@ export function Popover({
   align = 'start',
   children,
   className,
-}: PopoverProps) {
+}: PopoverProps, ref) {
   const surface = useRef<HTMLDivElement>(null);
+  // Recomputed on `open`: closed, the surface isn't rendered and the handle
+  // would otherwise be frozen at null from the first mount.
+  useImperativeHandle(ref, () => surface.current!, [open]);
 
   // Held in a ref and refreshed on every render — the same arrangement
   // `Toolbar` uses — so the listeners below install once and still read
@@ -385,4 +388,4 @@ export function Popover({
       {children}
     </div>
   );
-}
+});

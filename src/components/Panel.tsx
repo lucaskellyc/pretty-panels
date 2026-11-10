@@ -1,10 +1,4 @@
-import {
-  type CSSProperties,
-  type ReactNode,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { cx } from './util';
 
 export interface PanelProps {
@@ -44,7 +38,7 @@ const PLUS = (
  * With `collapsible`, the header grows a −/+ toggle that folds the body away
  * while the plate keeps its width.
  */
-export function Panel({
+export const Panel = forwardRef<HTMLDivElement, PanelProps>(function Panel({
   title,
   width,
   collapsible = false,
@@ -54,7 +48,7 @@ export function Panel({
   className,
   style,
   children,
-}: PanelProps) {
+}: PanelProps, ref) {
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
   const isControlled = collapsedProp !== undefined;
   const collapsed = isControlled ? collapsedProp : internalCollapsed;
@@ -62,6 +56,8 @@ export function Panel({
   const showHead = title != null || collapsible;
 
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => panelRef.current!, []);
   const innerRef = useRef<HTMLDivElement>(null);
 
   // Collapse folds the body away vertically while the plate keeps its width, so
@@ -130,4 +126,4 @@ export function Panel({
       </div>
     </div>
   );
-}
+});

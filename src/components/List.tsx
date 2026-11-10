@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef } from 'react';
 import { GRIP, RowContent, type RowFields, nameOf } from './ListRow';
 import { clamp, cx } from './util';
 
@@ -43,7 +43,7 @@ interface Drag {
  * Rows are a fixed height, so the drag measures one row pitch at pointerdown
  * and every hop is a multiple of it.
  */
-export function List({ items, reorderable = false, onReorder, label, className }: ListProps) {
+export const List = forwardRef<HTMLUListElement, ListProps>(function List({ items, reorderable = false, onReorder, label, className }: ListProps, ref) {
   const rows = items.map(toItem);
   const rowEls = useRef<(HTMLLIElement | null)[]>([]);
   /** Grips by item id, not by index — a keyboard move renumbers the indices out
@@ -124,7 +124,7 @@ export function List({ items, reorderable = false, onReorder, label, className }
   };
 
   return (
-    <ul
+    <ul ref={ref}
       className={cx(
         'pp-list',
         reorderable && 'is-reorderable',
@@ -184,4 +184,4 @@ export function List({ items, reorderable = false, onReorder, label, className }
       })}
     </ul>
   );
-}
+});

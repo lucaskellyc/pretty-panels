@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { forwardRef } from 'react';
 import { cx } from './util';
 
 export interface ReadoutProps {
@@ -24,11 +25,11 @@ export interface ReadoutProps {
  * plate on `--ctl-row` and carries `--ctl-text`, which also keeps it legible
  * dropped straight onto a plate or a section.
  */
-export function Readout({ value, label, accent = false, className }: ReadoutProps) {
+export const Readout = forwardRef<HTMLSpanElement, ReadoutProps>(function Readout({ value, label, accent = false, className }: ReadoutProps, ref) {
   return (
-    <span className={cx('pp-readout', accent && 'is-accent', className)}>
+    <span ref={ref} className={cx('pp-readout', accent && 'is-accent', className)}>
       {label != null && <span className="pp-readout-label">{label}</span>}
       <span className="pp-readout-value">{value}</span>
     </span>
   );
-}
+});

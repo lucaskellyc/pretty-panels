@@ -1,4 +1,4 @@
-import React, { type ReactNode, useRef } from 'react';
+import React, { type ReactNode, useRef, forwardRef } from 'react';
 
 export interface TabItem {
   /** Identifies the tab — this is what `onChange` reports. */
@@ -32,7 +32,7 @@ const toItem = (t: string | TabItem): TabItem => (typeof t === 'string' ? { id: 
  * follows the ARIA tabs pattern — one tab stop for the whole strip, then
  * arrows / Home / End to move between them, skipping disabled tabs.
  */
-export function Tabs({ items, value, onChange, label, className }: TabsProps) {
+export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs({ items, value, onChange, label, className }: TabsProps, ref) {
   const tabs = items.map(toItem);
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -75,7 +75,7 @@ export function Tabs({ items, value, onChange, label, className }: TabsProps) {
   };
 
   return (
-    <div
+    <div ref={ref}
       className={className ? `tab-bar ${className}` : 'tab-bar'}
       role="tablist"
       aria-label={label}
@@ -100,4 +100,4 @@ export function Tabs({ items, value, onChange, label, className }: TabsProps) {
       ))}
     </div>
   );
-}
+});

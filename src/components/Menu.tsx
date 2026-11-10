@@ -1,4 +1,4 @@
-import React, { type ReactNode, useEffect, useRef, useState } from 'react';
+import React, { type ReactNode, useEffect, useRef, useState, forwardRef } from 'react';
 import {
   Popover,
   type PopoverAlign,
@@ -115,7 +115,7 @@ const isSeparator = (e: MenuItem | MenuSeparator): e is MenuSeparator => 'separa
  * another's is a different problem from this one, and a flat menu with a
  * separator is almost always the better answer anyway.
  */
-export function Menu({
+export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu({
   open,
   onClose,
   anchor,
@@ -126,7 +126,7 @@ export function Menu({
   align = 'start',
   label,
   className,
-}: MenuProps) {
+}: MenuProps, ref) {
   const entries = items.map(toEntry);
   /** By entry index, so a separator simply leaves a hole rather than knocking
    *  every command after it out of step with its own row. */
@@ -225,7 +225,7 @@ export function Menu({
 
   return (
     <Popover open={open} onClose={onClose} anchor={anchor} side={side} align={align}>
-      <div className={cx('pp-menu', className)} role="menu" aria-label={label}>
+      <div ref={ref} className={cx('pp-menu', className)} role="menu" aria-label={label}>
         {entries.map((entry, i) => {
           if (isSeparator(entry)) {
             // Indexed key: a rule has no identity of its own, and its place in
@@ -266,4 +266,4 @@ export function Menu({
       </div>
     </Popover>
   );
-}
+});

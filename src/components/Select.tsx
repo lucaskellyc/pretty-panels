@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useId, useLayoutEffect, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useId, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { ControlRow } from './ControlRow';
 import { Menu } from './Menu';
 import { cx } from './util';
@@ -39,11 +39,12 @@ const toOption = (o: string | SelectOption): SelectOption => (typeof o === 'stri
  * Keyboard: Enter, Space, ArrowDown or ArrowUp on the capsule opens the list
  * with focus on the current choice; from there it is the menu's keyboard.
  */
-export function Select({ value, onChange, options, label, hint, disabled }: SelectProps) {
+export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select({ value, onChange, options, label, hint, disabled }: SelectProps, ref) {
   const id = useId();
   const labelId = label != null ? `${id}-label` : undefined;
   const triggerId = `${id}-trigger`;
   const trigger = useRef<HTMLButtonElement>(null);
+  useImperativeHandle(ref, () => trigger.current!, []);
   const wrap = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   /** The capsule's width when the list opened — the list is at least as wide,
@@ -126,4 +127,4 @@ export function Select({ value, onChange, options, label, hint, disabled }: Sele
       </span>
     </ControlRow>
   );
-}
+});

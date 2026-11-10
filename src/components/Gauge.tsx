@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useId, forwardRef } from 'react';
 
 export interface GaugeProps {
   /** Current reading. */
@@ -24,7 +24,7 @@ export interface GaugeProps {
  * The dial's centre is punched out in the plate color, so a gauge expects a
  * Panel (or another `--ctl-panel` ground) underneath it.
  */
-export function Gauge({ value, min = 0, max = 100, label, format, accent }: GaugeProps) {
+export const Gauge = forwardRef<HTMLDivElement, GaugeProps>(function Gauge({ value, min = 0, max = 100, label, format, accent }: GaugeProps, ref) {
   const id = useId();
   const labelId = label != null ? id : undefined;
   // The arc sweeps on a unitless 0–100 --fill; the CSS multiplies it into both
@@ -34,7 +34,7 @@ export function Gauge({ value, min = 0, max = 100, label, format, accent }: Gaug
   const fill = Math.round(Math.max(0, Math.min(100, raw)) * 10) / 10;
 
   return (
-    <div className="arc-gauge">
+    <div ref={ref} className="arc-gauge">
       <div
         className={accent ? 'arc is-accent' : 'arc'}
         style={{ ['--fill' as string]: fill }}
@@ -54,4 +54,4 @@ export function Gauge({ value, min = 0, max = 100, label, format, accent }: Gaug
       )}
     </div>
   );
-}
+});

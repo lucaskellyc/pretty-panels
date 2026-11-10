@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 
 export interface SliderProps {
   label: string;
@@ -38,7 +38,7 @@ const FINE = 0.1;
  * through the native `onChange`. `mode="absolute"` swaps all of that for
  * press-to-jump, drag-to-follow.
  */
-export function Slider({
+export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider({
   label,
   value,
   min,
@@ -47,8 +47,9 @@ export function Slider({
   onChange,
   format,
   mode = 'relative',
-}: SliderProps) {
+}: SliderProps, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => inputRef.current!, []);
   const editRef = useRef<HTMLInputElement>(null);
   const labelId = useId();
   const [scrubbing, setScrubbing] = useState(false);
@@ -254,4 +255,4 @@ export function Slider({
       />
     </div>
   );
-}
+});

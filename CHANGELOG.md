@@ -11,6 +11,15 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ### Added
 
+- **Every component forwards a ref.** `IconButton` and `TextButton` already
+  did; now the other twenty-three do too, so an app can focus a `TextField`
+  or `Select` after opening a `Popover`, measure a `Panel`, or hand a
+  `Toolbar` to a positioning library. Each lands on the element you'd
+  expect — the `<input>` of a `Slider`, `TextField` or `Toggle`, the trigger
+  button of a `Select`, the plate of a `Panel`, the `<table>` of a `Table`,
+  the `<ul>` of a `List` or `Tree` — and each docs page's props table says
+  which. A `Popover`'s is null while closed, a `SplashScreen`'s once it has
+  faded out.
 - **`Icon`**, the kit's own glyphs by name: `<Icon name="trash" />`.
   Twenty-three solid marks drawn for control panels — transport (`play`,
   `pause`, `skip-end`, `loop`, `clock`), tools (`cursor`, `marquee`, `lasso`,

@@ -1,11 +1,4 @@
-import {
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type CSSProperties, type ReactNode, type RefObject, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { CHEVRON } from './ListRow';
 import { cx } from './util';
 
@@ -167,7 +160,7 @@ function useScrollable(
  * cell sits in, which a grid of divs cannot do without rebuilding the whole
  * table role by hand.
  */
-export function Table({
+export const Table = forwardRef<HTMLTableElement, TableProps>(function Table({
   columns,
   rows,
   sort,
@@ -176,7 +169,7 @@ export function Table({
   minWidth,
   label,
   className,
-}: TableProps) {
+}: TableProps, ref) {
   /* A numeric column ends-aligns unless told otherwise — the one case where a
      column's type decides its alignment rather than the caller. */
   const alignOf = (col: TableColumn) => col.align ?? (col.numeric ? 'end' : 'start');
@@ -186,6 +179,7 @@ export function Table({
 
   const scroller = useRef<HTMLDivElement>(null);
   const tableEl = useRef<HTMLTableElement>(null);
+  useImperativeHandle(ref, () => tableEl.current!, []);
   const scrollable = useScrollable(scroller, tableEl);
 
   /* The floor rides on a custom property for the reason `Panel`'s width does:
@@ -280,4 +274,4 @@ export function Table({
       </table>
     </div>
   );
-}
+});

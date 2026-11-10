@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useState, forwardRef } from 'react';
 import { ProgressBar } from './ProgressBar';
 import { cx } from './util';
 
@@ -66,7 +66,7 @@ export interface SplashScreenProps {
  * flip `open` false when loading is done and it fades out on its own before it
  * unmounts.
  */
-export function SplashScreen({
+export const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(function SplashScreen({
   open,
   title,
   logo,
@@ -80,7 +80,7 @@ export function SplashScreen({
   children,
   onExited,
   className,
-}: SplashScreenProps) {
+}: SplashScreenProps, ref) {
   // Stays mounted after `open` goes false so the fade-out can play; the
   // animationend below is what finally takes it down.
   const [mounted, setMounted] = useState(open);
@@ -96,7 +96,7 @@ export function SplashScreen({
   const pct = !landing && progress != null ? Math.round(Math.max(0, Math.min(1, progress)) * 1000) / 10 : null;
 
   return (
-    <div
+    <div ref={ref}
       className={cx('pp-splash', fullscreen && 'is-fullscreen', !open && 'is-leaving')}
       onAnimationEnd={(e) => {
         // Only the layer's own exit counts — the banner's bubbles up too.
@@ -170,4 +170,4 @@ export function SplashScreen({
       </div>
     </div>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { cx } from './util';
 
 export interface ProgressBarProps {
@@ -25,12 +26,12 @@ export interface ProgressBarProps {
  * `--pp-progress-fill`, so a surface with its own ground (the SplashScreen's
  * artwork) can restyle it without a new prop.
  */
-export function ProgressBar({ value, striped, label, labelledBy, className }: ProgressBarProps) {
+export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function ProgressBar({ value, striped, label, labelledBy, className }: ProgressBarProps, ref) {
   const pct = value != null ? Math.round(Math.max(0, Math.min(1, value)) * 1000) / 10 : null;
   const stripes = striped ?? (pct == null || pct >= 100);
 
   return (
-    <div
+    <div ref={ref}
       className={cx('pp-progress', className)}
       role="progressbar"
       aria-label={label}
@@ -43,4 +44,4 @@ export function ProgressBar({ value, striped, label, labelledBy, className }: Pr
       <div className={cx('pp-progress-fill', stripes && 'is-striped')} />
     </div>
   );
-}
+});

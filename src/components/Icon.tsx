@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { forwardRef } from 'react';
 import { ICONS, type IconName } from './icons';
 import { cx } from './util';
 
@@ -37,10 +38,10 @@ export interface IconProps {
  * the accent. Nothing here styles its surroundings; it is an `<svg>` and sits
  * wherever an inline element would.
  */
-export function Icon({ name, size = 16, label, className, style }: IconProps) {
+export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon({ name, size = 16, label, className, style }: IconProps, ref) {
   const { box, paths } = ICONS[name];
   return (
-    <svg
+    <svg ref={ref}
       className={cx('pp-icon', className)}
       width={size}
       height={size}
@@ -62,4 +63,4 @@ export function Icon({ name, size = 16, label, className, style }: IconProps) {
       )}
     </svg>
   );
-}
+});

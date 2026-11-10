@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState, forwardRef } from 'react';
 import { ControlRow } from './ControlRow';
 import { clamp, cx, decimalsOf } from './util';
 
@@ -47,7 +47,7 @@ const PLUS = (
  * out, and asking a caller to supply a parser for it would be a second, harder
  * API. So the field opens on the raw value and reads back a plain number.
  */
-export function Stepper({
+export const Stepper = forwardRef<HTMLSpanElement, StepperProps>(function Stepper({
   value,
   onChange,
   step = 1,
@@ -57,7 +57,7 @@ export function Stepper({
   hint,
   format,
   disabled,
-}: StepperProps) {
+}: StepperProps, ref) {
   const id = useId();
   const labelId = label != null ? id : undefined;
   const decimals = decimalsOf(step);
@@ -113,7 +113,7 @@ export function Stepper({
 
   return (
     <ControlRow label={label} hint={hint} labelId={labelId}>
-      <span className="stepper" role="group" aria-labelledby={labelId}>
+      <span ref={ref} className="stepper" role="group" aria-labelledby={labelId}>
         <button
           type="button"
           className="stepper-btn"
@@ -175,4 +175,4 @@ export function Stepper({
       </span>
     </ControlRow>
   );
-}
+});

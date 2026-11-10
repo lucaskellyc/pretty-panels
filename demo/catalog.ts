@@ -111,6 +111,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'ReactNode', description: 'Caption under the dial.' },
       { name: 'format', type: '(v: number) => string', description: 'Format the number in the middle; the arc still fills from value.' },
       { name: 'accent', type: 'boolean', default: 'false', description: 'Paint the fill with the accent instead of the muted gauge fill.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the outer `.arc-gauge` wrapper.' },
     ],
   },
   {
@@ -123,6 +124,7 @@ export const pages: DocPage[] = [
     props: [
       { name: 'children', type: 'ReactNode', required: true, description: 'The gauges — usually two to four Gauges.' },
       { name: 'className', type: 'string', description: 'Extra class names on the row.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the strip itself.' },
     ],
   },
   {
@@ -138,6 +140,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'string', description: 'Accessible name, for an icon that stands alone and means something — the one thing in a table cell. Left off, the icon is decorative and hidden from assistive tech, which is right beside a label or inside a button that already carries its own.' },
       { name: 'className', type: 'string', description: 'Extra class names on the svg.' },
       { name: 'style', type: 'CSSProperties', description: 'Inline styles on the svg — color, most often, since the ink is currentColor.' },
+      { name: 'ref', type: 'Ref<SVGSVGElement>', description: 'Forwarded to the `<svg>`.' },
     ],
   },
   {
@@ -174,6 +177,7 @@ export const pages: DocPage[] = [
       { name: 'onReorder', type: '(from: number, to: number) => void', description: 'Called once on drop, or on an arrow keypress, with the indices to move between. Applying it to items is yours.' },
       { name: 'label', type: 'string', description: "Accessible name for the list (the ul's aria-label)." },
       { name: 'className', type: 'string', description: 'Extra class names on the list.' },
+      { name: 'ref', type: 'Ref<HTMLUListElement>', description: 'Forwarded to the `<ul>` that holds the rows.' },
     ],
   },
   {
@@ -199,6 +203,7 @@ export const pages: DocPage[] = [
       { name: 'align', type: "'start' | 'center' | 'end'", default: "'start'", description: 'Which way the menu lines up along that edge. Shifts along it to stay on screen.' },
       { name: 'label', type: 'string', description: "Accessible name for the menu (the menu's aria-label)." },
       { name: 'className', type: 'string', description: "Extra class names on the column of commands \u2014 not on the surface under it, which is Popover's." },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the `role="menu"` surface inside the Popover — the element to measure or to look for focus in.' },
     ],
   },
   {
@@ -217,6 +222,7 @@ export const pages: DocPage[] = [
       { name: 'width', type: 'number | string', default: '380px', description: 'Plate width. Unchanged while collapsed — only the body folds away.' },
       { name: 'className', type: 'string', description: 'Extra class names on the plate.' },
       { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the plate.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the plate — the outer `.panel` div.' },
     ],
   },
   {
@@ -235,6 +241,7 @@ export const pages: DocPage[] = [
       { name: 'orientation', type: "'horizontal' | 'vertical'", default: "'horizontal'", description: 'Lay the segments in a row or a column.' },
       { name: 'label', type: 'string', description: 'Accessible name for the group.' },
       { name: 'className', type: 'string', description: 'Extra class names on the tray.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the tray, the `role="toolbar"` or `role="radiogroup"` element.' },
     ],
   },
   {
@@ -253,6 +260,7 @@ export const pages: DocPage[] = [
       { name: 'align', type: "'start' | 'center' | 'end'", default: "'start'", description: "Which way the surface lines up along that edge \u2014 with the anchor's leading edge, its middle, or its trailing edge. It then shifts along the edge to stay inside the window, and keeps --pp-popover-inset off it." },
       { name: 'children', type: 'ReactNode', required: true, description: 'What floats. Bring the semantics with it: the surface takes no role and no name of its own, because a menu, a non-modal dialog and a tooltip want three different sets and a guess would be wrong two thirds of the time.' },
       { name: 'className', type: 'string', description: 'Extra class names on the surface. There is no style prop: where the surface sits is the placement\u2019s to write, and an inline left / top would only fight it.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the floating surface. Null while closed: the surface is not rendered then.' },
     ],
   },
   {
@@ -268,6 +276,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'string', description: 'Accessible name, when nothing on screen labels the bar.' },
       { name: 'labelledBy', type: 'string', description: 'Id of the element that labels the bar, when something on screen does.' },
       { name: 'className', type: 'string', description: 'Extra class names on the track. Recolour it with --pp-progress-track and --pp-progress-fill.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the `role="progressbar"` capsule.' },
     ],
   },
   {
@@ -285,6 +294,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
       { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Disable every choice in the group.' },
+      { name: 'ref', type: 'Ref<HTMLSpanElement>', description: 'Forwarded to the `role="radiogroup"` span that holds the choices, not the row around it.' },
     ],
   },
   {
@@ -299,6 +309,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'ReactNode', description: 'Optional caption ahead of the value \u2014 "aperture f/2.8".' },
       { name: 'accent', type: 'boolean', default: 'false', description: 'Paint the capsule with the accent, the way Gauge accents its fill: a value someone set rather than one the panel is merely reporting.' },
       { name: 'className', type: 'string', description: 'Extra class names on the capsule.' },
+      { name: 'ref', type: 'Ref<HTMLSpanElement>', description: 'Forwarded to the capsule.' },
     ],
   },
   {
@@ -314,6 +325,7 @@ export const pages: DocPage[] = [
       { name: 'open', type: 'boolean', description: 'Open state (controlled). Pair with onOpenChange; omit to use defaultOpen.' },
       { name: 'defaultOpen', type: 'boolean', default: 'true', description: 'Start expanded (uncontrolled).' },
       { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called with the next state when the header is clicked.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the outer `.collapse-section` wrapper, head and body together.' },
     ],
   },
   {
@@ -330,6 +342,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
       { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the capsule and block interaction.' },
+      { name: 'ref', type: 'Ref<HTMLButtonElement>', description: 'Forwarded to the capsule, the button that opens the list — focus it to let the keyboard open the choices.' },
     ],
   },
   {
@@ -348,6 +361,7 @@ export const pages: DocPage[] = [
       { name: 'onChange', type: '(v: number) => void', required: true, description: 'Called with the new value on drag or keypress.' },
       { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
       { name: 'mode', type: "'relative' | 'absolute'", default: "'relative'", description: 'relative: a drag nudges the value from where it is and a click opens a field to type into. absolute: a press jumps to the pointer and a drag follows it, for seek bars.' },
+      { name: 'ref', type: 'Ref<HTMLInputElement>', description: 'Forwarded to the range input: `.focus()` it, or read its `value`.' },
     ],
   },
   {
@@ -371,6 +385,7 @@ export const pages: DocPage[] = [
       { name: 'children', type: 'ReactNode', description: 'Small print in the bottom-right corner \u2014 credits, a copyright line.' },
       { name: 'onExited', type: '() => void', description: 'Called once the fade-out has finished and the splash has unmounted.' },
       { name: 'className', type: 'string', description: 'Extra class names on the banner.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the full-window layer. Null once it has faded out and unmounted.' },
     ],
   },
   {
@@ -390,6 +405,7 @@ export const pages: DocPage[] = [
       { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
       { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim both buttons and block interaction.' },
+      { name: 'ref', type: 'Ref<HTMLSpanElement>', description: 'Forwarded to the `role="group"` capsule around the buttons and readout; the type-in field only exists while editing.' },
     ],
   },
   {
@@ -408,6 +424,7 @@ export const pages: DocPage[] = [
       { name: 'minWidth', type: 'string', default: 'from columns', description: 'The width the rows refuse to fall below; narrower than this the table scrolls sideways inside its plate rather than squeezing every column to an ellipsis, so a row stays a whole capsule. Defaults to a floor built from columns — every width you declared, plus --pp-table-col-min (112px) for each column that left it off. Pass 0 to squeeze instead of scrolling.' },
       { name: 'label', type: 'string', description: "Accessible name for the table (its aria-label). Also names the scroller as a region while it scrolls." },
       { name: 'className', type: 'string', description: 'Extra class names on the table.' },
+      { name: 'ref', type: 'Ref<HTMLTableElement>', description: 'Forwarded to the `<table>` itself, inside its scroll box.' },
     ],
   },
   {
@@ -423,6 +440,7 @@ export const pages: DocPage[] = [
       { name: 'onChange', type: '(id: string) => void', required: true, description: 'Called with the newly selected tab id, on click or arrow key.' },
       { name: 'label', type: 'string', description: "Accessible name for the strip (the tablist's aria-label)." },
       { name: 'className', type: 'string', description: 'Extra class names on the strip.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the `role="tablist"` strip.' },
     ],
   },
   {
@@ -462,6 +480,7 @@ export const pages: DocPage[] = [
       { name: 'placeholder', type: 'string', description: 'Shown while the field is empty.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the capsule and block interaction.' },
       { name: 'spellCheck', type: 'boolean', default: 'false', description: 'Native spellcheck. Off by default — these fields usually hold identifiers rather than prose.' },
+      { name: 'ref', type: 'Ref<HTMLInputElement>', description: 'Forwarded to the text input: `.focus()` or `.select()` it.' },
     ],
   },
   {
@@ -480,6 +499,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'string', description: 'Accessible name. With one the bar becomes a labelled group; without, it is chrome, and the things inside carry their own semantics.' },
       { name: 'className', type: 'string', description: 'Extra class names on the bar.' },
       { name: 'style', type: 'CSSProperties', description: 'Inline styles merged onto the bar. It fills the width it is given \u2014 set one here if it should hug its contents instead.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the bar — the element the overflow measures against.' },
     ],
   },
   {
@@ -495,6 +515,7 @@ export const pages: DocPage[] = [
       { name: 'label', type: 'ReactNode', description: 'Bold row label.' },
       { name: 'hint', type: 'ReactNode', description: 'Secondary hint line under the label.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Dim the switch and block interaction.' },
+      { name: 'ref', type: 'Ref<HTMLInputElement>', description: 'Forwarded to the checkbox input behind the switch.' },
     ],
   },
   {
@@ -514,6 +535,7 @@ export const pages: DocPage[] = [
       { name: 'onMore', type: '(id: string, anchor: HTMLElement) => void', description: 'Give every leaf a \u22ef button on its right edge and call this when it is pressed. Branches get a spacer instead — actions belong to the things a container holds. Omit it and no button renders. The second argument is the element to hang a Menu off: the button under the pointer, or the row itself when the press came from the keyboard, where the \u22ef is not what was aimed at and is not yet on screen. A handler that only wants the id still fits. The example opens a Menu that locks the node.' },
       { name: 'label', type: 'string', description: "Accessible name for the tree (the tree's aria-label)." },
       { name: 'className', type: 'string', description: 'Extra class names on the tree.' },
+      { name: 'ref', type: 'Ref<HTMLUListElement>', description: 'Forwarded to the `role="tree"` list.' },
     ],
   },
   {
@@ -532,6 +554,7 @@ export const pages: DocPage[] = [
       { name: 'colorMode', type: 'boolean', default: 'false', description: 'Paint each field with its live rgb value from the first three entries; a missing channel reads as 0.' },
       { name: 'label', type: 'string', description: 'Accessible name for the group of fields, e.g. "Rotation". Give it whenever no visible label says what the capsule sets.' },
       { name: 'fieldLabels', type: 'string[]', description: 'Accessible name for each field. Defaults to X / Y / Z / W, or R / G / B / A with colorMode.' },
+      { name: 'ref', type: 'Ref<HTMLSpanElement>', description: 'Forwarded to the `role="group"` capsule around the fields.' },
     ],
   },
 ];

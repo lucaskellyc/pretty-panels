@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { forwardRef } from 'react';
 import { ControlRow } from './ControlRow';
 
 export interface TextFieldProps {
@@ -19,7 +20,7 @@ export interface TextFieldProps {
  * The `.text-field` control — a track capsule for free-form entry, set in the
  * mono face so typed identifiers line up with the numeric readouts around them.
  */
-export function TextField({
+export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField({
   value,
   onChange,
   label,
@@ -27,10 +28,10 @@ export function TextField({
   placeholder,
   disabled,
   spellCheck = false,
-}: TextFieldProps) {
+}: TextFieldProps, ref) {
   return (
     <ControlRow as="label" label={label} hint={hint}>
-      <input
+      <input ref={ref}
         type="text"
         className="text-field"
         value={value}
@@ -41,4 +42,4 @@ export function TextField({
       />
     </ControlRow>
   );
-}
+});

@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { CHEVRON, ELLIPSIS, GRIP, RowContent, type RowFields, nameOf, pxVar } from './ListRow';
 import { clamp, cx } from './util';
 
@@ -105,7 +105,7 @@ const SPRING_MS = 450;
  * siblings, right to indent under the previous sibling, left to outdent past
  * its parent.
  */
-export function Tree({
+export const Tree = forwardRef<HTMLUListElement, TreeProps>(function Tree({
   items,
   expanded: expandedProp,
   defaultExpanded = [],
@@ -115,13 +115,15 @@ export function Tree({
   onMore,
   label,
   className,
-}: TreeProps) {
+}: TreeProps, ref) {
   const [ownExpanded, setOwnExpanded] = useState<string[]>(defaultExpanded);
   const isControlled = expandedProp !== undefined;
   const expandedIds = isControlled ? expandedProp : ownExpanded;
   const open = new Set(expandedIds);
 
   const listEl = useRef<HTMLUListElement>(null);
+
+  useImperativeHandle(ref, () => listEl.current!, []);
   const rowEls = useRef(new Map<string, HTMLLIElement | null>());
   const pitch = useRef(0);
   const indent = useRef(16);
@@ -487,4 +489,4 @@ export function Tree({
       })}
     </ul>
   );
-}
+});
