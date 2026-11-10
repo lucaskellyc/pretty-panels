@@ -576,6 +576,55 @@ html {
 .doc-section h2 {
   margin: 0 0 18px;
 }
+/* The props open under a rule that sets them off from the header above. It's
+   the same hairline that splits one prop from the next, and the first prop's
+   16px top padding gives it the same gap beneath. */
+.doc-props {
+  border-top: 1px solid var(--doc-surface-recessed);
+}
+/* The import line: a recessed capsule, like a code block drawn to one line,
+   with its copy button tucked into the left end. The button's 34px circle sits
+   4px in from the capsule's edge, so the capsule's ends follow it round. */
+.import-line {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  padding: 4px 18px 4px 4px;
+  border-radius: var(--doc-radius-pill);
+  background: var(--doc-surface-recessed);
+}
+/* The capsule is its ground, so it drops the inline-code pill that any
+   `code` outside a `pre` gets. */
+.import-line-code {
+  min-width: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  overflow-x: auto;
+  font-family: var(--doc-font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--doc-text);
+  white-space: pre;
+  scrollbar-width: none;
+}
+/* The button's wrapper is what the ring's hover keys off. */
+.import-line-btn {
+  display: grid;
+  flex: none;
+}
+/* Just the glyph until hovered; the kit's own hover rule (more specific than
+   this) brings the ground back. */
+.import-line .pp-round-btn {
+  background: transparent;
+  transition: background var(--dur-fast) var(--ease-out),
+              transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.import-line .pp-round-btn:active {
+  transform: scale(0.97);
+}
 
 /* ---- Live example ----
    Leads the page, above the title, straight on the page ground. */
@@ -686,7 +735,7 @@ html {
    A prop name, type or default you click to copy. Solid is the filled accent,
    for required props — page-background ink holds about 6.5:1 on it in light
    and 7:1 in dark; soft is the accent's pale tint; plain has no fill. Hover
-   grows the chip and runs marching ants round it; a copy settles the ring —
+   runs marching ants round the chip, which keeps its size; a copy settles the ring —
    it stops marching and goes solid for a moment. The label never changes and the chip
    keeps its size, so a copy never shifts the layout. */
 .copy-chip-wrap {
@@ -695,18 +744,10 @@ html {
   /* So a long type can wrap inside its chip instead of pushing the row wider. */
   max-width: 100%;
   border-radius: var(--doc-radius-pill);
-  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.copy-chip-wrap:hover {
-  transform: scale(1.08);
-}
-/* A type can run the full width of the column, where growing would push it
-   past the edge — the ring alone marks the hover there. */
-.copy-chip-wrap:has(.is-plain):hover {
-  transform: none;
 }
 .copy-chip {
   --chip-pad-x: 8px;
+  margin-bottom: 26px;
   position: relative;
   /* Its own layer, so the fill's z-index: -1 stays behind the text but in
      front of the page. */
@@ -827,10 +868,12 @@ html {
   animation: copy-chip-march 500ms linear infinite;
   animation-play-state: paused;
 }
-.copy-chip-wrap:hover .copy-chip-ants {
+.copy-chip-wrap:hover .copy-chip-ants,
+.import-line:has(.import-line-btn:hover) .copy-chip-ants {
   opacity: 1;
 }
-.copy-chip-wrap:hover .copy-chip-ants rect {
+.copy-chip-wrap:hover .copy-chip-ants rect,
+.import-line:has(.import-line-btn:hover) .copy-chip-ants rect {
   animation-play-state: running;
 }
 @keyframes copy-chip-march {
@@ -840,10 +883,12 @@ html {
    (CopyChip holds `is-copied`), then the chip goes back to how it was.
    `!important` because the dash pattern is an inline style (CopyChip fits it
    to the outline). */
-.copy-chip.is-copied .copy-chip-ants {
+.copy-chip.is-copied .copy-chip-ants,
+.import-line.is-copied .copy-chip-ants {
   opacity: 1;
 }
-.copy-chip.is-copied .copy-chip-ants rect {
+.copy-chip.is-copied .copy-chip-ants rect,
+.import-line.is-copied .copy-chip-ants rect {
   stroke-dasharray: none !important;
   stroke-width: 2px;
   animation: none;
@@ -858,7 +903,8 @@ html {
 }
 @media (prefers-reduced-motion: reduce) {
   .copy-chip-wrap,
-  .copy-chip-wrap * {
+  .copy-chip-wrap *,
+  .import-line * {
     transition-duration: 1ms !important;
     animation: none !important;
   }
@@ -1436,4 +1482,26 @@ html.vt-up .sidebar {
   background-color: var(--stage-bg);
   /*background-image: var(--grid-dots);*/
   background-size: var(--grid-dots-size);
+}
+
+/* ---- Icon set ----
+   The Icon page's legend: every glyph beside its name, each a copy chip so the
+   name is a click away. A chip's ring is a capsule, and a capsule around
+   "glyph + word" is the shape it wants to be, so the cells run horizontal
+   rather than stacking the name under the mark. */
+.doc-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px 16px;
+  width: 100%;
+}
+/* The chip's bottom margin is for the props list it usually sits in. */
+.doc-icon-grid .copy-chip {
+  margin-bottom: 0;
+  justify-content: flex-start;
+}
+.doc-icon-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }

@@ -1,14 +1,4 @@
-import {
-  Children,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-  isValidElement,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { Children, type CSSProperties, type ReactNode, type RefObject, isValidElement, useEffect, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { IconButton } from './IconButton';
 import { ELLIPSIS } from './ListRow';
 import { Popover } from './Popover';
@@ -221,7 +211,7 @@ function useFold(
  * it has something to hold. A `Toolbar` with nothing in it is an empty plate,
  * which is the point: the parts are the components you put on it.
  */
-export function Toolbar({
+export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar({
   children,
   end,
   orientation = 'horizontal',
@@ -230,9 +220,10 @@ export function Toolbar({
   label,
   className,
   style,
-}: ToolbarProps) {
+}: ToolbarProps, ref) {
   const vertical = orientation === 'vertical';
   const bar = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => bar.current!, []);
   const more = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -328,4 +319,4 @@ export function Toolbar({
       )}
     </div>
   );
-}
+});

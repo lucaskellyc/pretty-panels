@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useId, forwardRef } from 'react';
 import { ControlRow } from './ControlRow';
 
 export interface RadioOption {
@@ -33,7 +33,7 @@ const toOption = (o: string | RadioOption): RadioOption => (typeof o === 'string
  * inputs, so arrow-key roving and form semantics come from the platform. Reach
  * for it over a Select when there are only a few short options.
  */
-export function RadioGroup({
+export const RadioGroup = forwardRef<HTMLSpanElement, RadioGroupProps>(function RadioGroup({
   value,
   onChange,
   options,
@@ -41,12 +41,12 @@ export function RadioGroup({
   label,
   hint,
   disabled,
-}: RadioGroupProps) {
+}: RadioGroupProps, ref) {
   const id = useId();
   const labelId = label != null ? `${id}label` : undefined;
   return (
     <ControlRow label={label} hint={hint} labelId={labelId}>
-      <span className="radio-group" role="radiogroup" aria-labelledby={labelId}>
+      <span ref={ref} className="radio-group" role="radiogroup" aria-labelledby={labelId}>
         {options.map((o) => {
           const opt = toOption(o);
           return (
@@ -67,4 +67,4 @@ export function RadioGroup({
       </span>
     </ControlRow>
   );
-}
+});

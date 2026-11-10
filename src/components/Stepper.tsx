@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState, forwardRef } from 'react';
 import { ControlRow } from './ControlRow';
 import { clamp, cx, decimalsOf } from './util';
 
@@ -36,7 +36,7 @@ const PLUS = (
  * tabular readout. For values that move in discrete increments (and so want a
  * click target rather than a Slider's continuous drag).
  *
- * **Double-click the readout to type a value**, for the two things a stepper is
+ * **Click the readout to type a value**, for the two things a stepper is
  * bad at: distance — twenty presses to cross a second is the cost of a step fine
  * enough to place one by ear — and precision, since a typed value is clamped to
  * the bounds but *not* rounded onto the step. Enter or clicking away commits,
@@ -47,7 +47,7 @@ const PLUS = (
  * out, and asking a caller to supply a parser for it would be a second, harder
  * API. So the field opens on the raw value and reads back a plain number.
  */
-export function Stepper({
+export const Stepper = forwardRef<HTMLSpanElement, StepperProps>(function Stepper({
   value,
   onChange,
   step = 1,
@@ -57,7 +57,7 @@ export function Stepper({
   hint,
   format,
   disabled,
-}: StepperProps) {
+}: StepperProps, ref) {
   const id = useId();
   const labelId = label != null ? id : undefined;
   const decimals = decimalsOf(step);
@@ -113,7 +113,7 @@ export function Stepper({
 
   return (
     <ControlRow label={label} hint={hint} labelId={labelId}>
-      <span className="stepper" role="group" aria-labelledby={labelId}>
+      <span ref={ref} className="stepper" role="group" aria-labelledby={labelId}>
         <button
           type="button"
           className="stepper-btn"
@@ -126,7 +126,7 @@ export function Stepper({
         {draft === null ? (
           <span
             className={cx('stepper-value', !disabled && 'is-editable')}
-            onDoubleClick={open}
+            onClick={open}
           >
             {format ? format(value) : value}
           </span>
@@ -175,4 +175,4 @@ export function Stepper({
       </span>
     </ControlRow>
   );
-}
+});

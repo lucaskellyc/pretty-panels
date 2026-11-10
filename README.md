@@ -4,9 +4,19 @@ A lightweight, themeable React component library for control-panel UIs.
 
 **[Full documentation →](https://lucaskellyc.github.io/pretty-panels/)**
 
-- **22 components**, 0 runtime dependencies (React is a peer dep).
+- **25 components**, 0 runtime dependencies (React is a peer dep).
 - **Fully controlled** — you own the state; every component is a pure function of props.
 - Ships an ESM + CJS bundle, TypeScript types, and one stylesheet.
+
+## Contents
+
+- [Install](#install)
+- [Usage](#usage)
+- [Theming](#theming) — [dark mode](#dark-mode), [fonts](#fonts), [scoping](#scoping)
+- [Components](#components)
+- [Roadmap](#roadmap)
+- [Develop](#develop)
+- [License](#license)
 
 ## Install
 
@@ -144,19 +154,26 @@ Alphabetical within each family.
 | `Select`     | Track capsule that opens its choices as a `Menu`.    |
 | `Toggle`     | Capsule on/off switch with optional label + hint.    |
 
+**Atoms · Glyphs**
+
+| Component | What it is                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| `Icon`    | A glyph from the kit's own set, by name. Solid, 16px, inked in `currentColor`. |
+
 **Atoms · Monitors**
 
 | Component | What it is                                                   |
 | --------- | ------------------------------------------------------------ |
 | `Gauge`   | Read-only 270° arc gauge with a tabular readout and caption. |
+| `ProgressBar` | Recessed capsule that fills; candy-stripes once full, or runs indeterminate. |
 | `Readout` | Capsule that states a value and nothing else — nothing to touch. |
 
 **Atoms · Values**
 
 | Component   | What it is                                                           |
 | ----------- | -------------------------------------------------------------------- |
-| `Slider`    | Label + value + capsule track; pointer-capture drag, keyboard arrows. |
-| `Stepper`   | −/+ around a readout; bounds disable the buttons, double-click types. |
+| `Slider`    | Label + value + capsule track; relative drag, click to type, keyboard arrows. |
+| `Stepper`   | −/+ around a readout; bounds disable the buttons, click the value to type. |
 | `TextField` | Track capsule for free-form entry, set in the mono face.              |
 | `Vector`    | 2–4 fused numeric fields; drag-to-scrub, optional color mode.         |
 
@@ -189,9 +206,24 @@ Alphabetical within each family.
 | --------- | -------------------------------------------------------------------------- |
 | `Panel`   | Plate with optional header + padded body; collapsibly folds its body away. |
 | `Popover` | A surface that floats over the work, anchored to an element or to a point. Holds anything; stays on screen; dismisses itself. |
+| `SplashScreen` | Startup banner: artwork edge to edge, the app's mark, name and version, and a line of loading status. Fades itself out. |
 | `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. Folds what doesn't fit into a `⋯`. |
 
 All prop types are exported (e.g. `SliderProps`, `PanelProps`).
+
+## Roadmap
+
+Shipped, and what's next. Each open item links to its issue.
+
+- [x] Touch-screen support across components ([#2](https://github.com/lucaskellyc/pretty-panels/issues/2))
+- [x] Nothing clipped on phones: controls wrap at 320px and up ([#6](https://github.com/lucaskellyc/pretty-panels/issues/6))
+- [x] Overflow `⋯` button, `Popover` and `Menu` ([#7](https://github.com/lucaskellyc/pretty-panels/issues/7))
+- [x] `Icon`, `ProgressBar` and `SplashScreen`; a controllable `Section`
+- [ ] Forward refs on every component ([#11](https://github.com/lucaskellyc/pretty-panels/issues/11))
+- [ ] `Slider` reads its formatted value in Chrome ([#12](https://github.com/lucaskellyc/pretty-panels/issues/12))
+- [ ] An automated test suite ([#10](https://github.com/lucaskellyc/pretty-panels/issues/10))
+- [ ] Pillotalk Studio on a phone, not just a note that it needs more room ([#13](https://github.com/lucaskellyc/pretty-panels/issues/13))
+- [ ] v1.0: a frozen API and a stable changelog cadence
 
 ## Develop
 
@@ -201,12 +233,25 @@ npm run dev          # run the demo / docs site locally
 npm run build        # build the library into dist/
 npm run build:demo   # build the docs site into dist-demo/ (GitHub Pages)
 npm run typecheck    # tsc --noEmit
+npm test             # vitest, headless (jsdom); `npm run test:watch` to keep it running
 ```
+
+Tests sit beside their components as `src/components/*.test.tsx` and cover
+the behaviour a browser check would — keys, pointer drags, what a screen
+reader is told — so a regression there fails CI rather than waiting to be
+noticed by hand.
 
 The demo under `demo/` doubles as the documentation site and is deployed to
 GitHub Pages by `.github/workflows/pages.yml` on every push to `stable`.
 Work lands on `unstable`, which runs CI but deliberately does not redeploy
 the site; `stable` is merged forward at each release.
+
+`npm install` runs the library build through `prepare`, so that
+`npm install github:lucaskellyc/pretty-panels` ships `dist/`; expect a few
+extra seconds when installing dev dependencies too.
+
+Bugs and rough edges are tracked as
+[GitHub issues](https://github.com/lucaskellyc/pretty-panels/issues).
 
 ## License
 

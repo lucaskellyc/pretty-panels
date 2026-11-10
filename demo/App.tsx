@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 // The SVG-only player, as the design canvas used — the default entry also
 // carries the canvas/html renderers, which this page never asks for.
 import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
-import { Code } from './Code';
+import { ImportLine } from './ImportLine';
 import { familiesOf, pages, type DocPage, type Group } from './catalog';
 import { PropsList } from './pages';
 import { IconButton, Slider, Stepper } from '../src';
@@ -276,6 +276,8 @@ function DocPageView({
 }) {
   const { Example, Guide } = page;
   const dir = GROUPS.find((g) => g.id === page.group)?.label ?? page.group;
+  // The display name carries a space ("Title Bar"); the export doesn't.
+  const importLine = `import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`;
   return (
     <article className="doc">
       {/* The live example leads the page, above the title. Optional per page —
@@ -305,19 +307,16 @@ function DocPageView({
           <span className="doc-title-name">{page.name}</span>
         </h1>
         <p className="doc-summary">{page.summary}</p>
+        <br></br>
+        <div className="doc-import">
+          <ImportLine code={importLine} label={`Copy import for ${page.name}`} />
+        </div>
       </header>
 
       {Guide && <Guide />}
 
-      <section className="doc-section">
-        <h2>Properties</h2>
+      <section className="doc-section doc-props">
         <PropsList rows={page.props} />
-      </section>
-
-      <section className="doc-section">
-        <h2>Import</h2>
-        {/* The display name carries a space ("Title Bar"); the export doesn't. */}
-        <Code lang="tsx">{`import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`}</Code>
       </section>
     </article>
   );
@@ -480,6 +479,7 @@ function HeroBench() {
             step={0.01}
             onChange={seek}
             format={(v) => `${v.toFixed(2)}s`}
+            mode="absolute"
           />
         </div>
         {/* Stepped by index, not by fps — the rate ladder isn't evenly spaced.

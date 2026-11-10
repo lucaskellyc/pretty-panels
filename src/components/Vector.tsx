@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef } from 'react';
 import { clamp, cx, decimalsOf } from './util';
 
 export interface VectorProps {
@@ -43,7 +43,7 @@ function readContrast(r: number, g: number, b: number) {
  * clamps and commits, and an empty field falls back to the value it opened on.
  * Escape restores that value. ArrowUp / ArrowDown step by `step`.
  */
-export function Vector({
+export const Vector = forwardRef<HTMLSpanElement, VectorProps>(function Vector({
   value,
   onChange,
   step = 0.5,
@@ -52,7 +52,7 @@ export function Vector({
   colorMode = false,
   label,
   fieldLabels,
-}: VectorProps) {
+}: VectorProps, ref) {
   const state = useRef<{
     startVal: number;
     /** Travel so far, up = positive. Summed per move rather than read off
@@ -195,7 +195,7 @@ export function Vector({
   }
 
   return (
-    <span className={cx('vector', colorMode && 'color-vector')} role="group" aria-label={label}>
+    <span ref={ref} className={cx('vector', colorMode && 'color-vector')} role="group" aria-label={label}>
       {value.map((v, axis) => (
         <input
           key={axis}
@@ -243,4 +243,4 @@ export function Vector({
       ))}
     </span>
   );
-}
+});

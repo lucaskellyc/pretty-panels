@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useId, forwardRef } from 'react';
 import { cx } from './util';
 
 export interface PlatterItem {
@@ -80,7 +80,7 @@ export type PlatterProps = PlatterMultiProps | PlatterSingleProps;
  * tab stop and form semantics all come from the platform rather than from key
  * handlers here — the same trade `RadioGroup` makes.
  */
-export function Platter(props: PlatterProps) {
+export const Platter = forwardRef<HTMLDivElement, PlatterProps>(function Platter(props: PlatterProps, ref) {
   const { items, orientation = 'horizontal', label, className } = props;
   // Narrowed once, into a `const`, so the single branch's props stay narrowed
   // inside the map callback below (a parameter's narrowing would not survive the
@@ -89,7 +89,7 @@ export function Platter(props: PlatterProps) {
   const id = useId();
 
   return (
-    <div
+    <div ref={ref}
       className={cx('pp-platter', orientation === 'vertical' && 'is-vertical', className)}
       role={sel ? 'radiogroup' : 'toolbar'}
       aria-label={label}
@@ -152,4 +152,4 @@ export function Platter(props: PlatterProps) {
       })}
     </div>
   );
-}
+});

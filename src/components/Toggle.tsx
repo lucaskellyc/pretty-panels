@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { forwardRef } from 'react';
 import { ControlRow } from './ControlRow';
 
 export interface ToggleProps {
@@ -15,11 +16,11 @@ export interface ToggleProps {
  * A controlled `.switch-row` — the capsule on/off switch, optionally paired with
  * a label + hint. The whole row is the click target (it's a `<label>`).
  */
-export function Toggle({ checked, onChange, label, hint, disabled }: ToggleProps) {
+export const Toggle = forwardRef<HTMLInputElement, ToggleProps>(function Toggle({ checked, onChange, label, hint, disabled }: ToggleProps, ref) {
   return (
     <ControlRow as="label" label={label} hint={hint}>
       <span className="switch">
-        <input
+        <input ref={ref}
           type="checkbox"
           checked={checked}
           disabled={disabled}
@@ -29,4 +30,4 @@ export function Toggle({ checked, onChange, label, hint, disabled }: ToggleProps
       </span>
     </ControlRow>
   );
-}
+});

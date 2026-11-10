@@ -10,8 +10,8 @@ const ANNOUNCE_MS = 1400;
 const DASH_PERIOD = 10;
 
 /**
- * A pill that copies its text when clicked. Hover grows it a touch and runs
- * marching ants around it; a click copies, and the ring settles — it stops
+ * A pill that copies its text when clicked. Hover runs marching ants around
+ * it; a click copies, and the ring settles — it stops
  * marching and goes solid for a moment. The label never changes and the chip
  * keeps its size, so a copy never shifts anything around it. `solid` is the filled accent, `soft` its pale tint, `plain` no fill at
  * all — then the ants take `antsColor`, so they match the text they surround.

@@ -9,6 +9,78 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+## [0.4.0-alpha] — 2026-11-10
+
+`Slider` drags are relative now; a seek bar wants `mode="absolute"`. See
+**Changed**.
+
+### Added
+
+- **Every component forwards a ref.** `IconButton` and `TextButton` already
+  did; now the other twenty-three do too, so an app can focus a `TextField`
+  or `Select` after opening a `Popover`, measure a `Panel`, or hand a
+  `Toolbar` to a positioning library. Each lands on the element you'd
+  expect — the `<input>` of a `TextField` or `Toggle`, the track of a `Slider`, the trigger
+  button of a `Select`, the plate of a `Panel`, the `<table>` of a `Table`,
+  the `<ul>` of a `List` or `Tree` — and each docs page's props table says
+  which. A `Popover`'s is null while closed, a `SplashScreen`'s once it has
+  faded out.
+- **`Icon`**, the kit's own glyphs by name: `<Icon name="trash" />`.
+  Twenty-three solid marks drawn for control panels — transport (`play`,
+  `pause`, `skip-end`, `loop`, `clock`), tools (`cursor`, `marquee`, `lasso`,
+  `pen`, `move`, `rotate`, `scale`, `zoom-in`, `eye`), housekeeping (`undo`,
+  `export`, `trash`, `close`) and a few shapes (`circles`, `diamonds`,
+  `dashed-circle`, `dial`, `sparkle`). `size` sets the square it fills (16px
+  by default), the ink is `currentColor`, and `label` names one that stands
+  alone — without it the icon is hidden from assistive tech. `ICON_NAMES`
+  lists the set and `IconName` is their union.
+- **`ProgressBar`**, a recessed capsule that fills from `value` (0–1). Once
+  full, the fill turns to running candy stripes; `striped` forces them on or
+  off, and leaving out `value` gives an indeterminate bar. Recolour it with
+  `--pp-progress-track` and `--pp-progress-fill`.
+- **`SplashScreen`**, the banner an app shows while it starts. A borderless
+  card floating mid-window over a blurred page, with optional artwork edge
+  to edge (`art`), the app's mark, name and version, a line of loading `status`, and
+  credits in the corner. `progress` adds a hairline along the bottom edge, or,
+  with `progressStyle="bar"`, a `ProgressBar` under the status.
+  Controlled through `open`; it fades out before it unmounts, and `onExited`
+  fires once it has.
+- **`Section` can be controlled.** Pass `open` with `onOpenChange` to own its
+  state, the way `Panel` takes `collapsed` with `onCollapsedChange`. Without
+  `open` it behaves as before, starting from `defaultOpen`.
+- **Type a value into a `Slider`.** Click the row, or press Enter while it
+  has focus, to swap the readout for a field. Enter or blur commits (snapped
+  to `step` and clamped to `min`/`max`), Escape cancels, and anything that
+  isn't a number is ignored.
+- **`Slider` `mode="absolute"`** keeps the old pointer behaviour for seek
+  bars: a press jumps the value to the pointer and a drag follows it. Enter
+  still opens the field.
+
+### Changed
+
+- **Sections are brighter on a dark plate.** `--ctl-section` now sits 16
+  points above `--mono-l` in dark mode (it was 6), so a `Section` reads as a
+  raised card with its controls recessed into it. Light mode is unchanged.
+- **`Slider` drags are relative.** A press no longer jumps the value to the
+  pointer. Drag sideways and the value moves from where it is, one track width
+  covering the full range; hold Shift for a tenth of the speed. A press that
+  doesn't move at least 3 px counts as a click (see above), and a mostly
+  vertical drag is ignored, so on touch the page scrolls instead.
+- **`Stepper` opens its value field on a single click** of the readout, not a
+  double-click, matching `Slider`.
+
+### Fixed
+
+- **A formatted `Slider` is announced by its formatted value in Chrome.**
+  The track was a native `<input type="range">`, and Chrome ignores
+  `aria-valuetext` on one of those: a slider showing "60%" was read as
+  "0.6". It is now an element with `role="slider"`, which every browser
+  reads through `aria-valuetext`. The keys are the native ones (arrows step,
+  Page Up / Down move a tenth of the range, Home and End go to the ends) and
+  the pointer behaviour is unchanged. Anything styling
+  `.slider-row input[type="range"]` should target `.slider-track` instead;
+  the forwarded ref is now an `HTMLDivElement`.
+
 ## [0.3.3-alpha] — 2026-10-27
 
 pretty-panels is a browser library now. The desktop window chrome and the
@@ -425,7 +497,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.0-alpha...HEAD
+[0.4.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...v0.4.0-alpha
 [0.3.3-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...v0.3.3-alpha
 [0.3.2-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...v0.3.2-alpha
 [0.3.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.0-alpha...v0.3.1-alpha

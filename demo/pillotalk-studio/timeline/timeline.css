@@ -207,8 +207,8 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .tl-readout { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
 /* local: the readout is also a control — dragging it vertically scrubs (see
    Timeline.tsx), hence the cursor and the active state. */
-.tl-time { margin-left: auto; font: var(--type-data); font-size: var(--text-md); font-variant-numeric: tabular-nums; color: var(--ctl-on-track); background: var(--ctl-track); border-radius: var(--radius-pill); padding: 3px var(--space-3); cursor: ns-resize; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-.tl-time:hover { background: var(--ctl-track-hover); }
+.tl-time { margin-left: auto; font: var(--type-data); font-size: var(--text-md); font-variant-numeric: tabular-nums; color: var(--ctl-text); background: var(--ctl-btn); border-radius: var(--radius-pill); padding: 3px var(--space-3); cursor: ns-resize; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.tl-time:hover { background: var(--ctl-btn-hover); }
 .tl-time.is-scrubbing { background: var(--ctl-accent); color: var(--ctl-on-track); }
 .tl-meta { font: var(--type-label); color: var(--ctl-hint); white-space: nowrap; text-transform: uppercase; }
 
@@ -285,11 +285,11 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    rather than competing with it. */
 .tl-prop-lane .tl-key { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-width: 1px; }
 
-.tl-canvas { position: relative; background: var(--ctl-track); border-radius: 14px; padding: 0 10px; overflow: hidden; cursor: ew-resize; }
+.tl-canvas { position: relative; background: var(--ctl-btn); border-radius: 14px; padding: 0 10px; overflow: hidden; cursor: ew-resize; }
 .tl-ruler { position: relative; height: var(--tl-ruler-h); }
-.tl-tick { position: absolute; top: 8px; bottom: 0; left: calc(var(--t) * 100%); width: 1px; background: color-mix(in srgb, var(--ctl-on-track) 35%, transparent); }
-.tl-tick.is-major { top: 4px; background: color-mix(in srgb, var(--ctl-on-track) 70%, transparent); }
-.tl-tick i { position: absolute; top: -6px; left: 3px; font: var(--type-data); font-size: var(--text-2xs); color: var(--ctl-on-track); font-style: normal; }
+.tl-tick { position: absolute; top: 8px; bottom: 0; left: calc(var(--t) * 100%); width: 1px; background: color-mix(in srgb, var(--ctl-text) 35%, transparent); }
+.tl-tick.is-major { top: 4px; background: color-mix(in srgb, var(--ctl-text) 70%, transparent); }
+.tl-tick i { position: absolute; top: -6px; left: 3px; font: var(--type-data); font-size: var(--text-2xs); color: var(--ctl-text); font-style: normal; }
 /* local: a floor of one lane. With an empty comp the lane column collapses and
    the canvas shrinks to its ruler — a sliver to scrub, and the dock jumps the
    moment the first layer lands. */
@@ -323,9 +323,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 
 /* The dashed edges are the work area's grips: the canvas hands a pointer within
    a few pixels of one to the drag, and thickens the line to say so. */
-.tl-range { position: absolute; top: 0; bottom: 0; left: calc(10px + var(--in) * (100% - 20px)); width: calc((var(--out) - var(--in)) * (100% - 20px)); background: color-mix(in srgb, var(--ctl-on-track) 8%, transparent); border-left: 1px dashed var(--ctl-on-track); border-right: 1px dashed var(--ctl-on-track); pointer-events: none; }
+.tl-range { position: absolute; top: 0; bottom: 0; left: calc(10px + var(--in) * (100% - 20px)); width: calc((var(--out) - var(--in)) * (100% - 20px)); background: color-mix(in srgb, var(--ctl-text) 8%, transparent); border-left: 1px dashed var(--ctl-text); border-right: 1px dashed var(--ctl-text); pointer-events: none; }
 .tl-canvas.is-over-edge { cursor: col-resize; }
-.tl-range.is-dragging { border-left-color: var(--ctl-accent); border-right-color: var(--ctl-accent); background: color-mix(in srgb, var(--ctl-on-track) 14%, transparent); }
+.tl-range.is-dragging { border-left-color: var(--ctl-accent); border-right-color: var(--ctl-accent); background: color-mix(in srgb, var(--ctl-text) 14%, transparent); }
 .tl-canvas.is-over-edge .tl-range, .tl-range.is-dragging { border-left-style: solid; border-right-style: solid; border-left-width: 2px; border-right-width: 2px; }
 
 .tl-playhead { position: absolute; top: 0; bottom: 0; left: calc(10px + var(--t) * (100% - 20px)); width: 2px; margin-left: -1px; background: var(--ctl-accent); pointer-events: none; }
@@ -348,14 +348,14 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .tl-canvas.is-graph { display: flex; flex-direction: column; }
 .tl-canvas.is-graph .tl-ruler { flex: none; }
 .tl-graph { position: relative; flex: 1; min-height: 120px; margin-bottom: 8px; }
-.tl-graph.is-empty { display: grid; place-items: center; font: var(--type-label); color: color-mix(in srgb, var(--ctl-on-track) 60%, transparent); }
+.tl-graph.is-empty { display: grid; place-items: center; font: var(--type-label); color: color-mix(in srgb, var(--ctl-text) 60%, transparent); }
 /* Stretched to the box rather than fitted, since the two axes measure different
    things and neither has a natural aspect. `vector-effect` is what keeps the
    strokes one pixel wide through that. */
 .tl-graph-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .tl-graph-lines polyline, .tl-graph-lines line { fill: none; vector-effect: non-scaling-stroke; }
 /* The lanes that are not being shaped: context, not competition. */
-.tl-graph-line { stroke: color-mix(in srgb, var(--ctl-on-track) 26%, transparent); stroke-width: 1; }
+.tl-graph-line { stroke: color-mix(in srgb, var(--ctl-text) 26%, transparent); stroke-width: 1; }
 .tl-graph-line.is-active { stroke: var(--ctl-accent); stroke-width: 2; }
 .tl-graph-stems line { stroke: color-mix(in srgb, var(--ctl-accent) 55%, transparent); stroke-width: 1; stroke-dasharray: 2 2; }
 
@@ -365,7 +365,7 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .tl-graph-key, .tl-graph-handle { position: absolute; left: calc(var(--x) * 100%); top: calc(var(--y) * 100%); cursor: grab; }
 /* A diamond, so a key looks like a key here too. Hollow until it has been
    shaped by hand, which is the one thing this view is for. */
-.tl-graph-key { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; background: var(--ctl-track); border: 2px solid var(--ctl-accent); border-radius: 2px; transform: rotate(45deg); }
+.tl-graph-key { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; background: var(--ctl-btn); border: 2px solid var(--ctl-accent); border-radius: 2px; transform: rotate(45deg); }
 .tl-graph-key.is-shaped { background: var(--ctl-accent); }
 .tl-graph-key[aria-selected="true"] { background: var(--ctl-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ctl-accent) 35%, transparent); }
 /* Round, so a handle never reads as a keyframe. Smaller, because it is the
@@ -375,7 +375,7 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .tl-graph.is-dragging, .tl-graph.is-dragging * { cursor: grabbing; }
 /* The focused lane's own numbers. Every lane is normalised to its own range, so
    there is no axis the whole box shares — this says whose it is. */
-.tl-graph-axis { position: absolute; inset: 0 auto 0 2px; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; font: var(--type-data); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ctl-on-track) 55%, transparent); pointer-events: none; }
+.tl-graph-axis { position: absolute; inset: 0 auto 0 2px; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; font: var(--type-data); font-size: var(--text-2xs); font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--ctl-text) 55%, transparent); pointer-events: none; }
 
 /* The name column in graph mode: the selected layer's properties, one of which
    carries the handles. Same rows as the layer names, so the column does not

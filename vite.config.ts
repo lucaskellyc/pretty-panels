@@ -49,7 +49,7 @@ function vendorFonts(): Plugin {
 export default defineConfig({
   plugins: [
     react(),
-    dts({ include: ['src'], exclude: ['demo', '**/*.test.*'], rollupTypes: false }),
+    dts({ include: ['src'], exclude: ['demo', 'src/test', '**/*.test.*'], rollupTypes: false }),
     vendorFonts(),
   ],
   build: {

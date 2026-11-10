@@ -18,4 +18,5 @@ jobs:
       # also validates the production lib build.
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build:demo

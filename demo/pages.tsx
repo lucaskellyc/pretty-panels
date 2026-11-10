@@ -1,7 +1,9 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Code } from './Code';
 import { CopyChip } from './CopyChip';
 import {
+  Icon,
+  ICON_NAMES,
   IconButton,
   Gauge,
   GaugeRow,
@@ -13,11 +15,13 @@ import {
   Popover,
   type PopoverPoint,
   type PopoverSide,
+  ProgressBar,
   RadioGroup,
   Readout,
   Section,
   Select,
   Slider,
+  SplashScreen,
   Stepper,
   Table,
   type TableSort,
@@ -320,6 +324,33 @@ export function TabsExample() {
 
 const oneDecimal = (v: number) => v.toFixed(1);
 
+export function ProgressBarExample() {
+  const [load, setLoad] = useState(0.4);
+  return (
+    <Panel title="Import">
+      <Row label="Assets">
+        <ProgressBar value={load} label="Assets" />
+      </Row>
+      {/* Full, so the stripes come on by themselves. */}
+      <Row label="Textures">
+        <ProgressBar value={1} label="Textures" />
+      </Row>
+      <Row label="Indexing">
+        <ProgressBar label="Indexing" />
+      </Row>
+      <Slider
+        label="Assets loaded"
+        value={Math.round(load * 100)}
+        min={0}
+        max={100}
+        step={1}
+        onChange={(v) => setLoad(v / 100)}
+        format={(v) => `${v}%`}
+      />
+    </Panel>
+  );
+}
+
 export function GaugeExample() {
   const [load, setLoad] = useState(60);
   return (
@@ -448,6 +479,55 @@ export function TextFieldExample() {
       <TextField label="Name" hint="Free-form entry" value={name} onChange={setName} />
       <TextField label="Tag" hint="Placeholder when empty" value={tag} placeholder="None" onChange={setTag} />
     </Panel>
+  );
+}
+
+export function IconExample() {
+  const [playing, setPlaying] = useState(false);
+  const [tool, setTool] = useState('cursor');
+  return (
+    <div className="doc-stack" style={{ width: '100%' }}>
+      {/* In the hardware it was drawn for. The buttons own the ink, so the same
+          glyph goes dark on the quiet ground and white on the accent — and the
+          transport swaps `play` for `pause` by swapping a string. */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <IconButton
+          mode="toggle"
+          active={playing}
+          onChange={setPlaying}
+          label={playing ? 'Pause' : 'Play'}
+        >
+          <Icon name={playing ? 'pause' : 'play'} />
+        </IconButton>
+        <Platter
+          mode="single"
+          label="Tool"
+          value={tool}
+          onChange={setTool}
+          items={[
+            { value: 'cursor', icon: <Icon name="cursor" />, label: 'Select' },
+            { value: 'marquee', icon: <Icon name="marquee" />, label: 'Marquee' },
+            { value: 'lasso', icon: <Icon name="lasso" />, label: 'Lasso' },
+            { value: 'pen', icon: <Icon name="pen" />, label: 'Pen' },
+          ]}
+        />
+        <TextButton icon={<Icon name="export" />} onClick={() => {}}>
+          Export
+        </TextButton>
+      </div>
+      {/* The whole set, each beside its name. A cell is a copy chip, so the
+          name is a click away. */}
+      <div className="doc-icon-grid">
+        {ICON_NAMES.map((name) => (
+          <CopyChip key={name} value={name} tone="plain" label={`Copy ${name}`}>
+            <span className="doc-icon-cell">
+              <Icon name={name} size={20} />
+              <span>{name}</span>
+            </span>
+          </CopyChip>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1037,6 +1117,72 @@ export function VectorExample() {
     </Panel>
   );
 }
+
+/** The steps the example's fake boot walks through, with how far along each
+ *  one leaves the progress line. */
+const BOOT_STEPS: [string, number][] = [
+  ['Reading preferences\u2026', 0.12],
+  ['Loading fonts\u2026', 0.3],
+  ['Initializing plug-ins\u2026', 0.55],
+  ['Compiling shaders\u2026', 0.8],
+  ['Restoring workspace\u2026', 1],
+];
+
+export function SplashScreenExample() {
+  const [open, setOpen] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [barStyle, setBarStyle] = useState(false);
+  const [step, setStep] = useState(-1);
+
+  // A stand-in for an app's real startup: walk the steps on a timer, then let
+  // the splash go.
+  useEffect(() => {
+    if (!open) return;
+    if (step >= BOOT_STEPS.length - 1) {
+      const t = setTimeout(() => setOpen(false), 600);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setStep((s) => s + 1), step < 0 ? 600 : 750);
+    return () => clearTimeout(t);
+  }, [open, step]);
+
+  const launch = () => {
+    setStep(-1);
+    setOpen(true);
+  };
+  const current = step >= 0 ? BOOT_STEPS[step] : null;
+
+  return (
+    <Panel title="Startup">
+      <Toggle checked={showProgress} onChange={setShowProgress} label="Progress line" hint="Off is status text alone" />
+      <Toggle checked={barStyle} onChange={setBarStyle} label="Candy-stripe bar" hint="A ProgressBar under the status" disabled={!showProgress} />
+      <Row label="Splash">
+        <TextButton onClick={launch}>Launch</TextButton>
+      </Row>
+      <SplashScreen
+        open={open}
+        logo={SPLASH_MARK}
+        title="Workbench"
+        version="Version 2.4.0"
+        status={current ? current[0] : 'Starting\u2026'}
+        progress={showProgress ? (current ? current[1] : 0) : undefined}
+        progressStyle={barStyle ? 'bar' : 'line'}
+      >
+        &copy; 2026 Workbench contributors.
+        <br />
+        Artwork by the theme.
+      </SplashScreen>
+    </Panel>
+  );
+}
+
+const SPLASH_MARK = (
+  <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+    <rect x="4" y="4" width="48" height="48" rx="16" fill="var(--ctl-on-track)" />
+    <rect x="16" y="18" width="24" height="6" rx="3" fill="var(--ctl-accent)" />
+    <rect x="16" y="32" width="14" height="6" rx="3" fill="var(--ctl-accent)" opacity="0.7" />
+  </svg>
+);
 
 export function SectionExample() {
   const [focus, setFocus] = useState(42);
