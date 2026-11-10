@@ -130,7 +130,7 @@ export const pages: DocPage[] = [
     name: 'Icon',
     group: 'atoms',
     family: 'Glyphs',
-    summary: "A glyph from the kit's own set, by name — the transport, tool and housekeeping marks a control panel keeps reaching for, drawn solid so they read at 16px and painted in currentColor so a button's tier repaints them. One component and a string rather than an import per icon: the set is small enough to ship whole, and a transport button that shows pause while it plays is swapping a string.",
+    summary: "A glyph from the kit's own set, by name \u2014 the transport, tool and housekeeping marks a control panel keeps reaching for. Drawn solid so they read at 16px and inked in currentColor so a button's tier repaints them. One component and a string rather than an import per icon.",
     Example: IconExample,
     props: [
       { name: 'name', type: 'IconName', required: true, description: 'Which glyph. ICON_NAMES lists the set and IconName is their union, so a typo fails to compile and a picker can iterate them.' },
@@ -224,7 +224,7 @@ export const pages: DocPage[] = [
     name: 'Platter',
     group: 'molecules',
     family: 'Groups',
-    summary: 'A capsule tray holding a row or column of icon and text buttons. It rests on the same quiet ground a standalone button does — a platter is a tray of buttons — and a segment paints the accent when lit. Two modes share the shape: multi for independent actions and toggles, single for one choice out of several, a radio group wearing the tray’s clothes.',
+    summary: 'A capsule tray holding a row or column of icon and text buttons, on the same quiet ground a standalone button sits on; a lit segment paints the accent. Two modes share the shape: multi for independent actions and toggles, single for one choice out of several.',
     Example: PlatterExample,
     props: [
       { name: 'items', type: 'PlatterItem[]', required: true, description: 'The segments. Each has an optional icon and/or text, plus disabled and an a11y label. A single tray identifies a segment by value; a multi tray gives each its own onClick and active.' },
@@ -242,7 +242,7 @@ export const pages: DocPage[] = [
     name: 'Popover',
     group: 'organisms',
     family: 'Surfaces',
-    summary: "A surface that floats over the work, anchored to something in it \u2014 the mechanism Menu is built on, and it will hold anything: a few controls, a colour picker, a form. Three jobs, and pointedly no fourth. It stays on screen, flipping and shifting as the room runs out and capping itself to what is left. It floats clear of everything, in the browser's top layer, so no ancestor's overflow can clip it and no later stacking context can paint over it \u2014 and it gets there without a portal, so your tokens, your presses and the focus order all still reach it. And it dismisses: Escape, or a press outside. Saying what the thing actually is belongs to the content.",
+    summary: "A surface that floats over the work, anchored to something in it \u2014 the mechanism Menu is built on, holding anything from a few controls to a form. It stays on screen, flipping and shifting as the room runs out. It sits in the browser's top layer without a portal, so nothing clips or covers it and your tokens and focus order still reach it. Escape or a press outside dismisses it.",
     Example: PopoverExample,
     Guide: PopoverGuide,
     props: [
@@ -355,7 +355,7 @@ export const pages: DocPage[] = [
     name: 'Splash Screen',
     group: 'organisms',
     family: 'Surfaces',
-    summary: 'The banner an app shows while it starts: a borderless card floating in the middle of the window, artwork edge to edge, with the app\u2019s mark, name and version in one corner and a line of loading status along the foot. Not a dialog \u2014 there is nothing to answer \u2014 but it catches the pointer so the half-loaded app behind can\u2019t be used. Flip open to false when loading is done and it fades out before it unmounts \u2014 or pass actions and it becomes a landing page that waits for a choice.',
+    summary: 'The banner an app shows while it starts: a borderless card mid-window, artwork edge to edge, the app\u2019s mark, name and version in a corner and a line of loading status at the foot. Not a dialog, but it catches the pointer so the half-loaded app behind can\u2019t be used. Set open to false and it fades out before it unmounts; pass actions and it becomes a landing page that waits for a choice.',
     Example: SplashScreenExample,
     props: [
       { name: 'open', type: 'boolean', required: true, description: 'Whether the splash is up (fully controlled). Going false plays the fade-out, then unmounts.' },
@@ -469,7 +469,7 @@ export const pages: DocPage[] = [
     name: 'Toolbar',
     group: 'organisms',
     family: 'Surfaces',
-    summary: 'Lays a row of controls out the way Panel stacks a column of them, but paints nothing: no ground, no edge, no shadow. Fill it with Platters and Readouts and they float directly on whatever is behind. Being surfaceless is what lets it go anywhere — on the stage or inside a Panel — without stacking one surface on an identical one; the trade is that its contents take their ground, and so their character, from wherever you put it. Set overflow and it never spills either: the items it has run out of room for fold into a \u22ef that opens them as a sheet, one item at a time, which is the same bargain the window strip strikes with its slots.',
+    summary: 'Lays a row of controls out the way Panel stacks a column, but paints nothing: no ground, no edge, no shadow. Platters and Readouts float on whatever is behind, so it goes anywhere \u2014 on the stage or inside a Panel \u2014 without stacking one surface on an identical one; its contents take their character from where you put it. Set overflow and whatever runs out of room folds into a \u22ef that opens as a sheet.',
     Example: ToolbarExample,
     props: [
       { name: 'children', type: 'ReactNode', required: true, description: 'The bar\u2019s contents, laid out from the leading edge \u2014 Platters, buttons, a Select, whatever the job needs.' },

@@ -8,6 +8,16 @@ A lightweight, themeable React component library for control-panel UIs.
 - **Fully controlled** — you own the state; every component is a pure function of props.
 - Ships an ESM + CJS bundle, TypeScript types, and one stylesheet.
 
+## Contents
+
+- [Install](#install)
+- [Usage](#usage)
+- [Theming](#theming) — [dark mode](#dark-mode), [fonts](#fonts), [scoping](#scoping)
+- [Components](#components)
+- [Roadmap](#roadmap)
+- [Develop](#develop)
+- [License](#license)
+
 ## Install
 
 ```bash
@@ -200,6 +210,20 @@ Alphabetical within each family.
 | `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. Folds what doesn't fit into a `⋯`. |
 
 All prop types are exported (e.g. `SliderProps`, `PanelProps`).
+
+## Roadmap
+
+Shipped, and what's next. Each open item links to its issue.
+
+- [x] Touch-screen support across components ([#2](https://github.com/lucaskellyc/pretty-panels/issues/2))
+- [x] Nothing clipped on phones: controls wrap at 320px and up ([#6](https://github.com/lucaskellyc/pretty-panels/issues/6))
+- [x] Overflow `⋯` button, `Popover` and `Menu` ([#7](https://github.com/lucaskellyc/pretty-panels/issues/7))
+- [x] `Icon`, `ProgressBar` and `SplashScreen`; a controllable `Section`
+- [ ] Forward refs on every component ([#11](https://github.com/lucaskellyc/pretty-panels/issues/11))
+- [ ] `Slider` reads its formatted value in Chrome ([#12](https://github.com/lucaskellyc/pretty-panels/issues/12))
+- [ ] An automated test suite ([#10](https://github.com/lucaskellyc/pretty-panels/issues/10))
+- [ ] Pillotalk Studio on a phone, not just a note that it needs more room ([#13](https://github.com/lucaskellyc/pretty-panels/issues/13))
+- [ ] v1.0: a frozen API and a stable changelog cadence
 
 ## Develop
 
