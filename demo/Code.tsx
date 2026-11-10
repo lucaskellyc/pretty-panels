@@ -84,16 +84,24 @@ function tokenize(src: string, lang: CodeLang): [Kind, string][] {
  * demo.css so it follows the page's light / dark palette.
  */
 export function Code({ lang, children }: { lang: CodeLang; children: string }) {
-  const parts: ReactNode[] = tokenize(children, lang).map(([kind, text], i) =>
+  return (
+    <pre className="code" data-lang={lang}>
+      <code>
+        <Tokens lang={lang} src={children} />
+      </code>
+    </pre>
+  );
+}
+
+/** Just the coloured runs, with no block around them — for a snippet set
+ *  inline, such as the import line in a copy chip. */
+export function Tokens({ lang, src }: { lang: CodeLang; src: string }) {
+  const parts: ReactNode[] = tokenize(src, lang).map(([kind, text], i) =>
     kind === 'text' ? text : (
       <span key={i} className={`tok-${kind}`}>
         {text}
       </span>
     ),
   );
-  return (
-    <pre className="code" data-lang={lang}>
-      <code>{parts}</code>
-    </pre>
-  );
+  return <>{parts}</>;
 }

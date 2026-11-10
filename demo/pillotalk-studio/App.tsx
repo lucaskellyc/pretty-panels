@@ -3,12 +3,13 @@ import { Tabs } from '../../src';
 import { exportOtf } from './font/export';
 import { CHARSET, createProject, isDrawn, shiftGlyph, toLineCap, type FontProject, type GlyphData, type LineCap } from './font/model';
 import { inkBounds } from './font/outline';
-import { importSvgs } from './font/svgImport';
+import { importSvgs, type ImportFile } from './font/svgImport';
 import { layoutSheet } from './font/sheet';
 import { CanvasControls, CanvasStage, useCanvasSettings } from './Canvas';
 import { DOCK_W, Dock, DockPanel } from './Dock';
 import type { EditMessage } from './types';
 import { Outliner } from './Outliner';
+import { Splash } from './Splash';
 import { Stage } from './Stage';
 import { glyphProp, groupOf, resolveProject } from './timeline/channels';
 import type { KeyContext } from './timeline/KeyGutter';
@@ -60,6 +61,10 @@ export function App() {
   const [project, setProject] = useState<FontProject>(loadProject);
   const [char, setChar] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // The splash is the landing page: up on every load until a way in is chosen.
+  const [landing, setLanding] = useState(true);
+  /** Whether the session being restored has anything worth continuing. */
+  const [canResume] = useState(() => CHARSET.some((c) => isDrawn(project.glyphs[c])));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_KEY) === '1';
@@ -268,12 +273,22 @@ export function App() {
     else if (edit.type === 'unkey') unkeyAtPlayhead(edit.prop);
   };
 
+  /** Replaces the project whole — glyphs, parameters and keys — and leaves the
+   *  landing page. The canvas's text and frame are the reader's, so they stay. */
+  const startWith = (next: FontProject) => {
+    setProject(next);
+    anim.set({ doc: { ...anim.get().doc, tracks: {} }, muted: [], locked: [] });
+    setChar(null);
+    setLanding(false);
+  };
+
   /** Each file replaces its glyph whole. The weight is taken from the files
-   *  only while no glyph has stroke paths yet — after that it is yours. */
-  const importFiles = async (files: File[]) => {
-    const read = await Promise.all(files.map(async (f) => ({ name: f.name, text: await f.text() })));
-    const result = importSvgs(read, project);
-    setProject((p) => {
+   *  only while no glyph has stroke paths yet — after that it is yours.
+   *  `fresh` lays them over an empty project instead, as a new start. */
+  const applyImport = (read: ImportFile[], fresh: boolean) => {
+    const base = fresh ? createProject() : project;
+    const result = importSvgs(read, base);
+    const merge = (p: FontProject): FontProject => {
       const hadStrokes = Object.values(p.glyphs).some((g) => g.strokes?.length);
       const glyphs = { ...p.glyphs };
       for (const g of result.glyphs) glyphs[g.char] = g;
@@ -282,13 +297,20 @@ export function App() {
         glyphs,
         strokeWeight: !hadStrokes && result.weight ? result.weight : p.strokeWeight,
       };
-    });
+    };
+    if (fresh) startWith(merge(base));
+    else setProject(merge);
     // Only problems are worth a dialog.
     const problems = [
       ...result.errors,
       ...result.skipped.map((n) => `${n}: name isn't <letter>u.svg / <letter>l.svg`),
     ];
     if (problems.length) window.alert(`Imported ${result.glyphs.length} glyphs.\n\n${problems.join('\n')}`);
+  };
+
+  const importFiles = async (files: File[], fresh = false) => {
+    const read = await Promise.all(files.map(async (f) => ({ name: f.name, text: await f.text() })));
+    applyImport(read, fresh);
   };
 
   /** The font at the playhead, as every view shows it. */
@@ -326,9 +348,7 @@ export function App() {
    *  text and frame are the reader's, not the font's, so they stay. */
   const reset = () => {
     if (!window.confirm('Reset the font? Every imported glyph, setting and keyframe will be cleared.')) return;
-    setProject(createProject());
-    anim.set({ doc: { ...anim.get().doc, tracks: {} }, muted: [], locked: [] });
-    setChar(null);
+    startWith(createProject());
   };
 
   const pick = (c: string) => {
@@ -422,8 +442,19 @@ export function App() {
         onChange={(e) => {
           const files = [...(e.target.files ?? [])];
           e.target.value = '';
-          if (files.length) importFiles(files);
+          // From the landing page an import is a new start; cancelling the
+          // picker leaves the landing page up.
+          if (files.length) importFiles(files, landing);
         }}
+      />
+
+      <Splash
+        open={landing}
+        canResume={canResume}
+        onResume={() => setLanding(false)}
+        onTemplate={(files) => applyImport(files, true)}
+        onScratch={() => startWith(createProject())}
+        onImport={() => fileRef.current?.click()}
       />
     </div>
   );

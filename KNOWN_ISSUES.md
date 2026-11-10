@@ -39,9 +39,9 @@ A running log of bugs and rough edges found in the codebase. File references are
 7. ✅ **Fixed (v0.1.0-alpha).** ~~Hardcoded version strings.~~ The brand badge and
    hero spec strip now read `version` from `package.json`, matching the Footer.
 
-8. **`Section` has no controlled API.** `Panel` supports both controlled and
-   uncontrolled collapse, but `Section` (`src/components/Section.tsx:11`) is
-   uncontrolled-only. Inconsistent component API.
+8. ✅ **Fixed (unreleased).** ~~`Section` has no controlled API.~~ `Section`
+   takes `open` + `onOpenChange` alongside `defaultOpen`, matching `Panel`'s
+   controlled/uncontrolled collapse.
 
 ## Accessibility
 

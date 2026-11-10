@@ -342,6 +342,45 @@
   margin-top: -8px;
 }
 
+/* ---- Progress bar (a recessed capsule that fills) ----
+   Track and fill read from their own custom properties so a surface with a
+   different ground can recolour the bar without a prop (the splash does). Once
+   full, the fill turns to candy stripes that run toward the start; the tile is
+   square, so shifting it one tile width loops seamlessly. */
+.pp-progress {
+  --pp-progress-stripe: hsl(var(--mono-h) 30% 8% / 0.18);
+  position: relative;
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--pp-progress-track, var(--ctl-field));
+  box-shadow: var(--shadow-inset);
+}
+.pp-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--pp-progress-value, 0%);
+  border-radius: inherit;
+  background-color: var(--pp-progress-fill, var(--ctl-accent));
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.pp-progress-fill.is-striped {
+  background-image: linear-gradient(
+    45deg,
+    var(--pp-progress-stripe) 25%, transparent 25%,
+    transparent 50%, var(--pp-progress-stripe) 50%,
+    var(--pp-progress-stripe) 75%, transparent 75%, transparent
+  );
+  background-size: 16px 16px;
+  animation: pp-progress-stripes 0.6s linear infinite;
+}
+@keyframes pp-progress-stripes { from { background-position: 16px 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .pp-progress-fill { transition: none; }
+  .pp-progress-fill.is-striped { animation: none; }
+}
+
 /* ---- Readout (a capsule that only states a value) ----
    Not a track: that recessed surface is the language of controls you aim at, so
    a passive readout rests just off the plate instead and carries --ctl-text.
@@ -381,6 +420,18 @@
   color: var(--ctl-on-track);
 }
 .pp-readout.is-accent .pp-readout-label { color: var(--ctl-on-track); opacity: 0.75; }
+
+/* ---- Icon (a glyph from the kit's set) ----
+   The svg carries its own width and height, as every icon handed to a button
+   or a row must, and its ink is currentColor, so there is no colour or size to
+   set here. What is left is the inline fit: no baseline gap under it, no
+   shrinking when a flex row runs short. A button's own `svg { display: block }`
+   still wins inside one. */
+.pp-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
 
 /* ---- Switch rows (Toggle) ---- */
 .switch-row {
@@ -1266,3 +1317,229 @@
 .collapse-head .chevron { transition: transform var(--dur-base) var(--ease-out); }
 .collapse-head[aria-expanded="true"] .chevron { transform: rotate(180deg); }
 .collapse-head:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ---- Splash screen ----
+   A borderless banner floating in the middle of the window, artwork edge to
+   edge. The full-window layer under it is solid white, hiding the page, and
+   it catches the pointer, so the half-loaded app behind it can't be clicked. */
+.pp-splash {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-overlay) + 1);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: #fff;
+}
+.pp-splash.is-leaving {
+  animation: pp-splash-out var(--dur-slow) var(--ease-out) both;
+  pointer-events: none;
+}
+
+.pp-splash-banner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-8);
+  width: min(560px, 100%);
+  aspect-ratio: 16 / 9;
+  min-height: 220px;
+  padding: var(--space-6);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  /* The theme's ink over the white page; light once there's artwork, which
+     is assumed dark. Everything drawn on the banner tints from currentColor. */
+  color: var(--ctl-text);
+  box-shadow: var(--doc-shadow-panel), 0 24px 60px -12px hsl(var(--mono-h) 30% 8% / 0.45);
+  user-select: none;
+  cursor: progress;
+}
+
+/* The art layer fills the banner behind everything. Empty, it paints nothing
+   and the white page shows through. */
+.pp-splash-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.pp-splash-art > :is(img, video, svg, canvas) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pp-splash-banner.has-art { color: var(--ctl-on-track); }
+/* A scrim at the foot keeps the status legible over any artwork. */
+.pp-splash-banner.has-art .pp-splash-art::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 45%;
+  background: linear-gradient(to top, hsl(var(--mono-h) 30% 6% / 0.55), transparent);
+}
+
+.pp-splash-head,
+.pp-splash-foot { position: relative; z-index: 1; }
+
+.pp-splash-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.pp-splash-logo { flex: none; display: grid; place-items: center; }
+.pp-splash-logo > :is(img, svg) { display: block; max-width: 48px; max-height: 48px; }
+.pp-splash-title {
+  font: var(--fw-bold) var(--text-3xl)/var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--ls-tight);
+}
+.pp-splash-version {
+  margin-top: var(--space-1);
+  font: var(--type-code);
+  font-size: var(--text-xs);
+  opacity: 0.75;
+}
+
+.pp-splash-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+/* Status line, with the progress bar under it when `progressStyle="bar"`. */
+.pp-splash-load {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+/* Recoloured from the banner's ink, matching the hairline. */
+.pp-splash-bar {
+  --pp-progress-track: color-mix(in srgb, currentColor 15%, transparent);
+  --pp-progress-fill: currentColor;
+  /* The fill is the ink, so the stripes take the plate, the ink's opposite, to
+     show on it in either theme. */
+  --pp-progress-stripe: color-mix(in srgb, var(--ctl-panel) 30%, transparent);
+  width: 180px;
+  max-width: 100%;
+  box-shadow: none;
+}
+/* Over artwork the ink is always light, so the stripes go back to dark. */
+.pp-splash-banner.has-art .pp-splash-bar { --pp-progress-stripe: hsl(var(--mono-h) 30% 8% / 0.18); }
+.pp-splash-status {
+  min-width: 0;
+  /* Holds its line even when empty, so a status arriving later doesn't nudge
+     anything. */
+  min-height: calc(var(--text-xs) * var(--lh-normal));
+  font: var(--type-label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+.pp-splash-credits {
+  flex: none;
+  max-width: 55%;
+  font: var(--type-label);
+  font-size: var(--text-2xs);
+  line-height: var(--lh-snug);
+  text-align: right;
+  opacity: 0.6;
+}
+
+/* A hairline along the bottom edge, flush to the banner's corners. */
+.pp-splash-progress {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  height: 3px;
+  background: color-mix(in srgb, currentColor 15%, transparent);
+}
+.pp-splash-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--pp-splash-fill, 0%);
+  background: currentColor;
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* ---- Landing ----
+   With `actions`, the banner stops being a wait and becomes the way in: it
+   lets go of its 16:9 so a row of cards fits between head and foot, drops the
+   progress cursor, and the cards fade up one after another. Glass tinted from
+   the banner's ink rather than plate-coloured, so they read on the white
+   page and on artwork alike. */
+.pp-splash-banner.is-landing {
+  width: min(640px, 100%);
+  aspect-ratio: auto;
+  gap: var(--space-6);
+  cursor: default;
+}
+.pp-splash-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.pp-splash-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+  backdrop-filter: blur(12px);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: pp-splash-action-in var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+  transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.pp-splash-action:hover { background: color-mix(in srgb, currentColor 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); }
+.pp-splash-action:focus-visible { outline: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent), var(--focus-ring); }
+.pp-splash-action:disabled { opacity: 0.5; cursor: progress; }
+.pp-splash-action-icon { display: grid; place-items: center; margin-bottom: var(--space-2); }
+.pp-splash-action-icon > svg { display: block; width: 20px; height: 20px; }
+.pp-splash-action-label { font: var(--type-label); font-weight: var(--fw-bold); font-size: var(--text-sm); }
+.pp-splash-action-desc { font: var(--type-label); font-size: var(--text-2xs); line-height: var(--lh-snug); opacity: 0.7; }
+
+/* ---- Full screen ----
+   The banner becomes the window: no gutter, corners or shadow, the art running
+   to every edge. Head and foot pin to the top and bottom, and the cards keep a
+   readable width in the middle rather than stretching across a wide screen. */
+.pp-splash.is-fullscreen { padding: 0; }
+.pp-splash.is-fullscreen .pp-splash-banner {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  padding: var(--space-8);
+  border-radius: 0;
+  box-shadow: none;
+}
+.pp-splash.is-fullscreen .pp-splash-actions {
+  width: min(720px, 100%);
+  margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+  .pp-splash-banner { aspect-ratio: auto; padding: var(--space-5); }
+  .pp-splash.is-fullscreen .pp-splash-banner { padding: var(--space-5); overflow-y: auto; }
+  .pp-splash-title { font-size: var(--text-2xl); }
+}
+
+@keyframes pp-splash-out { to { opacity: 0; } }
+@keyframes pp-splash-action-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  /* Near-zero rather than none: the component waits on the exit's animationend
+     to unmount, so the animation has to happen, just instantly. */
+  .pp-splash.is-leaving { animation-duration: 1ms; }
+  .pp-splash-action { animation: none; }
+  .pp-splash-progress::after { transition: none; }
+}

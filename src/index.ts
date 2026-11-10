@@ -10,6 +10,9 @@ export type { GaugeProps } from './components/Gauge';
 export { GaugeRow } from './components/GaugeRow';
 export type { GaugeRowProps } from './components/GaugeRow';
 
+export { Icon, ICON_NAMES } from './components/Icon';
+export type { IconName, IconProps } from './components/Icon';
+
 export { IconButton } from './components/IconButton';
 export type {
   IconButtonProps,
@@ -43,6 +46,9 @@ export type {
   PopoverSide,
 } from './components/Popover';
 
+export { ProgressBar } from './components/ProgressBar';
+export type { ProgressBarProps } from './components/ProgressBar';
+
 export { RadioGroup } from './components/RadioGroup';
 export type { RadioGroupProps, RadioOption } from './components/RadioGroup';
 
@@ -57,6 +63,9 @@ export type { SelectProps, SelectOption } from './components/Select';
 
 export { Slider } from './components/Slider';
 export type { SliderProps } from './components/Slider';
+
+export { SplashScreen } from './components/SplashScreen';
+export type { SplashAction, SplashScreenProps } from './components/SplashScreen';
 
 export { Stepper } from './components/Stepper';
 export type { StepperProps } from './components/Stepper';

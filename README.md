@@ -4,7 +4,7 @@ A lightweight, themeable React component library for control-panel UIs.
 
 **[Full documentation →](https://lucaskellyc.github.io/pretty-panels/)**
 
-- **22 components**, 0 runtime dependencies (React is a peer dep).
+- **25 components**, 0 runtime dependencies (React is a peer dep).
 - **Fully controlled** — you own the state; every component is a pure function of props.
 - Ships an ESM + CJS bundle, TypeScript types, and one stylesheet.
 
@@ -144,11 +144,18 @@ Alphabetical within each family.
 | `Select`     | Track capsule that opens its choices as a `Menu`.    |
 | `Toggle`     | Capsule on/off switch with optional label + hint.    |
 
+**Atoms · Glyphs**
+
+| Component | What it is                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| `Icon`    | A glyph from the kit's own set, by name. Solid, 16px, inked in `currentColor`. |
+
 **Atoms · Monitors**
 
 | Component | What it is                                                   |
 | --------- | ------------------------------------------------------------ |
 | `Gauge`   | Read-only 270° arc gauge with a tabular readout and caption. |
+| `ProgressBar` | Recessed capsule that fills; candy-stripes once full, or runs indeterminate. |
 | `Readout` | Capsule that states a value and nothing else — nothing to touch. |
 
 **Atoms · Values**
@@ -189,6 +196,7 @@ Alphabetical within each family.
 | --------- | -------------------------------------------------------------------------- |
 | `Panel`   | Plate with optional header + padded body; collapsibly folds its body away. |
 | `Popover` | A surface that floats over the work, anchored to an element or to a point. Holds anything; stays on screen; dismisses itself. |
+| `SplashScreen` | Startup banner: artwork edge to edge, the app's mark, name and version, and a line of loading status. Fades itself out. |
 | `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. Folds what doesn't fit into a `⋯`. |
 
 All prop types are exported (e.g. `SliderProps`, `PanelProps`).

@@ -11,6 +11,29 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ### Added
 
+- **`Icon`**, the kit's own glyphs by name: `<Icon name="trash" />`.
+  Twenty-three solid marks drawn for control panels — transport (`play`,
+  `pause`, `skip-end`, `loop`, `clock`), tools (`cursor`, `marquee`, `lasso`,
+  `pen`, `move`, `rotate`, `scale`, `zoom-in`, `eye`), housekeeping (`undo`,
+  `export`, `trash`, `close`) and a few shapes (`circles`, `diamonds`,
+  `dashed-circle`, `dial`, `sparkle`). `size` sets the square it fills (16px
+  by default), the ink is `currentColor`, and `label` names one that stands
+  alone — without it the icon is hidden from assistive tech. `ICON_NAMES`
+  lists the set and `IconName` is their union.
+- **`ProgressBar`**, a recessed capsule that fills from `value` (0–1). Once
+  full, the fill turns to running candy stripes; `striped` forces them on or
+  off, and leaving out `value` gives an indeterminate bar. Recolour it with
+  `--pp-progress-track` and `--pp-progress-fill`.
+- **`SplashScreen`**, the banner an app shows while it starts. A borderless
+  card floating mid-window over a blurred page, with optional artwork edge
+  to edge (`art`), the app's mark, name and version, a line of loading `status`, and
+  credits in the corner. `progress` adds a hairline along the bottom edge, or,
+  with `progressStyle="bar"`, a `ProgressBar` under the status.
+  Controlled through `open`; it fades out before it unmounts, and `onExited`
+  fires once it has.
+- **`Section` can be controlled.** Pass `open` with `onOpenChange` to own its
+  state, the way `Panel` takes `collapsed` with `onCollapsedChange`. Without
+  `open` it behaves as before, starting from `defaultOpen`.
 - **Type a value into a `Slider`.** Click the row, or press Enter while it
   has focus, to swap the readout for a field. Enter or blur commits (snapped
   to `step` and clamped to `min`/`max`), Escape cancels, and anything that
@@ -21,6 +44,9 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ### Changed
 
+- **Sections are brighter on a dark plate.** `--ctl-section` now sits 16
+  points above `--mono-l` in dark mode (it was 6), so a `Section` reads as a
+  raised card with its controls recessed into it. Light mode is unchanged.
 - **`Slider` drags are relative.** A press no longer jumps the value to the
   pointer. Drag sideways and the value moves from where it is, one track width
   covering the full range; hold Shift for a tenth of the speed. A press that

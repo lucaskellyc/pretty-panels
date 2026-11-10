@@ -69,7 +69,9 @@
      furthest, and text is the far end of the ramp. */
   --ctl-panel:            hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  0 * var(--mono-sgn)) * 1%), 100%));
   --ctl-bar:              hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  9 * var(--mono-sgn)) * 1%), 100%));
-  --ctl-section:          hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-l) -  6 * var(--mono-sgn)) * 1%), 100%));
+  /* On a dark plate a section lifts well off the panel instead, so it reads as
+     a raised card and the buttons and fields inside it as wells cut into it. */
+  --ctl-section:          hsl(var(--mono-h) var(--mono-s) clamp(0%, calc((var(--mono-lit) * (var(--mono-l) - 6) + (1 - var(--mono-lit)) * (var(--mono-l) + 16)) * 1%), 100%));
   /* Tabs are navigation, not state, so the selected one goes to the deep end of
      the ramp rather than gold — the accent stays reserved for values you set.
      The idle capsule sits between the bar and a track, recessing into the
