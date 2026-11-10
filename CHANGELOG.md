@@ -9,13 +9,18 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+## [0.4.0-alpha] — 2026-11-10
+
+`Slider` drags are relative now; a seek bar wants `mode="absolute"`. See
+**Changed**.
+
 ### Added
 
 - **Every component forwards a ref.** `IconButton` and `TextButton` already
   did; now the other twenty-three do too, so an app can focus a `TextField`
   or `Select` after opening a `Popover`, measure a `Panel`, or hand a
   `Toolbar` to a positioning library. Each lands on the element you'd
-  expect — the `<input>` of a `Slider`, `TextField` or `Toggle`, the trigger
+  expect — the `<input>` of a `TextField` or `Toggle`, the track of a `Slider`, the trigger
   button of a `Select`, the plate of a `Panel`, the `<table>` of a `Table`,
   the `<ul>` of a `List` or `Tree` — and each docs page's props table says
   which. A `Popover`'s is null while closed, a `SplashScreen`'s once it has
@@ -492,7 +497,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.0-alpha...HEAD
+[0.4.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...v0.4.0-alpha
 [0.3.3-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...v0.3.3-alpha
 [0.3.2-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...v0.3.2-alpha
 [0.3.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.0-alpha...v0.3.1-alpha
