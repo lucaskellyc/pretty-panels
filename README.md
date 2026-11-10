@@ -233,7 +233,13 @@ npm run dev          # run the demo / docs site locally
 npm run build        # build the library into dist/
 npm run build:demo   # build the docs site into dist-demo/ (GitHub Pages)
 npm run typecheck    # tsc --noEmit
+npm test             # vitest, headless (jsdom); `npm run test:watch` to keep it running
 ```
+
+Tests sit beside their components as `src/components/*.test.tsx` and cover
+the behaviour a browser check would — keys, pointer drags, what a screen
+reader is told — so a regression there fails CI rather than waiting to be
+noticed by hand.
 
 The demo under `demo/` doubles as the documentation site and is deployed to
 GitHub Pages by `.github/workflows/pages.yml` on every push to `stable`.

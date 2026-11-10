@@ -62,12 +62,16 @@ Stop the server: `pkill -f "vite --config vite.demo.config.ts"`
 
 ## Checks (what CI runs)
 
-There is no test suite. CI (`.github/workflows/`) runs:
+CI (`.github/workflows/`) runs:
 
 ```bash
 npm run typecheck
+npm test             # vitest + jsdom; tests are src/components/*.test.tsx
 npm run build:demo
 ```
+
+Prefer adding a test to screenshotting when a behaviour can be asserted in jsdom
+(keys, pointer sequences, ARIA attributes); use the driver for what needs layout.
 
 ## Gotchas
 
