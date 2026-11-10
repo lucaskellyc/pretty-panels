@@ -816,13 +816,19 @@ html {
   animation: copy-chip-march 500ms linear infinite;
   animation-play-state: paused;
 }
-.copy-chip-wrap:hover .copy-chip-ants,
-.import-line:has(.import-line-btn:hover) .copy-chip-ants {
-  opacity: 1;
-}
-.copy-chip-wrap:hover .copy-chip-ants rect,
-.import-line:has(.import-line-btn:hover) .copy-chip-ants rect {
-  animation-play-state: running;
+/* Pointer-only, like the fill's hover above: on a touch screen a tap leaves
+   the chip "hovered" until the next tap lands elsewhere, so the ants would
+   keep marching long after the copy settled. There the ring shows only for
+   the copied moment below. */
+@media (hover: hover) {
+  .copy-chip-wrap:hover .copy-chip-ants,
+  .import-line:has(.import-line-btn:hover) .copy-chip-ants {
+    opacity: 1;
+  }
+  .copy-chip-wrap:hover .copy-chip-ants rect,
+  .import-line:has(.import-line-btn:hover) .copy-chip-ants rect {
+    animation-play-state: running;
+  }
 }
 @keyframes copy-chip-march {
   to { stroke-dashoffset: var(--ants-period, -10px); }
