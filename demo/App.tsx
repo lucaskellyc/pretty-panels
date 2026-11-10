@@ -4,9 +4,9 @@ import { flushSync } from 'react-dom';
 // carries the canvas/html renderers, which this page never asks for.
 import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
 import { ImportLine } from './ImportLine';
-import { familiesOf, pages, type DocPage, type Group } from './catalog';
+import { families, pages, type DocPage } from './catalog';
 import { PropsList } from './pages';
-import { IconButton, Slider, Stepper } from '../src';
+import { Icon, IconButton, Slider, Stepper } from '../src';
 import { version } from '../package.json';
 // Imported as URLs, not as modules: these two compositions are ~340KB of JSON
 // together, and lottie fetches them itself rather than having them inlined into
@@ -38,47 +38,22 @@ function Footer() {
   );
 }
 
-const GROUPS: { id: Group; label: string }[] = [
-  { id: 'atoms', label: 'Atoms' },
-  { id: 'molecules', label: 'Molecules' },
-  { id: 'organisms', label: 'Organisms' },
-];
+// Slugs in the order the sidebar actually renders them: by family, then
+// alphabetically within it. The `pages` array is alphabetical across every
+// family, so page-to-page slides key off *this* order instead — moving to a
+// later entry slides down, an earlier one slides up, matching the sidebar.
+const sidebarOrder = families.flatMap((f) => f.items.map((p) => p.slug));
 
-/** Tier prefix for a component's part-code (A1 / M1 / O1). The letter is real
- *  taxonomy — the atomic level it sits at — so the code encodes something true. */
-const TIER_CODE: Record<Group, string> = { atoms: 'A', molecules: 'M', organisms: 'O' };
-
-// Slugs in the order the sidebar actually renders them: by tier, then by family
-// within the tier. The `pages` array is alphabetical across every tier, so
-// page-to-page slides key off *this* order instead — moving to a later entry
-// slides down, an earlier one slides up, matching the sidebar.
-const sidebarOrder = GROUPS.flatMap((g) =>
-  familiesOf(g.id).flatMap((f) => f.items.map((p) => p.slug)),
+/* The drawer toggle's glyph. Not in the kit's set — a control panel has no
+   hamburger — so it's drawn here like the GitHub mark above. */
+const MENU_ICON = (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <path d="M1.5 3.25h13a1 1 0 0 1 0 2h-13a1 1 0 0 1 0-2zm0 3.75h13a1 1 0 0 1 0 2h-13a1 1 0 0 1 0-2zm0 3.75h13a1 1 0 0 1 0 2h-13a1 1 0 0 1 0-2z" />
+  </svg>
 );
 
-/** Part-code per slug (A1 / M2 / O1), numbered down each tier in sidebar order
- *  so the catalog's codes read consecutively across a tier's families. */
-const PART_CODE = new Map<string, string>();
-GROUPS.forEach((g) => {
-  let n = 0;
-  familiesOf(g.id).forEach((f) =>
-    f.items.forEach((p) => PART_CODE.set(p.slug, `${TIER_CODE[g.id]}${++n}`)),
-  );
-});
-
-/** The home catalog's cells — one per component class, in sidebar order. A class
- *  is a tier's family (Buttons, Choices, Groups …), and every page carries one, so
- *  the grid labels by family alone and never falls back to a tier name. */
-const CLASSES = GROUPS.flatMap((g) =>
-  familiesOf(g.id).map((f) => ({
-    key: `${g.id}:${f.label}`,
-    tier: g.id,
-    label: f.label,
-    items: f.items,
-  })),
-);
-
-/** Track the active component slug from the URL hash (`#/atoms/slider`),
+/** Track the active component slug from the URL hash (`#/slider`; the last
+ *  segment is what counts, so an older `#/atoms/slider` link still lands),
  *  animating swaps with a View Transition. <html> is tagged per navigation so
  *  the CSS can choose the motion: the sidebar slides in/out when it appears or
  *  disappears (to/from the home page), and page-to-page jumps slide vertically
@@ -208,48 +183,50 @@ export function App() {
                 <span className="brand-badge">alpha</span>
               </a>
               <nav>
-                {GROUPS.map((g) => (
-                  // No tier caption here — `data-tier` inks each link's part code
-                  // (A1 / M2 / O1) in the tier's own hue, the same code-and-colour
-                  // pair the home catalog prints, so the grouping reads without
-                  // repeating "Atoms / Molecules / Organisms" down the rail.
-                  <div className="nav-group" data-tier={g.id} key={g.id}>
-                    {familiesOf(g.id).map((f) => (
-                      <div className="nav-family" key={f.label}>
-                        <div className="nav-family-title">{f.label}</div>
-                        {f.items.map((p) => (
-                          <a
-                            key={p.slug}
-                            className={`nav-link${p.slug === slug ? ' is-active' : ''}`}
-                            href={`#/${p.group}/${p.slug}`}
-                          >
-                            <span className="nav-code">{PART_CODE.get(p.slug)}</span>
-                            <span className="nav-name">{p.name}</span>
-                          </a>
-                        ))}
-                      </div>
+                {families.map((f) => (
+                  // `data-family` tints the pills in the family's hue — the same
+                  // one its catalog cell wears — so the grouping reads by colour
+                  // as well as by caption.
+                  <div className="nav-family" data-family={f.label} key={f.label}>
+                    <div className="nav-family-title">{f.label}</div>
+                    {f.items.map((p) => (
+                      <a
+                        key={p.slug}
+                        className={`nav-link${p.slug === slug ? ' is-active' : ''}`}
+                        href={`#/${p.slug}`}
+                      >
+                        {p.name}
+                      </a>
                     ))}
                   </div>
                 ))}
               </nav>
             </div>
-
           </aside>
           <div
             className={`docs-scrim${menuOpen ? ' is-open' : ''}`}
             onClick={() => setMenuOpen(false)}
             aria-hidden="true"
           />
+          {/* The drawer's toggle: a button floating over the page's bottom-right
+              corner, narrow screens only (hidden on wide, where the sidebar is
+              always a column). It sits above the scrim so a second press closes
+              the drawer as readily as the first opened it. */}
+          <div className="docs-menu-fab">
+            <IconButton
+              label={menuOpen ? 'Close navigation' : 'Open navigation'}
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <Icon name="close" /> : MENU_ICON}
+            </IconButton>
+          </div>
         </>
       )}
 
       <main className="content" ref={contentRef} tabIndex={-1}>
         {page ? (
-          <DocPageView
-            page={page}
-            menuOpen={menuOpen}
-            onToggleMenu={() => setMenuOpen((o) => !o)}
-          />
+          <DocPageView page={page} />
         ) : (
           <Overview />
         )}
@@ -265,17 +242,8 @@ function scrollContentToTop() {
   document.querySelector('.content')?.scrollTo(0, 0);
 }
 
-function DocPageView({
-  page,
-  menuOpen,
-  onToggleMenu,
-}: {
-  page: DocPage;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
-}) {
+function DocPageView({ page }: { page: DocPage }) {
   const { Example, Guide } = page;
-  const dir = GROUPS.find((g) => g.id === page.group)?.label ?? page.group;
   // The display name carries a space ("Title Bar"); the export doesn't.
   const importLine = `import { ${page.name.replace(/\s/g, '')} } from 'pretty-panels';`;
   return (
@@ -289,23 +257,7 @@ function DocPageView({
       )}
 
       <header className="doc-head">
-        <h1 className="doc-title">
-          {/* The parent dir doubles as the sidebar toggle (narrow only; hidden
-              on wide, where the sidebar is always visible). */}
-          <button
-            type="button"
-            className="doc-title-dir"
-            onClick={onToggleMenu}
-            aria-label="Toggle navigation"
-            aria-expanded={menuOpen}
-          >
-            {dir}
-          </button>
-          <span className="doc-title-slash" aria-hidden="true">
-            /
-          </span>
-          <span className="doc-title-name">{page.name}</span>
-        </h1>
+        <h1 className="doc-title">{page.name}</h1>
         <p className="doc-summary">{page.summary}</p>
         <br></br>
         <div className="doc-import">
@@ -514,17 +466,16 @@ function Overview() {
     <article className="home">
       <HeroBench />
       <section className="catalog">
-        {CLASSES.map((c) => (
-          // `data-tier` tints the cell and every card inside it: pink / teal /
-          // warm yellow per atomic level. It's a second read of the part code
-          // each card already prints (A1 / M2 / O1), never the only one.
-          <div className="catalog-cell" data-tier={c.tier} key={c.key}>
-            <h3 className="catalog-cell-title">{c.label}</h3>
+        {families.map((f) => (
+          // `data-family` tints the cell's caption and every card inside it in
+          // the family's own hue; the Experiments cell below carries none and
+          // stays on the neutral palette.
+          <div className="catalog-cell" data-family={f.label} key={f.label}>
+            <h3 className="catalog-cell-title">{f.label}</h3>
             <ul className="catalog-list">
-              {c.items.map((p) => (
+              {f.items.map((p) => (
                 <li key={p.slug}>
-                  <a className="catalog-row" href={`#/${p.group}/${p.slug}`}>
-                    <span className="catalog-code">{PART_CODE.get(p.slug)}</span>
+                  <a className="catalog-row" href={`#/${p.slug}`}>
                     <span className="catalog-name">{p.name}</span>
                   </a>
                 </li>
@@ -534,9 +485,9 @@ function Overview() {
         ))}
       </section>
       {/* Apps built on the kit, each a page of its own beside the docs. Same
-          cell and cards as the catalog, in the neutral palette (no tier). */}
+          cell and cards as the catalog. */}
       <section className="catalog experiments">
-        <div className="catalog-cell" data-tier="apps">
+        <div className="catalog-cell">
           <h3 className="catalog-cell-title">Experiments</h3>
           <ul className="catalog-list">
             <li>
