@@ -64,6 +64,18 @@ well as features, so read the **Changed** notes before bumping a minor.
 - **`Stepper` opens its value field on a single click** of the readout, not a
   double-click, matching `Slider`.
 
+### Fixed
+
+- **A formatted `Slider` is announced by its formatted value in Chrome.**
+  The track was a native `<input type="range">`, and Chrome ignores
+  `aria-valuetext` on one of those: a slider showing "60%" was read as
+  "0.6". It is now an element with `role="slider"`, which every browser
+  reads through `aria-valuetext`. The keys are the native ones (arrows step,
+  Page Up / Down move a tenth of the range, Home and End go to the ends) and
+  the pointer behaviour is unchanged. Anything styling
+  `.slider-row input[type="range"]` should target `.slider-track` instead;
+  the forwarded ref is now an `HTMLDivElement`.
+
 ## [0.3.3-alpha] — 2026-10-27
 
 pretty-panels is a browser library now. The desktop window chrome and the

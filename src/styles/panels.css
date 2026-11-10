@@ -179,23 +179,17 @@
 }
 @media (hover: hover) { .slider-row:hover { background: var(--ctl-field-hover); } }
 @media (hover: hover) { .slider-row:hover .slider-fill { background: var(--ctl-accent-hover); } }
-.slider-row input[type="range"] {
+.slider-row .slider-track {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  opacity: 0;
   cursor: ew-resize;
-  margin: 0;
+  outline: none;
   /* Vertical swipes scroll the page; only sideways drags reach the slider. */
   touch-action: pan-y;
 }
-/* Keyboard focus only. A click focuses the hidden range input too (so arrows
-   work after a drag), and :focus-within would leave the ring on from then on. */
-.slider-row:has(input[type="range"]:focus-visible) { box-shadow: var(--focus-ring); }
+/* Keyboard focus only. A click focuses the track too (so arrows work after a
+   drag), and :focus-within would leave the ring on from then on. */
+.slider-row:has(.slider-track:focus-visible) { box-shadow: var(--focus-ring); }
 /* A press is a click until it moves; the accent brightens once it's a drag. */
 .slider-row.is-scrubbing .slider-fill { background: var(--ctl-accent-hover); }
 /* A click swaps the readout for a field that looks just like it — same face,

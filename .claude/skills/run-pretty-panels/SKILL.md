@@ -33,7 +33,7 @@ Drive it. Each run opens a fresh page and runs the steps in order:
 D=.claude/skills/run-pretty-panels/driver.mjs
 node $D goto home ss home
 node $D goto atoms/select value 0 open 0 ss select-open click Solid value 0 ss select-picked
-node $D goto atoms/slider focus 'input[type=range]' eval "document.activeElement.value" key ArrowRight key ArrowRight eval "document.activeElement.value" ss slider
+node $D goto atoms/slider focus '[role=slider]' eval "document.activeElement.ariaValueNow" key ArrowRight key ArrowRight eval "document.activeElement.ariaValueNow" ss slider
 ```
 
 Steps (see the header of `driver.mjs`):
@@ -83,9 +83,8 @@ npm run build:demo
   one, so `click` waits 600ms.
 - **Menu items use `role="menuitemcheckbox"`**, not `option` or `menuitem`. Match them with
   `[role^=menuitem]` or by text.
-- **Sliders are native `<input type="range">`** with an implicit slider role and no `role`
-  attribute, so `[role=slider]` finds nothing. Use `input[type=range]` (value lives in `.value`,
-  formatted text in `aria-valuetext`).
+- **Sliders are `<div role="slider">`**, not native range inputs. Match them with `[role=slider]`;
+  the value is in `aria-valuenow` and the formatted text in `aria-valuetext`.
 - **`chromium.launch()` without a channel fails** with "Executable doesn't exist at
   .../chromium_headless_shell-NNNN" whenever the Playwright version and its cached browsers
   differ. The driver uses `channel: 'chrome'` (system Google Chrome) to skip

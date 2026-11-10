@@ -361,7 +361,7 @@ export const pages: DocPage[] = [
       { name: 'onChange', type: '(v: number) => void', required: true, description: 'Called with the new value on drag or keypress.' },
       { name: 'format', type: '(v: number) => string', description: 'Format the displayed value; the underlying number is unchanged.' },
       { name: 'mode', type: "'relative' | 'absolute'", default: "'relative'", description: 'relative: a drag nudges the value from where it is and a click opens a field to type into. absolute: a press jumps to the pointer and a drag follows it, for seek bars.' },
-      { name: 'ref', type: 'Ref<HTMLInputElement>', description: 'Forwarded to the range input: `.focus()` it, or read its `value`.' },
+      { name: 'ref', type: 'Ref<HTMLDivElement>', description: 'Forwarded to the `role="slider"` element that takes the keyboard and the pointer: `.focus()` it, or read `aria-valuenow`.' },
     ],
   },
   {

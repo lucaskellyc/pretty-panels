@@ -26,19 +26,23 @@ const FINE = 0.1;
 
 /**
  * The `.slider-row` control — label + value + capsule track in one object, with
- * a real range input overlaid (opacity 0). Driven under explicit pointer
- * capture so a release outside the track (or a missed pointerup) can never
- * leave it stuck tracking the mouse.
+ * an invisible `role="slider"` element overlaid that takes the pointer and the
+ * keyboard. An ARIA slider rather than a native range input because Chrome
+ * ignores `aria-valuetext` on the native one and reads the raw number, so a
+ * slider formatted as "60%" was announced as "0.6". Driven under explicit
+ * pointer capture so a release outside the track (or a missed pointerup) can
+ * never leave it stuck tracking the mouse.
  *
  * A press is a click until it travels DRAG_SLOP. A click opens a field to type
  * an exact number into (so does Enter). A sideways drag scrubs *relative* to
  * the current value — one track width covers the full range, Shift for fine —
  * so nothing jumps to where you pressed. A mostly-vertical drag is let go, and
- * on touch the page scrolls (`touch-action: pan-y`). Arrow keys still flow
- * through the native `onChange`. `mode="absolute"` swaps all of that for
+ * on touch the page scrolls (`touch-action: pan-y`). Arrow keys step, Page
+ * Up / Down jump a tenth of the range, Home and End go to the ends, as on the
+ * native range. `mode="absolute"` swaps the pointer half of that for
  * press-to-jump, drag-to-follow.
  */
-export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider({
+export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider({
   label,
   value,
   min,
@@ -48,7 +52,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
   format,
   mode = 'relative',
 }: SliderProps, ref) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
   useImperativeHandle(ref, () => inputRef.current!, []);
   const editRef = useRef<HTMLInputElement>(null);
   const labelId = useId();
@@ -78,9 +82,9 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
     return snap(min + t * (max - min));
   };
 
-  const onPointerDown = (e: React.PointerEvent<HTMLInputElement>) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
-    e.preventDefault(); // suppress the native thumb jump and drag
+    e.preventDefault(); // no text selection from the press
     e.currentTarget.setPointerCapture(e.pointerId);
     // preventDefault dropped the implicit focus. Not a keyboard focus, so no
     // ring — engines without the option fall back to their own heuristic.
@@ -93,7 +97,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
     }
     press.current = { mode: 'pending', x0: e.clientX, y0: e.clientY, x: e.clientX, raw: value };
   };
-  const onPointerMove = (e: React.PointerEvent<HTMLInputElement>) => {
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const p = press.current;
     if (!p || p.mode === 'ignore') return;
     // A missed up-event leaves us mid-press with no button down — end it here.
@@ -144,6 +148,45 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
     if (draft.trim() !== '' && Number.isFinite(typed)) onChange(snap(typed));
   };
   const cancelEdit = () => setDraft(null);
+
+  // The native range's keys, with the ARIA slider pattern's: arrows step, Page
+  // Up / Down move a tenth of the range (at least a step), Home / End go to the
+  // ends. Enter opens the field.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const page = Math.max(step, (max - min) / 10);
+    let next: number | undefined;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowUp':
+        next = value + step;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        next = value - step;
+        break;
+      case 'PageUp':
+        next = value + page;
+        break;
+      case 'PageDown':
+        next = value - page;
+        break;
+      case 'Home':
+        next = min;
+        break;
+      case 'End':
+        next = max;
+        break;
+      case 'Enter':
+        e.preventDefault();
+        startEdit();
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    next = snap(next);
+    if (next !== value) onChange(next);
+  };
 
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
   const shown = format ? format(value) : value;
@@ -228,30 +271,26 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
         <span className="control-name">{label}</span>
         {!editing && <span className="control-value">{shown}</span>}
       </span>
-      <input
+      <div
         ref={inputRef}
-        type="range"
+        className="slider-track"
+        role="slider"
+        tabIndex={0}
         // The visible label names it; a formatted readout ("40%", "1.2 s") is
         // what a screen reader should say for the value, not the raw number.
         aria-labelledby={labelId}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
         aria-valuetext={format?.(value)}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
+        aria-orientation="horizontal"
         hidden={editing}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={endPress}
         onLostPointerCapture={endPress}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            startEdit();
-          }
-        }}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onKeyDown={onKeyDown}
       />
     </div>
   );
