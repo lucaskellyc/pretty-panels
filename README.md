@@ -135,18 +135,17 @@ override one on any subtree, no marker needed:
 
 ## Components
 
-Grouped by tier and family, mirroring the documentation site — atoms are single
-controls, molecules are closed sets of peers, organisms host content of yours.
-Alphabetical within each family.
+Grouped by family, mirroring the documentation site. Alphabetical within each
+family.
 
-**Atoms · Buttons**
+**Buttons**
 
 | Component    | What it is                                                           |
 | ------------ | -------------------------------------------------------------------- |
 | `IconButton` | Round icon button. An action, or `mode="toggle"` for an on/off state. |
 | `TextButton` | Capsule text button with an optional leading icon; same two modes.   |
 
-**Atoms · Choices**
+**Choices**
 
 | Component    | What it is                                           |
 | ------------ | ---------------------------------------------------- |
@@ -154,38 +153,13 @@ Alphabetical within each family.
 | `Select`     | Track capsule that opens its choices as a `Menu`.    |
 | `Toggle`     | Capsule on/off switch with optional label + hint.    |
 
-**Atoms · Glyphs**
+**Glyphs**
 
 | Component | What it is                                                                  |
 | --------- | --------------------------------------------------------------------------- |
 | `Icon`    | A glyph from the kit's own set, by name. Solid, 16px, inked in `currentColor`. |
 
-**Atoms · Monitors**
-
-| Component | What it is                                                   |
-| --------- | ------------------------------------------------------------ |
-| `Gauge`   | Read-only 270° arc gauge with a tabular readout and caption. |
-| `ProgressBar` | Recessed capsule that fills; candy-stripes once full, or runs indeterminate. |
-| `Readout` | Capsule that states a value and nothing else — nothing to touch. |
-
-**Atoms · Values**
-
-| Component   | What it is                                                           |
-| ----------- | -------------------------------------------------------------------- |
-| `Slider`    | Label + value + capsule track; relative drag, click to type, keyboard arrows. |
-| `Stepper`   | −/+ around a readout; bounds disable the buttons, click the value to type. |
-| `TextField` | Track capsule for free-form entry, set in the mono face.              |
-| `Vector`    | 2–4 fused numeric fields; drag-to-scrub, optional color mode.         |
-
-**Molecules · Structures**
-
-| Component | What it is                                                              |
-| --------- | ----------------------------------------------------------------------- |
-| `List`    | Stack of capsule rows with a mono readout pinned right; optionally reorderable. |
-| `Table`   | `List`'s rows arranged by column; opt-in sortable headings, mono numeric columns. |
-| `Tree`    | `List`'s rows arranged by depth; a drag picks both the gap and the depth. |
-
-**Molecules · Groups**
+**Groups**
 
 | Component  | What it is                                                                |
 | ---------- | ------------------------------------------------------------------------- |
@@ -193,14 +167,30 @@ Alphabetical within each family.
 | `Menu`     | Commands on a floating sheet: a context menu, or the menu a `⋯` button opens. Ticks, keystroke hints, the ARIA keyboard. |
 | `Platter`  | Capsule tray of icon / text buttons, row or column. `mode="single"` makes it one choice instead of many. |
 
-**Molecules · Layout**
+**Layout**
 
 | Component  | What it is                                                   |
 | ---------- | ------------------------------------------------------------ |
 | `Section`  | Collapsible titled section (smooth wipe).                    |
 | `Tabs`     | Capsule tab strip; flush plate header via `Panel`'s `title`. |
 
-**Organisms · Surfaces**
+**Monitors**
+
+| Component | What it is                                                   |
+| --------- | ------------------------------------------------------------ |
+| `Gauge`   | Read-only 270° arc gauge with a tabular readout and caption. |
+| `ProgressBar` | Recessed capsule that fills; candy-stripes once full, or runs indeterminate. |
+| `Readout` | Capsule that states a value and nothing else — nothing to touch. |
+
+**Structures**
+
+| Component | What it is                                                              |
+| --------- | ----------------------------------------------------------------------- |
+| `List`    | Stack of capsule rows with a mono readout pinned right; optionally reorderable. |
+| `Table`   | `List`'s rows arranged by column; opt-in sortable headings, mono numeric columns. |
+| `Tree`    | `List`'s rows arranged by depth; a drag picks both the gap and the depth. |
+
+**Surfaces**
 
 | Component | What it is                                                                 |
 | --------- | -------------------------------------------------------------------------- |
@@ -208,6 +198,15 @@ Alphabetical within each family.
 | `Popover` | A surface that floats over the work, anchored to an element or to a point. Holds anything; stays on screen; dismisses itself. |
 | `SplashScreen` | Startup banner: artwork edge to edge, the app's mark, name and version, and a line of loading status. Fades itself out. |
 | `Toolbar` | Surfaceless row for `Platter`s and `Readout`s: controls lead, status pins to the end. Folds what doesn't fit into a `⋯`. |
+
+**Values**
+
+| Component   | What it is                                                           |
+| ----------- | -------------------------------------------------------------------- |
+| `Slider`    | Label + value + capsule track; relative drag, click to type, keyboard arrows. |
+| `Stepper`   | −/+ around a readout; bounds disable the buttons, click the value to type. |
+| `TextField` | Track capsule for free-form entry, set in the mono face.              |
+| `Vector`    | 2–4 fused numeric fields; drag-to-scrub, optional color mode.         |
 
 All prop types are exported (e.g. `SliderProps`, `PanelProps`).
 

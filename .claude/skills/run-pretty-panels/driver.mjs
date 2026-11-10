@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Drive the pretty-panels demo site in headless Chrome.
 // Usage: node .claude/skills/run-pretty-panels/driver.mjs <step> [args] <step> [args] ...
-//   goto <group/slug>   open a component page, e.g. atoms/select ('' or 'home' = catalog)
+//   goto <slug>         open a component page, e.g. select ('' or 'home' = catalog)
 //   click <text>        click the first element whose exact text matches
 //   open <n>            click the n-th (0-based) [aria-haspopup] trigger on the page
 //   value <n>           print the n-th [aria-haspopup] trigger's text

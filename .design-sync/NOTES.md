@@ -94,8 +94,9 @@
 
 - The repo has its **own** taxonomy in `demo/catalog.ts` (it lived in
   `demo/pages.tsx` until 2026-09-24, when the data was split out of the module
-  holding the example components so the latter could Fast Refresh): tiers
-  `atoms`/`molecules`/`organisms` plus families `Buttons`/`Choices`/`Readouts`/`Values`.
+  holding the example components so the latter could Fast Refresh): families
+  `Buttons`/`Choices`/`Readouts`/`Values` (the `atoms`/`molecules`/`organisms` tiers
+  that once sat above them were dropped on 2026-11-10).
   The four family names are preserved verbatim as picker groups; `Layout` was added
   for the structural pieces (Panel, Section, Tabs) that carry no family upstream.
 - Grouping is done with **frontmatter-only stubs** in `.design-sync/groups/<Name>.md`

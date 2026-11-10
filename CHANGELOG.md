@@ -9,6 +9,16 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Docs site: no more atomic tiers.** The sidebar and the home catalog file
+  components by family alone (Buttons, Choices, Glyphs …), each family in a
+  hue of its own; the A1 / M2 / O1 part codes and the "Atoms / Slider" path in
+  a page's title are gone. Routes are `#/<slug>` now — an older `#/atoms/slider` link
+  still opens the right page. On narrow screens the drawer opens from a
+  floating menu button in the bottom-right corner instead of the title's
+  directory segment.
+
 ## [0.4.0-alpha] — 2026-11-10
 
 `Slider` drags are relative now; a seek bar wants `mode="absolute"`. See

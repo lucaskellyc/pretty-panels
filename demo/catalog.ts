@@ -1,4 +1,4 @@
-/* The docs catalog: the taxonomy, the page registry, and the grouping helper.
+/* The docs catalog: the families, the page registry, and the grouping helper.
 
    Split out of `pages.tsx` on purpose. vite-plugin-react can only Fast Refresh a
    module whose runtime exports are *all* components; mixing this data in with
@@ -40,15 +40,10 @@ import {
   VectorExample,
 } from './pages';
 
-/** Atomic level a component sits at — drives the sidebar grouping. */
-export type Group = 'atoms' | 'molecules' | 'organisms';
-
-/** Sub-heading within a tier. Every part files by what it actually does rather
- *  than sitting in one long list under its tier — the catalog and the sidebar
- *  both label by family alone, so a tier with no families would print a
- *  captionless bucket next to the named ones. Alphabetical, like the components
- *  inside them; a family belongs to exactly one tier, so no two cells collide.
- *  This order is what numbers the part codes (A1 / M2 / O1) down each tier. */
+/** The headings the catalog and the sidebar file components under. Every part
+ *  files by what it actually does rather than sitting in one long list, and
+ *  both views label by family alone. Alphabetical, like the components inside
+ *  them, and this order is the order the sidebar renders. */
 export const FAMILIES = [
   'Buttons',
   'Choices',
@@ -78,10 +73,8 @@ export interface PropRow {
 export interface DocPage {
   slug: string;
   name: string;
-  group: Group;
-  /** Sub-heading to file this page under within its tier. Required: the catalog
-   *  and sidebar label by family alone, so a page without one would have nowhere
-   *  to sit. */
+  /** Heading to file this page under. Required: the catalog and sidebar label
+   *  by family alone, so a page without one would have nowhere to sit. */
   family: Family;
   summary: string;
   /** A self-contained, interactive demo of the component. Omit to hide the
@@ -100,7 +93,6 @@ export const pages: DocPage[] = [
   {
     slug: 'gauge',
     name: 'Gauge',
-    group: 'atoms',
     family: 'Monitors',
     summary: 'A read-only 270° dial with a rounded fill, a tabular readout, and a caption. The range and the displayed number are independent, so 3.4-out-of-10 reads "3.4" on a 34%-full arc.',
     Example: GaugeExample,
@@ -117,7 +109,6 @@ export const pages: DocPage[] = [
   {
     slug: 'gauge-row',
     name: 'Gauge Row',
-    group: 'molecules',
     family: 'Groups',
     summary: 'The strip a set of Gauge dials sits in — spaced evenly across the plate and hung from a common top edge so their captions line up.',
     Example: GaugeRowExample,
@@ -130,7 +121,6 @@ export const pages: DocPage[] = [
   {
     slug: 'icon',
     name: 'Icon',
-    group: 'atoms',
     family: 'Glyphs',
     summary: "A glyph from the kit's own set, by name \u2014 the transport, tool and housekeeping marks a control panel keeps reaching for. Drawn solid so they read at 16px and inked in currentColor so a button's tier repaints them. One component and a string rather than an import per icon.",
     Example: IconExample,
@@ -146,7 +136,6 @@ export const pages: DocPage[] = [
   {
     slug: 'icon-button',
     name: 'Icon Button',
-    group: 'atoms',
     family: 'Buttons',
     summary: 'A round icon button on a panel-plate ground. Supply your own icon; the accent paints the primary action of a cluster, or — as a toggle — the on state.',
     Example: IconButtonExample,
@@ -167,7 +156,6 @@ export const pages: DocPage[] = [
   {
     slug: 'list',
     name: 'List',
-    group: 'molecules',
     family: 'Structures',
     summary: 'A stack of capsule rows — a leading icon, a label, and a mono readout pinned right. Turn on reorderable and each row grows a grip: drag it, or focus it and use the arrow keys.',
     Example: ListExample,
@@ -184,10 +172,9 @@ export const pages: DocPage[] = [
     slug: 'menu',
     name: 'Menu',
     /* A closed set of peer commands, so it files with `Platter` rather than with
-       the surface it floats on. `Popover` is the organism of the pair: it hosts
+       the surface it floats on. `Popover` is the surface of the pair: it hosts
        content of yours, and a menu hosts nothing — it takes items and renders
        them. */
-    group: 'molecules',
     family: 'Groups',
     summary: "A Popover holding commands \u2014 the context menu, and the menu a \u22ef button opens. Capsule rows on a floating sheet, with an optional tick column, mono keystroke hints and the ARIA menu keyboard over them. It brings the surface's whole job with it: anchored to an element or to the point a right-click named, flipped and shifted to stay on screen, and dismissed by Escape, by Tab, or by a press outside it.",
     Example: MenuExample,
@@ -209,7 +196,6 @@ export const pages: DocPage[] = [
   {
     slug: 'panel',
     name: 'Panel',
-    group: 'organisms',
     family: 'Surfaces',
     summary: 'A static control-panel plate: the grey surface with an optional header bar and a padded body. Use it to group controls anywhere. Optionally folds its body away while keeping the plate width.',
     props: [
@@ -228,7 +214,6 @@ export const pages: DocPage[] = [
   {
     slug: 'platter',
     name: 'Platter',
-    group: 'molecules',
     family: 'Groups',
     summary: 'A capsule tray holding a row or column of icon and text buttons, on the same quiet ground a standalone button sits on; a lit segment paints the accent. Two modes share the shape: multi for independent actions and toggles, single for one choice out of several.',
     Example: PlatterExample,
@@ -247,7 +232,6 @@ export const pages: DocPage[] = [
   {
     slug: 'popover',
     name: 'Popover',
-    group: 'organisms',
     family: 'Surfaces',
     summary: "A surface that floats over the work, anchored to something in it \u2014 the mechanism Menu is built on, holding anything from a few controls to a form. It stays on screen, flipping and shifting as the room runs out. It sits in the browser's top layer without a portal, so nothing clips or covers it and your tokens and focus order still reach it. Escape or a press outside dismisses it.",
     Example: PopoverExample,
@@ -266,7 +250,6 @@ export const pages: DocPage[] = [
   {
     slug: 'progress-bar',
     name: 'Progress Bar',
-    group: 'atoms',
     family: 'Monitors',
     summary: 'A recessed capsule with a rounded fill, for load progress at a glance. Once the fill reaches the end it turns to running candy stripes, so a finished load reads as wrapping up rather than stalled at 100%. Omit value for an indeterminate bar.',
     Example: ProgressBarExample,
@@ -282,7 +265,6 @@ export const pages: DocPage[] = [
   {
     slug: 'radio-group',
     name: 'Radio Group',
-    group: 'atoms',
     family: 'Choices',
     summary: 'A row of dot-and-label choices over real radio inputs, so arrow-key roving and form semantics come from the platform. Reach for it over a Select when the options are few and short.',
     Example: RadioGroupExample,
@@ -300,7 +282,6 @@ export const pages: DocPage[] = [
   {
     slug: 'readout',
     name: 'Readout',
-    group: 'atoms',
     family: 'Monitors',
     summary: 'A capsule that states a value and nothing else \u2014 no handler, no disabled state, nothing to touch. It hugs its content, and rests just off the plate rather than in a track, because a recessed track is the language of controls you aim at.',
     Example: ReadoutExample,
@@ -315,7 +296,6 @@ export const pages: DocPage[] = [
   {
     slug: 'section',
     name: 'Section',
-    group: 'molecules',
     family: 'Layout',
     summary: 'A collapsible titled section: a bold header that folds its body with a smooth wipe. Nest these inside a Panel.',
     Example: SectionExample,
@@ -331,7 +311,6 @@ export const pages: DocPage[] = [
   {
     slug: 'select',
     name: 'Select',
-    group: 'atoms',
     family: 'Choices',
     summary: 'A track capsule showing the current choice, which opens the choices as a Menu hung off it \u2014 the current one ticked, the way a platform popup button lists them. Drawn by the kit rather than the platform, so the list takes the theme too; choosing gets the menu\u2019s confirming blink before onChange fires.',
     Example: SelectExample,
@@ -348,7 +327,6 @@ export const pages: DocPage[] = [
   {
     slug: 'slider',
     name: 'Slider',
-    group: 'atoms',
     family: 'Values',
     summary: 'Label + value + capsule track in one object. Drag sideways to nudge the value (Shift for fine), click or press Enter to type one, arrows to step. Set mode="absolute" for a seek bar that jumps to the pointer.',
     Example: SliderExample,
@@ -367,7 +345,6 @@ export const pages: DocPage[] = [
   {
     slug: 'splash-screen',
     name: 'Splash Screen',
-    group: 'organisms',
     family: 'Surfaces',
     summary: 'The banner an app shows while it starts: a borderless card mid-window, artwork edge to edge, the app\u2019s mark, name and version in a corner and a line of loading status at the foot. Not a dialog, but it catches the pointer so the half-loaded app behind can\u2019t be used. Set open to false and it fades out before it unmounts; pass actions and it becomes a landing page that waits for a choice.',
     Example: SplashScreenExample,
@@ -391,7 +368,6 @@ export const pages: DocPage[] = [
   {
     slug: 'stepper',
     name: 'Stepper',
-    group: 'atoms',
     family: 'Values',
     summary: 'A recessed capsule holding −/+ buttons around a tabular readout. For values that move in discrete increments; the buttons disable at the bounds.',
     Example: StepperExample,
@@ -411,7 +387,6 @@ export const pages: DocPage[] = [
   {
     slug: 'table',
     name: 'Table',
-    group: 'molecules',
     family: 'Structures',
     summary: "List's capsule rows are arranged by column, ordering rows by field rather than sequence or depth. A row is a plain record, and numeric columns automatically adopt a mono, tabular-figure format.",
     Example: TableExample,
@@ -430,7 +405,6 @@ export const pages: DocPage[] = [
   {
     slug: 'tabs',
     name: 'Tabs',
-    group: 'molecules',
     family: 'Layout',
     summary: "A capsule tab strip. Hand it to a Panel's title and it becomes the plate's flush header; drop it anywhere else and it's a self-contained bar. It renders only the strip — which body to show is yours to switch on value.",
     Example: TabsExample,
@@ -446,7 +420,6 @@ export const pages: DocPage[] = [
   {
     slug: 'text-button',
     name: 'Text Button',
-    group: 'atoms',
     family: 'Buttons',
     summary: "IconButton's text-label sibling: a capsule that hugs its label on a panel-plate ground, with an optional leading icon. It takes the same two modes — an action whose accent marks it primary, or a toggle whose accent is a state.",
     Example: TextButtonExample,
@@ -468,7 +441,6 @@ export const pages: DocPage[] = [
   {
     slug: 'text-field',
     name: 'Text Field',
-    group: 'atoms',
     family: 'Values',
     summary: 'A track capsule for free-form entry, set in the mono face so typed identifiers line up with the numeric readouts around them.',
     Example: TextFieldExample,
@@ -486,7 +458,6 @@ export const pages: DocPage[] = [
   {
     slug: 'toolbar',
     name: 'Toolbar',
-    group: 'organisms',
     family: 'Surfaces',
     summary: 'Lays a row of controls out the way Panel stacks a column, but paints nothing: no ground, no edge, no shadow. Platters and Readouts float on whatever is behind, so it goes anywhere \u2014 on the stage or inside a Panel \u2014 without stacking one surface on an identical one; its contents take their character from where you put it. Set overflow and whatever runs out of room folds into a \u22ef that opens as a sheet.',
     Example: ToolbarExample,
@@ -505,7 +476,6 @@ export const pages: DocPage[] = [
   {
     slug: 'toggle',
     name: 'Toggle',
-    group: 'atoms',
     family: 'Choices',
     summary: 'A capsule on/off switch, optionally paired with a bold label and a hint line. The whole row is the click target.',
     Example: ToggleExample,
@@ -521,7 +491,6 @@ export const pages: DocPage[] = [
   {
     slug: 'tree',
     name: 'Tree',
-    group: 'molecules',
     family: 'Structures',
     summary: "List's rows arranged by depth — a scene outliner, with a chevron on any node that has children. Dragging a node works in two axes: up and down picks the gap to land in, left and right picks the depth at that gap.",
     Example: TreeExample,
@@ -541,7 +510,6 @@ export const pages: DocPage[] = [
   {
     slug: 'vector',
     name: 'Vector',
-    group: 'atoms',
     family: 'Values',
     summary: 'A segmented capsule with 2, 3, or 4 numeric fields. Drag a field vertically to scrub or type a value; color mode paints each field with its live rgb.',
     Example: VectorExample,
@@ -559,13 +527,9 @@ export const pages: DocPage[] = [
   },
 ];
 
-/** The families inside one tier, in display order, each holding its pages.
- *  A tier whose pages carry no family comes back as a single unlabelled section,
- *  so callers can render every tier the same way. */
-export function familiesOf(group: Group): { label: Family; items: DocPage[] }[] {
-  const tier = pages.filter((p) => p.group === group);
-  return FAMILIES.map((label) => ({
-    label,
-    items: tier.filter((p) => p.family === label),
-  })).filter((f) => f.items.length > 0);
-}
+/** The families in display order, each holding its pages. Only families with a
+ *  page come back, so neither the catalog nor the sidebar prints an empty tray. */
+export const families: { label: Family; items: DocPage[] }[] = FAMILIES.map((label) => ({
+  label,
+  items: pages.filter((p) => p.family === label),
+})).filter((f) => f.items.length > 0);

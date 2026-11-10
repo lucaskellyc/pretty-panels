@@ -32,15 +32,15 @@ Drive it. Each run opens a fresh page and runs the steps in order:
 ```bash
 D=.claude/skills/run-pretty-panels/driver.mjs
 node $D goto home ss home
-node $D goto atoms/select value 0 open 0 ss select-open click Solid value 0 ss select-picked
-node $D goto atoms/slider focus '[role=slider]' eval "document.activeElement.ariaValueNow" key ArrowRight key ArrowRight eval "document.activeElement.ariaValueNow" ss slider
+node $D goto select value 0 open 0 ss select-open click Solid value 0 ss select-picked
+node $D goto slider focus '[role=slider]' eval "document.activeElement.ariaValueNow" key ArrowRight key ArrowRight eval "document.activeElement.ariaValueNow" ss slider
 ```
 
 Steps (see the header of `driver.mjs`):
 
 | step | does |
 |---|---|
-| `goto <group/slug>` | open `#/<group>/<slug>`, e.g. `atoms/select`, `molecules/tree`, `organisms/popover`; `home` = catalog |
+| `goto <slug>` | open `#/<slug>`, e.g. `select`, `tree`, `popover`; `home` = catalog |
 | `click <text>` | click the first element with exactly this text, then wait 600ms |
 | `open <n>` / `value <n>` | click / read the n-th `[aria-haspopup]` trigger (Select capsules); `open` prints the menu items |
 | `focus <css>` / `key <Key>` | keyboard interaction |
@@ -79,9 +79,10 @@ Prefer adding a test to screenshotting when a behaviour can be asserted in jsdom
 - **Every page load logs `CONSOLE Failed to load resource: 404 ... /favicon.ico`.** Chrome asks
   for the favicon at the server root, outside Vite's base. It's harmless, so ignore it. The
   driver's `HTTP` listener never sees it because the browser makes that request itself.
-- **Routing only reads the last hash segment** (`App.tsx` `useHashSlug`), so a wrong group still
-  opens the right page, though the breadcrumb comes from the catalog. Group ids: `atoms`,
-  `molecules`, `organisms` (see `demo/catalog.ts`).
+- **Routing only reads the last hash segment** (`App.tsx` `useHashSlug`), so an older
+  `#/<group>/<slug>` link still opens the right page. Slugs are in `demo/catalog.ts`.
+- **On narrow screens the sidebar is a drawer** opened by a floating round button in the
+  bottom-right corner (`.docs-menu-fab`, label "Open navigation"); on wide screens it's a column.
 - **Menus blink before they act.** Choosing a Menu/Select item plays a ~300ms confirm blink before
   `onChange` fires and the menu closes. Read the value right after the click and you'll see the old
   one, so `click` waits 600ms.

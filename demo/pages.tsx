@@ -174,7 +174,7 @@ export function PropsList({ rows }: { rows: PropRow[] }) {
   );
 }
 
-/** A labelled control row used inside the molecule-style examples. */
+/** A labelled control row used inside the composed examples. */
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="doc-row">
@@ -1269,10 +1269,10 @@ export function MenuGuide() {
           <em>and</em> the element the press came from &mdash; the button under
           the pointer, or the row itself when the press came from the keyboard,
           where the ⋯ is not what was aimed at and is not even on screen yet. The
-          example on the <a href="#/molecules/tree">Tree</a> page is exactly that,
+          example on the <a href="#/tree">Tree</a> page is exactly that,
           end-aligned so it opens back across the plate &mdash; and the ⋯ stays
           drawn for as long as its menu is up, which is the anchor mark described
-          on the <a href="#/organisms/popover">Popover</a> page.
+          on the <a href="#/popover">Popover</a> page.
         </p>
       </section>
       <section className="doc-section">
