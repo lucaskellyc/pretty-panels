@@ -475,3 +475,25 @@ body {
   font: var(--type-label);
   color: var(--ctl-text);
 }
+
+/* ---- Too narrow ------------------------------------------------------------
+   A phone gets one plate in the middle of the stage instead of the studio. */
+.pt-narrow {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--stage-bg);
+  font: var(--type-ui);
+  -webkit-user-select: text;
+  user-select: text;
+}
+.pt-narrow .panel {
+  max-width: 100%;
+}
+.pt-narrow-copy {
+  margin: 0 0 12px;
+  color: var(--ctl-text);
+  line-height: 1.45;
+}

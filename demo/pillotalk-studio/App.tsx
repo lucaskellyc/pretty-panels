@@ -10,6 +10,7 @@ import { DOCK_W, Dock, DockPanel } from './Dock';
 import type { EditMessage } from './types';
 import { Outliner } from './Outliner';
 import { Splash } from './Splash';
+import { NarrowScreen, useTooNarrow } from './NarrowScreen';
 import { Stage } from './Stage';
 import { glyphProp, groupOf, resolveProject } from './timeline/channels';
 import type { KeyContext } from './timeline/KeyGutter';
@@ -57,7 +58,12 @@ function loadProject(): FontProject {
  * inspector in its top-right, over the timeline dock. Every plate rolls up to
  * its header, and the timeline folds down to its transport bar.
  */
+/** The studio, or on a phone a note saying it needs more room. */
 export function App() {
+  return useTooNarrow() ? <NarrowScreen /> : <Studio />;
+}
+
+function Studio() {
   const [project, setProject] = useState<FontProject>(loadProject);
   const [char, setChar] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
