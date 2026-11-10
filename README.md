@@ -216,6 +216,13 @@ GitHub Pages by `.github/workflows/pages.yml` on every push to `stable`.
 Work lands on `unstable`, which runs CI but deliberately does not redeploy
 the site; `stable` is merged forward at each release.
 
+`npm install` runs the library build through `prepare`, so that
+`npm install github:lucaskellyc/pretty-panels` ships `dist/`; expect a few
+extra seconds when installing dev dependencies too.
+
+Bugs and rough edges are tracked as
+[GitHub issues](https://github.com/lucaskellyc/pretty-panels/issues).
+
 ## License
 
 MIT © Kelly
