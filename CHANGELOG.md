@@ -9,6 +9,8 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+## [0.4.1-alpha] — 2026-11-24
+
 ### Added
 
 - A `collapsible` `Panel`'s header stays pinned to the top of its scroller
@@ -43,6 +45,14 @@ well as features, so read the **Changed** notes before bumping a minor.
   still opens the right page. On narrow screens the drawer opens from a
   floating menu button in the bottom-right corner instead of the title's
   directory segment.
+- **Docs site: Pillotalk Studio fits narrow screens.** The "needs a wider
+  window" notice is gone. When the stage can't hold both plates beside the
+  sheet, they open one at a time and the sheet takes the full width; below
+  480px an open plate drops beneath the other's strip. A plate's open body is
+  held to the room it has and scrolls inside, so its fold runs in step with its
+  width rather than snapping. The timeline is a floating plate, its corners
+  concentric with the pills inside, and its lanes no longer hang into the
+  padding with overlay scrollbars.
 
 ### Fixed
 
@@ -539,7 +549,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.0-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.1-alpha...HEAD
+[0.4.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.0-alpha...v0.4.1-alpha
 [0.4.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...v0.4.0-alpha
 [0.3.3-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...v0.3.3-alpha
 [0.3.2-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.1-alpha...v0.3.2-alpha

@@ -288,6 +288,26 @@ body {
   margin-right: auto;
 }
 
+/* Compact (a stage too narrow for both columns), the plates take turns: one
+   open at a time, the column holding it raised over the other's strip, and
+   no column wider than the stage. */
+.pt-dock.is-compact {
+  max-width: calc(100% - var(--space-3) * 2);
+  transition: top var(--dur-slow) var(--ease-out);
+}
+.pt-dock.is-compact:has(.panel:not(.is-collapsed)) {
+  z-index: 3;
+}
+/* Narrower still, an open plate would cover the other column's strip (the
+   inspector's open 320px beside the ~110px glyphs strip, or the glyphs' 264px
+   beside an inspector strip of up to ~150px): it drops below the row of
+   strips (a rolled-up plate's 48px header), leaving that strip to tap. */
+@media (max-width: 480px) {
+  .pt-dock.is-compact:has(.panel:not(.is-collapsed)) {
+    top: calc(var(--space-3) * 2 + 48px);
+  }
+}
+
 /* Rolled up, a plate draws in to hug its header (DockPanel measures it into
    --dock-panel-w), pinned to its edge, while the kit folds its body — the
    same duration and curve, so they land together. The body's content keeps
@@ -323,6 +343,21 @@ body {
   border-radius: var(--radius-lg);
 }
 .pt-dock-slot.is-scrolling::-webkit-scrollbar {
+  display: none;
+}
+
+/* The plates' bodies are held to the room the column has for them
+   (DockPanel measures it into --dock-body-room) and scroll inside, under the
+   pinned header: the kit's fold then animates over what is on screen. */
+.pt-dock-slot.is-scrolling .panel.is-collapsible .panel-body {
+  height: min(var(--panel-body-h, 0px), var(--dock-body-room, 100vh));
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.pt-dock-slot.is-scrolling .panel.is-collapsible.is-collapsed .panel-body {
+  height: 0;
+}
+.pt-dock-slot.is-scrolling .panel-body::-webkit-scrollbar {
   display: none;
 }
 
@@ -558,31 +593,4 @@ body {
     inset 0 0 0 1px hsl(0 0% 100% / 0.22),
     inset 0 1px 0 hsl(0 0% 100% / 0.45);
   pointer-events: none;
-}
-
-/* ---- Too narrow ------------------------------------------------------------
-   A phone gets one plate in the middle of the stage instead of the studio. */
-.pt-narrow {
-  display: grid;
-  place-items: center;
-  min-height: 100dvh;
-  padding: 16px;
-  box-sizing: border-box;
-  /* The grounds swap: the page takes the plate's colour and the plate the
-     stage's, so the notice reads as a well in the panel rather than a plate on
-     the stage. */
-  background: var(--ctl-panel);
-  font: var(--type-ui);
-  -webkit-user-select: text;
-  user-select: text;
-}
-.pt-narrow .panel {
-  max-width: 100%;
-  background: var(--stage-bg);
-  border-color: var(--stage-bg);
-}
-.pt-narrow-copy {
-  margin: var(--space-2) 0;
-  color: var(--ctl-text);
-  line-height: 1.45;
 }
