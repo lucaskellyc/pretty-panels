@@ -6,7 +6,7 @@ import lottie, { type AnimationItem } from 'lottie-web/build/player/lottie_svg';
 import { ImportLine } from './ImportLine';
 import { families, pages, type DocPage } from './catalog';
 import { PropsList } from './pages';
-import { Icon, IconButton, Slider, Stepper } from '../src';
+import { IconButton, Slider, Stepper, TextButton } from '../src';
 import { version } from '../package.json';
 // Imported as URLs, not as modules: these two compositions are ~340KB of JSON
 // together, and lottie fetches them itself rather than having them inlined into
@@ -43,14 +43,6 @@ function Footer() {
 // family, so page-to-page slides key off *this* order instead — moving to a
 // later entry slides down, an earlier one slides up, matching the sidebar.
 const sidebarOrder = families.flatMap((f) => f.items.map((p) => p.slug));
-
-/* The drawer toggle's glyph. Not in the kit's set — a control panel has no
-   hamburger — so it's drawn here like the GitHub mark above. */
-const MENU_ICON = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-    <path d="M1.5 3.25h13a1 1 0 0 1 0 2h-13a1 1 0 0 1 0-2zm0 3.75h13a1 1 0 0 1 0 2h-13a1 1 0 0 1 0-2zm0 3.75h13a1 1 0 0 1 0 2h-13a1 1 0 0 1 0-2z" />
-  </svg>
-);
 
 /** Track the active component slug from the URL hash (`#/slider`; the last
  *  segment is what counts, so an older `#/atoms/slider` link still lands),
@@ -208,18 +200,14 @@ export function App() {
             onClick={() => setMenuOpen(false)}
             aria-hidden="true"
           />
-          {/* The drawer's toggle: a button floating over the page's bottom-right
-              corner, narrow screens only (hidden on wide, where the sidebar is
+          {/* The drawer's toggle: a button floating over the page's top-left
+              corner, where the drawer comes in from, narrow screens only (hidden on wide, where the sidebar is
               always a column). It sits above the scrim so a second press closes
               the drawer as readily as the first opened it. */}
           <div className="docs-menu-fab">
-            <IconButton
-              label={menuOpen ? 'Close navigation' : 'Open navigation'}
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-expanded={menuOpen}
-            >
-              {menuOpen ? <Icon name="close" /> : MENU_ICON}
-            </IconButton>
+            <TextButton onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen}>
+              {menuOpen ? 'Close' : 'Menu'}
+            </TextButton>
           </div>
         </>
       )}

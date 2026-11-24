@@ -5,24 +5,37 @@ import { CHARSET, createProject, isDrawn, shiftGlyph, toLineCap, type FontProjec
 import { inkBounds } from './font/outline';
 import { importSvgs, type ImportFile } from './font/svgImport';
 import { layoutSheet } from './font/sheet';
-import { CanvasControls, CanvasStage, useCanvasSettings } from './Canvas';
+import { CanvasControls, CanvasStage, useCanvasSettings, type CanvasSettings } from './Canvas';
 import { DOCK_W, Dock, DockPanel } from './Dock';
-import type { EditMessage } from './types';
+import type { EditMessage, PreviewSettings } from './types';
+import { DOCUMENT_EXTENSION, parseDocument, saveDocument } from './document';
+import { exportGif } from './gif';
+import { exportLottie } from './lottie';
 import { Outliner } from './Outliner';
 import { Splash } from './Splash';
 import { NarrowScreen, useTooNarrow } from './NarrowScreen';
 import { Stage } from './Stage';
 import { glyphProp, groupOf, resolveProject } from './timeline/channels';
 import type { KeyContext } from './timeline/KeyGutter';
-import { anim, bindProject, FPS, keyAtPlayhead, setValue, toggle, toggleArmed, transport, unkeyAtPlayhead } from './timeline/state';
+import {
+  anim,
+  bindProject,
+  FPS,
+  keyAtPlayhead,
+  replaceAnim,
+  seek,
+  setDuration,
+  setValue,
+  setWork,
+  toggle,
+  toggleArmed,
+  transport,
+  unkeyAtPlayhead,
+} from './timeline/state';
 import { TimelineDock } from './timeline/Timeline';
 import { useFitView } from './view';
 
 const STORAGE_KEY = 'pillotalk-studio:project';
-/** Whether the glyphs plate is rolled up, remembered with the project. */
-const SIDEBAR_KEY = 'pillotalk-studio:sidebar-collapsed';
-/** Whether the inspector plate is rolled up. */
-const DOCK_KEY = 'pillotalk-studio:dock-collapsed';
 /** Which of the left plate's tabs is open: the glyph sheet or the canvas. */
 const VIEW_KEY = 'pillotalk-studio:view';
 
@@ -67,24 +80,17 @@ function Studio() {
   const [project, setProject] = useState<FontProject>(loadProject);
   const [char, setChar] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  /** The Open dialog's input, for a saved document. */
+  const docRef = useRef<HTMLInputElement>(null);
+  /** The desktop studio's preview sample: no preview here, but a document
+   *  opened from there keeps it when saved again. */
+  const preview = useRef<PreviewSettings>({ text: 'Pillotalk', size: 56 });
   // The splash is the landing page: up on every load until a way in is chosen.
   const [landing, setLanding] = useState(true);
   /** Whether the session being restored has anything worth continuing. */
   const [canResume] = useState(() => CHARSET.some((c) => isDrawn(project.glyphs[c])));
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(SIDEBAR_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-  }, [sidebarCollapsed]);
+  // Every plate opens rolled up, leaving the stage clear until one is wanted.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // The left plate's tabs: the glyph sheet, or the canvas — each brings its
   // own stage with it.
@@ -103,6 +109,16 @@ function Studio() {
     }
   }, [studioView]);
   const [canvas, setCanvas] = useCanvasSettings();
+  // Tracking was a canvas setting before it became a keyable font channel:
+  // carry a remembered value over to the project once.
+  useEffect(() => {
+    const legacy = (canvas as { tracking?: number }).tracking;
+    if (legacy === undefined) return;
+    if (legacy) setProject((p) => ({ ...p, tracking: p.tracking ?? legacy }));
+    setCanvas({ tracking: undefined } as Partial<CanvasSettings>);
+  }, []);
+  /** How far a GIF export has got, while one renders. */
+  const [gifProgress, setGifProgress] = useState<number | null>(null);
   const onCanvas = studioView === 'canvas';
 
   // Space plays and pauses the canvas — the one shortcut the page takes, and
@@ -121,20 +137,7 @@ function Studio() {
 
   // ---- dock ---------------------------------------------------------------
 
-  const [dockCollapsed, setDockCollapsed] = useState<boolean>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(DOCK_KEY) ?? '{}').inspector === true;
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(DOCK_KEY, JSON.stringify({ inspector: dockCollapsed }));
-    } catch {
-      /* ignore */
-    }
-  }, [dockCollapsed]);
+  const [dockCollapsed, setDockCollapsed] = useState(true);
 
   // ---- timeline ------------------------------------------------------------
 
@@ -269,10 +272,14 @@ function Studio() {
    *  itself while a value is static and keys it at the playhead once armed. */
   const onEdit = (edit: EditMessage) => {
     if (edit.type === 'weight') setValue('weight', edit.value);
+    else if (edit.type === 'font') setValue(edit.field, edit.value);
     else if (edit.type === 'cap') setAllCaps(edit.cap);
+    else if (edit.type === 'name') setProject((p) => ({ ...p, [edit.field]: edit.value }));
     else if (edit.type === 'lsb' || edit.type === 'rsb') setBearing(edit.char, edit.type, edit.value);
     else if (edit.type === 'width') setValue(glyphProp('width', edit.char), Math.max(1, Math.round(edit.value)));
     else if (edit.type === 'offsetY') setValue(glyphProp('offsetY', edit.char), edit.value);
+    else if (edit.type === 'stretchAt')
+      editGlyph(edit.char, (g) => ({ ...g, stretchAt: edit.value === null ? undefined : Math.round(edit.value) }));
     else if (edit.type === 'trim') setValue(glyphProp(edit.field, edit.char), edit.value);
     else if (edit.type === 'arm') toggleArmed(edit.prop);
     else if (edit.type === 'key') keyAtPlayhead(edit.prop);
@@ -309,7 +316,7 @@ function Studio() {
     // Only problems are worth a dialog.
     const problems = [
       ...result.errors,
-      ...result.skipped.map((n) => `${n}: name isn't <letter>u.svg / <letter>l.svg`),
+      ...result.skipped.map((n) => `${n}: name isn't <letter>u.svg / <letter>l.svg / <digit>.svg`),
     ];
     if (problems.length) window.alert(`Imported ${result.glyphs.length} glyphs.\n\n${problems.join('\n')}`);
   };
@@ -324,7 +331,60 @@ function Studio() {
     if (drawnCount > 0) exportOtf(shown);
   };
 
-  // ---- video ---------------------------------------------------------------
+  // ---- documents -------------------------------------------------------------
+
+  /** Everything the studio keeps, written out as one document. */
+  const doSave = () => {
+    const { doc, muted, locked } = anim.get();
+    saveDocument({
+      project,
+      anim: { tracks: doc.tracks, muted: [...muted], locked: [...locked], duration: doc.duration },
+      canvas,
+      preview: preview.current,
+      work: transport.get().work,
+    });
+  };
+
+  /** Replace the work with a saved document's — after asking, if there are
+   *  drawn glyphs it would throw away — and leave the landing page. The
+   *  playhead lands at the work area's start, or its end for `'end'`. */
+  const openDocument = (text: string, at: 'start' | 'end' = 'start') => {
+    let doc;
+    try {
+      doc = parseDocument(text);
+    } catch (err) {
+      window.alert((err as Error).message);
+      return;
+    }
+    if (!landing && drawnCount > 0 && !window.confirm('Open this document? The font you have now will be replaced.'))
+      return;
+    setProject((projectRef.current = doc.project));
+    replaceAnim(doc.anim);
+    setCanvas(doc.canvas);
+    preview.current = doc.preview;
+    setWork(doc.work);
+    seek(at === 'end' ? doc.work.out : doc.work.in);
+    setChar(null);
+    setLanding(false);
+  };
+
+  // ---- canvas exports ------------------------------------------------------
+
+  /** The work area, as playback loops it. */
+  const workRange = () => {
+    const { work } = transport.get();
+    return { fps: FPS, start: work.in, end: work.out };
+  };
+
+  const doExportLottie = () => exportLottie(resolveAt, canvas, workRange(), project);
+
+  const doExportGif = () => {
+    setGifProgress(0);
+    exportGif(resolveAt, canvas, workRange(), project, { loop: canvas.gifLoop, onProgress: setGifProgress })
+      .catch((e) => window.alert(`Couldn't export the GIF.\n\n${e instanceof Error ? e.message : e}`))
+      .finally(() => setGifProgress(null));
+  };
+
 
   const [videoProgress, setVideoProgress] = useState<number | null>(null);
   /** The canvas over the work area, written to an .mp4 named for the font. */
@@ -414,8 +474,13 @@ function Studio() {
               <CanvasControls
                 settings={canvas}
                 onChange={setCanvas}
-                exportProgress={videoProgress}
-                onExportVideo={exportVideo}
+                duration={animState.doc.duration}
+                onDurationChange={setDuration}
+                onExportLottie={drawnCount > 0 ? doExportLottie : undefined}
+                onExportGif={drawnCount > 0 && gifProgress == null ? doExportGif : undefined}
+                gifProgress={gifProgress}
+                onExportVideo={drawnCount > 0 ? exportVideo : undefined}
+                videoProgress={videoProgress}
               />
             ) : (
               <Outliner project={shown} char={char} onPick={pick} />
@@ -432,6 +497,8 @@ function Studio() {
           onEdit={onEdit}
           onImport={() => fileRef.current?.click()}
           onExport={doExport}
+          onOpen={() => docRef.current?.click()}
+          onSave={doSave}
           onReset={reset}
         />
       </div>
@@ -454,13 +521,26 @@ function Studio() {
         }}
       />
 
+      {/* Open… opens this; Save… writes one. */}
+      <input
+        ref={docRef}
+        type="file"
+        accept={`.${DOCUMENT_EXTENSION}`}
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) openDocument(await file.text());
+        }}
+      />
+
       <Splash
         open={landing}
         canResume={canResume}
         onResume={() => setLanding(false)}
-        onTemplate={(files) => applyImport(files, true)}
+        onTemplate={(text) => openDocument(text, 'end')}
         onScratch={() => startWith(createProject())}
-        onImport={() => fileRef.current?.click()}
+        onOpen={() => docRef.current?.click()}
       />
     </div>
   );

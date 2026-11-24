@@ -2,7 +2,8 @@ import { toLineCap, type FontProject, type GlyphData, type LineCap, type LineJoi
 
 /**
  * SVG glyph import. Each file is one glyph, named `<letter>u.svg` for the
- * capital and `<letter>l.svg` for the lowercase (`au.svg` → A, `al.svg` → a).
+ * capital, `<letter>l.svg` for the lowercase (`au.svg` → A, `al.svg` → a) and
+ * `<digit>.svg` for a figure (`7.svg` → 7).
  *
  * The paths come across **raw**: centrelines with their curves intact, never
  * expanded into outlines. Their stroke width is not baked in either — it
@@ -33,9 +34,12 @@ export interface ImportResult {
   errors: string[];
 }
 
-/** `au.svg` → `A`, `al.svg` → `a`; anything else → null. */
+/** `au.svg` → `A`, `al.svg` → `a`, `7.svg` → `7`; anything else → null. */
 export function charForFile(name: string): string | null {
-  const m = /^([a-z])(u|l)\.svg$/i.exec(name.split(/[\\/]/).pop() ?? '');
+  const base = name.split(/[\\/]/).pop() ?? '';
+  const digit = /^([0-9])\.svg$/i.exec(base);
+  if (digit) return digit[1];
+  const m = /^([a-z])(u|l)\.svg$/i.exec(base);
   if (!m) return null;
   return m[2].toLowerCase() === 'u' ? m[1].toUpperCase() : m[1].toLowerCase();
 }

@@ -1,8 +1,9 @@
-import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
 import { RadioGroup, Section, Slider, TextButton, Toggle, Vector } from '../../src';
-import { isDrawn, strokePathData, type FontProject, type GlyphData } from './font/model';
-import { trimmedGlyph } from './font/trim';
+import { isDrawn, riseOf, strokePathData, type FontProject, type GlyphData } from './font/model';
+import { shapedGlyph } from './font/stretch';
 import { useFitView } from './view';
+import { DURATION_MAX, DURATION_MIN, FPS } from './timeline/state';
 
 /**
  * The canvas: a frame of fixed size with a line of text set on it in the font
@@ -15,14 +16,13 @@ import { useFitView } from './view';
  */
 
 export type TextAlign = 'left' | 'center' | 'right';
+export type UnwriteOrder = 'first' | 'last';
 const ALIGNS: TextAlign[] = ['left', 'center', 'right'];
 
 export interface CanvasSettings {
   text: string;
   /** Type size: pixels per em, in the frame's own pixels. */
   size: number;
-  /** Extra space between letters, in font units. */
-  tracking: number;
   /** Baseline to baseline, as a multiple of the font's ascender-to-descender
    *  height. */
   leading: number;
@@ -37,6 +37,14 @@ export interface CanvasSettings {
    *  typed: the font's keyed weight ripples along the text. 0 moves them
    *  together. */
   weightStagger: number;
+  /** The same for the font's tracking: the gap before each letter, in the
+   *  order typed, opens and closes this many seconds after the one before. */
+  trackingStagger: number;
+  /** The same for the font's vertical offset: a keyed rise travels along the
+   *  text as a wave. */
+  offsetStagger: number;
+  /** The same for the font's keyed height. */
+  heightStagger: number;
   frameWidth: number;
   frameHeight: number;
   /** Write the line on: each letter's strokes drawn out, in the order typed,
@@ -53,16 +61,35 @@ export interface CanvasSettings {
    *  time, and the letters after it start sooner to keep the same overlap.
    *  Keyed by character, so it carries to any text. */
   writeSpeed: Record<string, number>;
+  /** Once the whole line is written, wait and then take it back off: each
+   *  letter retracts to where its pen started, at the same speeds. */
+  unwrite: boolean;
+  /** Seconds the finished line holds before the first letter un-writes. */
+  unwriteDelay: number;
+  /** Which letter un-writes first. */
+  unwriteOrder: UnwriteOrder;
+  /** The letters' colour, as `#rrggbb`. */
+  textColor: string;
+  /** The frame's ground, as `#rrggbb` — unless `transparent`. */
+  background: string;
+  /** No ground at all: the frame shows a checkerboard, and Lottie export
+   *  leaves the background layer out. */
+  transparent: boolean;
+  /** GIF export plays over and over; off, it plays once and holds its last
+   *  frame. */
+  gifLoop: boolean;
 }
 
-const DEFAULTS: CanvasSettings = {
+export const CANVAS_DEFAULTS: CanvasSettings = {
   text: 'Pillotalk',
   size: 240,
-  tracking: 0,
   leading: 1.1,
   align: 'center',
   stagger: 0,
   weightStagger: 0,
+  trackingStagger: 0,
+  offsetStagger: 0,
+  heightStagger: 0,
   frameWidth: 1920,
   frameHeight: 1080,
   writeOn: false,
@@ -70,6 +97,13 @@ const DEFAULTS: CanvasSettings = {
   writeDuration: 0.6,
   writeGap: 0.4,
   writeSpeed: {},
+  unwrite: false,
+  unwriteDelay: 2,
+  unwriteOrder: 'first',
+  textColor: '#ffffff',
+  background: '#000000',
+  transparent: false,
+  gifLoop: true,
 };
 const STORAGE_KEY = 'pillotalk-studio:canvas';
 const FRAME_MIN = 16;
@@ -79,9 +113,9 @@ const FRAME_MAX = 8192;
 export function useCanvasSettings(): [CanvasSettings, (patch: Partial<CanvasSettings>) => void] {
   const [settings, setSettings] = useState<CanvasSettings>(() => {
     try {
-      return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') };
+      return { ...CANVAS_DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') };
     } catch {
-      return DEFAULTS;
+      return CANVAS_DEFAULTS;
     }
   });
   useEffect(() => {
@@ -113,10 +147,11 @@ interface Placed {
  *  and each line's width in font units. Each letter is laid out at its own
  *  advance, so a staggered width animation ripples down the line. A character
  *  the font doesn't have takes a space's width, as export's space glyph does,
- *  and draws nothing. Repeats are counted across lines. */
+ *  and draws nothing. Repeats are counted across lines. `tracking` gives the
+ *  gap before the kth letter typed (newlines aside), so it can be staggered. */
 function layoutText(
   text: string,
-  tracking: number,
+  tracking: (k: number) => number,
   space: number,
   glyphAt: (char: string, repeat: number) => GlyphData | undefined,
 ): { placed: Placed[]; widths: number[] } {
@@ -134,7 +169,7 @@ function layoutText(
       first = true;
       return;
     }
-    if (!first) x += tracking;
+    if (!first) x += tracking(placed.length);
     first = false;
     const repeat = seen.get(char) ?? 0;
     seen.set(char, repeat + 1);
@@ -157,11 +192,13 @@ const SPEED_MAX = 4;
 const speedOf = (settings: CanvasSettings, char: string) =>
   Math.min(SPEED_MAX, Math.max(SPEED_MIN, settings.writeSpeed[char] ?? 1));
 
-/** When each drawn letter starts and how long it takes, in the order typed:
- *  a letter's speed divides both its duration and the gap to the next, so a
+type Slot = { start: number; duration: number };
+
+/** Letters timed one after another from `from`, in the order given: a
+ *  letter's speed divides both its duration and the gap to the next, so a
  *  slow letter holds the ones after it back. */
-function writeSchedule(settings: CanvasSettings, chars: string[]): { start: number; duration: number }[] {
-  let at = settings.writeStart;
+function runSlots(settings: CanvasSettings, chars: string[], from: number): Slot[] {
+  let at = from;
   return chars.map((c) => {
     const k = speedOf(settings, c);
     const slot = { start: at, duration: settings.writeDuration / k };
@@ -170,11 +207,32 @@ function writeSchedule(settings: CanvasSettings, chars: string[]): { start: numb
   });
 }
 
-/** How far a letter is written at `t`, 0–1, at an even pen speed. */
-function writeProgress(slot: { start: number; duration: number }, t: number): number {
+/** When each drawn letter writes on, in the order typed — and, with
+ *  `unwrite`, when it comes back off: the same run again, starting
+ *  `unwriteDelay` after the last letter is done, first or last letter first. */
+function writeSchedule(settings: CanvasSettings, chars: string[]): { on: Slot; off?: Slot }[] {
+  const on = runSlots(settings, chars, settings.writeStart);
+  if (!settings.unwrite || !on.length) return on.map((slot) => ({ on: slot }));
+  const done = Math.max(...on.map((s) => s.start + s.duration));
+  const last = settings.unwriteOrder === 'last';
+  const order = last ? [...chars].reverse() : chars;
+  const off = runSlots(settings, order, done + settings.unwriteDelay);
+  if (last) off.reverse();
+  return on.map((slot, n) => ({ on: slot, off: off[n] }));
+}
+
+/** How far a slot has run at `t`, 0–1, at an even pen speed. */
+function slotProgress(slot: Slot, t: number): number {
   const local = t - slot.start;
   if (slot.duration <= 0) return local >= 0 ? 1 : 0;
   return Math.min(1, Math.max(0, local / slot.duration));
+}
+
+/** How much of a letter is written at `t`, 0–1: drawn on, then — if it
+ *  un-writes — retracted back toward where its pen started. */
+function writeProgress({ on, off }: { on: Slot; off?: Slot }, t: number): number {
+  const p = slotProgress(on, t);
+  return off ? Math.min(p, 1 - slotProgress(off, t)) : p;
 }
 
 /** The glyph part-written: its own trim window, whichever way round its start
@@ -189,61 +247,35 @@ function writtenGlyph(glyph: GlyphData, p: number): GlyphData {
   return { ...glyph, trimStart: lo, trimEnd: lo + (Math.max(a, b) - lo) * p };
 }
 
-/* ---- Drawing ----------------------------------------------------------------- */
-
-/** A letter's trimmed outlines as path data, in font units with y down from
- *  the baseline — ready for an SVG <path> or a canvas Path2D alike. */
-export function letterPaths(glyph: GlyphData) {
-  const g = trimmedGlyph(glyph);
-  // `strokePathData` flips about its ascender; at 0 that is a plain y-flip.
-  const fill = g.contours
-    .filter((c) => c.points.length >= 3)
-    .map((c) => c.points.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${-p.y}`).join('') + 'Z')
-    .join('');
-  const stroke = g.strokes?.length ? strokePathData(g.strokes, 0) : '';
-  return { fill, stroke, cap: g.cap ?? 'round', join: g.join ?? 'round' } as const;
-}
-
-/** One letter in glyph space, placed by the group above. Memoised on the
- *  glyph, so playback redraws only what is animated. */
-const Letter = memo(function Letter({ glyph, weight }: { glyph: GlyphData; weight: number }) {
-  const { fill, stroke, cap, join } = useMemo(() => letterPaths(glyph), [glyph]);
-  return (
-    <>
-      {fill && <path className="pt-ink" d={fill} />}
-      {stroke && (
-        <path className="pt-stroke" d={stroke} strokeWidth={weight} strokeLinecap={cap} strokeLinejoin={join} />
-      )}
-    </>
-  );
-});
-
-/** One drawn letter in the frame: its baseline origin in frame pixels, the
- *  glyph as it stands at that moment, and the weight it is stroked at. */
-export interface FrameLetter {
-  /** Index in the text, a stable key. */
-  i: number;
+/** One letter as the frame draws it at some moment: its glyph part-written
+ *  and staggered as it stands then, the weight it strokes at, the height it
+ *  is stretched by, and where it
+ *  sits — `x`, `y` the baseline origin in frame pixels, `scale` pixels per
+ *  font unit (glyph y is up, so a point lands at x + px·s, y − py·s). */
+export interface SceneLetter {
+  /** Index in the text, so a letter that repeats keeps its own key. */
+  key: number;
   char: string;
   glyph: GlyphData;
   weight: number;
+  /** Font units added above the glyph's cut (see stretch.ts). */
+  stretch: number;
   x: number;
   y: number;
+  scale: number;
 }
 
 /**
- * What the frame shows at `time`: every drawn letter, placed. The stage draws
- * this as SVG and the video export paints it frame by frame, so the two can't
- * disagree. `project` is the project at `time`; `resolveAt` reaches behind it
- * for staggered repeats and weights.
+ * The frame's letters at `time`, with `project` the project resolved there —
+ * what the stage draws and what Lottie export samples, frame by frame.
  */
-export function frameLetters(
+export function canvasScene(
   project: FontProject,
   resolveAt: (t: number) => FontProject,
   time: number,
   settings: CanvasSettings,
-): { letters: FrameLetter[]; scale: number } {
-  const { frameWidth: fw, frameHeight: fh, size, tracking, leading, align, stagger, text } = settings;
-
+): SceneLetter[] {
+  const { frameWidth: fw, frameHeight: fh, size, leading, align, stagger, text } = settings;
   // The nth repeat of a letter is sampled `n × stagger` behind the playhead,
   // its own channels only — the weight is the whole font's, so it stays put.
   // One resolve per repeat index, shared by every letter at that index.
@@ -254,8 +286,24 @@ export function frameLetters(
     if (!p) behind.set(repeat, (p = resolveAt(time - repeat * stagger)));
     return p.glyphs[c];
   };
-  const { placed, widths } = layoutText(text, tracking, project.unitsPerEm / 4, glyphAt);
-
+  // The font's channels as they stood `n × seconds` behind the playhead — how
+  // weight, tracking, offset and height ripple along the text. One resolve per
+  // moment, shared by whichever channels land on it.
+  const past = new Map<number, FontProject>();
+  const fontAt = (seconds: number, n: number): FontProject => {
+    if (!seconds || n <= 0) return project;
+    const t = time - n * seconds;
+    let p = past.get(t);
+    if (!p) past.set(t, (p = resolveAt(t)));
+    return p;
+  };
+  // Tracking is the font's (keyable on its timeline row), not the canvas's.
+  const { placed, widths } = layoutText(
+    text,
+    (k) => fontAt(settings.trackingStagger, k).tracking ?? 0,
+    project.unitsPerEm / 4,
+    glyphAt,
+  );
   // The block centred both ways: across by its widest line, down by its
   // lines' ascender-to-descender boxes, so it sits where its metrics say.
   // Within it, each line is set left, centre or right.
@@ -271,27 +319,65 @@ export function frameLetters(
 
   // Write-on order counts only the letters that draw, so a space doesn't
   // leave a pause.
-  const drawable = placed.filter((p): p is Placed & { glyph: GlyphData } => !!p.glyph && isDrawn(p.glyph));
-  const schedule = settings.writeOn ? writeSchedule(settings, drawable.map((p) => p.char)) : [];
+  const schedule = settings.writeOn
+    ? writeSchedule(settings, placed.filter((p) => p.glyph && isDrawn(p.glyph)).map((p) => p.char))
+    : [];
   // The nth drawn letter takes the weight from `n × weightStagger` behind the
-  // playhead; the weight alone, so its other channels stay on time.
-  const weightOf = (n: number) =>
-    settings.weightStagger && n > 0 ? resolveAt(time - n * settings.weightStagger).strokeWeight : project.strokeWeight;
+  // playhead, and the font's offset from `n × offsetStagger`; those alone, so
+  // its other channels stay on time.
+  const weightOf = (n: number) => fontAt(settings.weightStagger, n).strokeWeight;
+  const riseAt = (n: number, glyph: GlyphData) => riseOf(fontAt(settings.offsetStagger, n), glyph);
+  // The height ripples the same way, on its own stagger.
+  const stretchOf = (n: number) => fontAt(settings.heightStagger, n).stretch ?? 0;
 
-  const letters = drawable.map(({ i, char, glyph: own, line, x }, n) => {
+  const out: SceneLetter[] = [];
+  for (const { i, char, glyph: own, line, x } of placed) {
+    if (!own || !isDrawn(own)) continue;
+    const n = out.length;
     const slot = schedule[n];
     const glyph = slot ? writtenGlyph(own, writeProgress(slot, time)) : own;
-    return {
-      i,
+    out.push({
+      key: i,
       char,
       glyph,
       weight: weightOf(n),
+      stretch: stretchOf(n),
       x: leftOf(line) + x * s,
-      y: baselineOf(line) - (glyph.offsetY ?? 0) * s,
-    };
-  });
-  return { letters, scale: s };
+      y: baselineOf(line) - riseAt(n, glyph) * s,
+      scale: s,
+    });
+  }
+  return out;
 }
+
+/* ---- Drawing ----------------------------------------------------------------- */
+
+/** One letter in glyph space (y up, baseline 0), flipped by the group above.
+ *  Memoised on the glyph and its height, so playback redraws only what is
+ *  animated. */
+const Letter = memo(function Letter({ glyph, weight, stretch }: { glyph: GlyphData; weight: number; stretch: number }) {
+  const g = useMemo(() => shapedGlyph(glyph, stretch), [glyph, stretch]);
+  // `strokePathData` flips about its ascender; at 0 that is a plain y-flip,
+  // undone by the group's own, so the paths can be drawn as stored.
+  const fill = g.contours
+    .filter((c) => c.points.length >= 3)
+    .map((c) => c.points.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${-p.y}`).join('') + 'Z')
+    .join('');
+  return (
+    <>
+      {fill && <path className="pt-ink" d={fill} />}
+      {g.strokes?.length ? (
+        <path
+          className="pt-stroke"
+          d={strokePathData(g.strokes, 0)}
+          strokeWidth={weight}
+          strokeLinecap={g.cap ?? 'round'}
+          strokeLinejoin={g.join ?? 'round'}
+        />
+      ) : null}
+    </>
+  );
+});
 
 const CLICK_SLOP = 3;
 
@@ -321,8 +407,9 @@ export function CanvasStage({
   const fitView = useFitView(fw, fh);
   const { box, view, scale } = fitView;
   const pan = useRef<{ x: number; y: number; travel: number } | null>(null);
-  const { letters, scale: s } = useMemo(
-    () => frameLetters(project, resolveAt, time, settings),
+
+  const letters = useMemo(
+    () => canvasScene(project, resolveAt, time, settings),
     [project, resolveAt, time, settings],
   );
 
@@ -373,28 +460,46 @@ export function CanvasStage({
         role="img"
         aria-label="Canvas"
       >
+        <defs>
+          {/* What a transparent frame shows through. */}
+          <pattern id="pt-canvas-checker" width={32} height={32} patternUnits="userSpaceOnUse">
+            <rect width={32} height={32} fill="#fff" />
+            <rect width={16} height={16} fill="#d6d6d6" />
+            <rect x={16} y={16} width={16} height={16} fill="#d6d6d6" />
+          </pattern>
+        </defs>
         <g transform={transform}>
-          <rect className="pt-canvas-frame" width={fw} height={fh} />
-          <svg width={fw} height={fh} overflow="hidden">
-            {letters.map(({ i, char: c, glyph, weight, x, y }) => (
-                <g
-                  key={i}
-                  data-char={c}
-                  data-selected={c === char || undefined}
-                  className="pt-canvas-letter"
-                  transform={`translate(${x} ${y}) scale(${s})`}
-                >
-                  {/* The letter's advance box: what catches the click. */}
-                  <rect
-                    x={0}
-                    y={-project.ascender}
-                    width={glyph.advanceWidth}
-                    height={project.ascender - project.descender}
-                    fill="transparent"
-                    pointerEvents="all"
-                  />
-                  <Letter glyph={glyph} weight={weight} />
-                </g>
+          <rect
+            className="pt-canvas-frame"
+            width={fw}
+            height={fh}
+            style={{ fill: settings.transparent ? 'url(#pt-canvas-checker)' : settings.background }}
+          />
+          <svg
+            width={fw}
+            height={fh}
+            overflow="hidden"
+            style={{ '--canvas-ink': settings.textColor } as CSSProperties}
+          >
+            {letters.map(({ key, char: c, glyph, weight, stretch, x, y, scale: s }) => (
+              <g
+                key={key}
+                data-char={c}
+                data-selected={c === char || undefined}
+                className="pt-canvas-letter"
+                transform={`translate(${x} ${y}) scale(${s})`}
+              >
+                {/* The letter's advance box: what catches the click. */}
+                <rect
+                  x={0}
+                  y={-project.ascender}
+                  width={glyph.advanceWidth}
+                  height={project.ascender - project.descender}
+                  fill="transparent"
+                  pointerEvents="all"
+                />
+                <Letter glyph={glyph} weight={weight} stretch={stretch} />
+              </g>
             ))}
           </svg>
         </g>
@@ -405,18 +510,58 @@ export function CanvasStage({
 
 /* ---- The sidebar's Canvas tab --------------------------------------------- */
 
+/** A labelled colour well: the system's own picker, and the hex beside it. */
+function ColorRow({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className={disabled ? 'pt-canvas-color is-disabled' : 'pt-canvas-color'}>
+      <span className="pt-canvas-field-label">{label}</span>
+      <span className="pt-canvas-color-value">{value.toUpperCase()}</span>
+      <input type="color" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
 export function CanvasControls({
   settings,
   onChange,
-  exportProgress,
+  onExportLottie,
+  onExportGif,
+  gifProgress,
   onExportVideo,
+  videoProgress,
+  duration,
+  onDurationChange,
 }: {
   settings: CanvasSettings;
   onChange: (patch: Partial<CanvasSettings>) => void;
-  /** 0–1 while an MP4 is being written, null otherwise. */
-  exportProgress: number | null;
-  onExportVideo: () => void;
+  /** The clip's length in seconds: the timeline's, which playback and export
+   *  run within. */
+  duration: number;
+  onDurationChange: (seconds: number) => void;
+  /** Write the frame's animation out as a Lottie file; unset when there is
+   *  nothing drawn to export. */
+  onExportLottie?: () => void;
+  /** The same as an animated GIF; unset when there is nothing to export. */
+  onExportGif?: () => void;
+  /** How far a GIF export has got, 0–1, while one is rendering. */
+  gifProgress?: number | null;
+  /** The same as an .mp4; unset when there is nothing to export. */
+  onExportVideo?: () => void;
+  /** How far an MP4 export has got, 0–1, while one is being written. */
+  videoProgress?: number | null;
 }) {
+  const rendering = gifProgress != null;
+  const encoding = videoProgress != null;
   return (
     <>
       <Section title="Text">
@@ -439,15 +584,6 @@ export function CanvasControls({
           step={1}
           onChange={(size) => onChange({ size })}
           format={(v) => `${v}px`}
-        />
-        <Slider
-          label="Tracking"
-          value={settings.tracking}
-          min={-300}
-          max={600}
-          step={5}
-          onChange={(tracking) => onChange({ tracking })}
-          format={(v) => `${v} u`}
         />
         {/* Only matters once there's a second line. */}
         {settings.text.includes('\n') && (
@@ -490,6 +626,33 @@ export function CanvasControls({
           onChange={(weightStagger) => onChange({ weightStagger })}
           format={(v) => (v ? `${v.toFixed(2)} s` : 'Off')}
         />
+        <Slider
+          label="Stagger tracking"
+          value={settings.trackingStagger}
+          min={0}
+          max={2}
+          step={0.01}
+          onChange={(trackingStagger) => onChange({ trackingStagger })}
+          format={(v) => (v ? `${v.toFixed(2)} s` : 'Off')}
+        />
+        <Slider
+          label="Stagger offset"
+          value={settings.offsetStagger}
+          min={0}
+          max={2}
+          step={0.01}
+          onChange={(offsetStagger) => onChange({ offsetStagger })}
+          format={(v) => (v ? `${v.toFixed(2)} s` : 'Off')}
+        />
+        <Slider
+          label="Stagger height"
+          value={settings.heightStagger}
+          min={0}
+          max={2}
+          step={0.01}
+          onChange={(heightStagger) => onChange({ heightStagger })}
+          format={(v) => (v ? `${v.toFixed(2)} s` : 'Off')}
+        />
       </Section>
       <Section title="Write on">
         <Toggle
@@ -527,6 +690,34 @@ export function CanvasControls({
               onChange={(writeGap) => onChange({ writeGap })}
               format={(v) => `${v.toFixed(2)} s`}
             />
+            <Toggle
+              label="Un-write"
+              hint="Takes the line back off once it's written"
+              checked={settings.unwrite}
+              onChange={(unwrite) => onChange({ unwrite })}
+            />
+            {settings.unwrite && (
+              <>
+                <Slider
+                  label="Hold for"
+                  value={settings.unwriteDelay}
+                  min={0}
+                  max={10}
+                  step={0.05}
+                  onChange={(unwriteDelay) => onChange({ unwriteDelay })}
+                  format={(v) => `${v.toFixed(2)} s`}
+                />
+                <RadioGroup
+                  label="Un-write from"
+                  value={settings.unwriteOrder}
+                  options={[
+                    { value: 'first', label: 'First letter' },
+                    { value: 'last', label: 'Last letter' },
+                  ]}
+                  onChange={(v) => onChange({ unwriteOrder: v as UnwriteOrder })}
+                />
+              </>
+            )}
           </>
         )}
       </Section>
@@ -550,6 +741,21 @@ export function CanvasControls({
           ))}
         </Section>
       )}
+      <Section title="Colors">
+        <ColorRow label="Text" value={settings.textColor} onChange={(textColor) => onChange({ textColor })} />
+        <ColorRow
+          label="Background"
+          value={settings.background}
+          disabled={settings.transparent}
+          onChange={(background) => onChange({ background })}
+        />
+        <Toggle
+          label="Transparent background"
+          hint="No ground on the canvas or in the export"
+          checked={settings.transparent}
+          onChange={(transparent) => onChange({ transparent })}
+        />
+      </Section>
       <Section title="Frame">
         <div className="pt-canvas-dims">
           <span className="pt-canvas-dims-label">Width × height</span>
@@ -564,14 +770,38 @@ export function CanvasControls({
             }}
           />
         </div>
+        <Slider
+          label="Duration"
+          value={duration}
+          min={DURATION_MIN}
+          max={DURATION_MAX}
+          step={1 / FPS}
+          onChange={onDurationChange}
+          format={(v) => `${v.toFixed(2)} s`}
+        />
       </Section>
       <Section title="Export">
         <div className="pt-actions">
-          <TextButton label="Export as MP4" disabled={exportProgress !== null} onClick={onExportVideo}>
-            {exportProgress === null ? 'Export as MP4' : `Exporting… ${Math.round(exportProgress * 100)}%`}
+          <TextButton label="Export Lottie" disabled={!onExportLottie} onClick={() => onExportLottie?.()}>
+            Export Lottie…
+          </TextButton>
+          <TextButton label="Export GIF" disabled={!onExportGif || rendering} onClick={() => onExportGif?.()}>
+            {rendering ? `Rendering GIF… ${Math.round(gifProgress * 100)}%` : 'Export GIF…'}
+          </TextButton>
+          <TextButton label="Export MP4" disabled={!onExportVideo || encoding} onClick={() => onExportVideo?.()}>
+            {encoding ? `Exporting MP4… ${Math.round(videoProgress * 100)}%` : 'Export MP4…'}
           </TextButton>
         </div>
-        <p className="pt-empty">The frame, over the timeline's work area.</p>
+        <Toggle
+          label="Loop GIF"
+          hint={settings.gifLoop ? 'Plays over and over' : 'Plays once and holds the last frame'}
+          checked={settings.gifLoop}
+          onChange={(gifLoop) => onChange({ gifLoop })}
+        />
+        <p className="pt-empty">
+          {settings.transparent ? 'Transparent background' : 'With the background'}, over the timeline's work area.
+          {settings.transparent && ' An MP4 has no transparency, so it takes the background colour.'}
+        </p>
       </Section>
     </>
   );

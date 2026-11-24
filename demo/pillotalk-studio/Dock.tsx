@@ -93,6 +93,8 @@ export function Dock({
   onEdit,
   onImport,
   onExport,
+  onOpen,
+  onSave,
   onReset,
 }: {
   /** The project at the playhead. */
@@ -104,6 +106,8 @@ export function Dock({
   onEdit: (edit: EditMessage) => void;
   onImport: () => void;
   onExport: () => void;
+  onOpen: () => void;
+  onSave: () => void;
   onReset: () => void;
 }) {
   const title = char ? `${char}  ${codepointLabel(char)}` : 'Inspector';
@@ -124,11 +128,16 @@ export function Dock({
           onBearingChange={(side, value) => char && onEdit({ type: side, char, value })}
           onWidthChange={(value) => char && onEdit({ type: 'width', char, value })}
           onOffsetChange={(value) => char && onEdit({ type: 'offsetY', char, value })}
+          onStretchAtChange={(value) => char && onEdit({ type: 'stretchAt', char, value })}
           onTrimChange={(field, value) => char && onEdit({ type: 'trim', char, field, value })}
           onWeightChange={(value) => onEdit({ type: 'weight', value })}
+          onFontChange={(field, value) => onEdit({ type: 'font', field, value })}
           onCapChange={(cap) => onEdit({ type: 'cap', cap })}
+          onNameChange={(field, value) => onEdit({ type: 'name', field, value })}
           onImport={onImport}
           onExport={onExport}
+          onOpen={onOpen}
+          onSave={onSave}
           onReset={onReset}
         />
       </DockPanel>

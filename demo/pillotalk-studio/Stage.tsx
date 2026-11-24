@@ -1,7 +1,7 @@
 import { memo, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react';
 import { strokePathData, type FontProject, type GlyphData, type Point } from './font/model';
 import type { Artboard as ArtboardBox, Sheet } from './font/sheet';
-import { trimmedGlyph } from './font/trim';
+import { shapedGlyph } from './font/stretch';
 import type { FitView } from './view';
 
 interface StageProps {
@@ -36,17 +36,19 @@ const Artboard = memo(function Artboard({
   glyph,
   ascender,
   weight,
+  stretch,
   selected,
 }: {
   box: ArtboardBox;
   glyph: GlyphData | undefined;
   ascender: number;
   weight: number;
+  stretch: number;
   selected: boolean;
 }) {
   // Drawing against a lower top edge raises the glyph by its offset.
   const top = ascender - (glyph?.offsetY ?? 0);
-  const trimmed = useMemo(() => glyph && trimmedGlyph(glyph), [glyph]);
+  const shaped = useMemo(() => glyph && shapedGlyph(glyph, stretch), [glyph, stretch]);
   return (
     <g transform={`translate(${box.x} ${box.y})`} data-char={box.char}>
       <rect
@@ -56,11 +58,11 @@ const Artboard = memo(function Artboard({
         height={box.height}
         pointerEvents="all"
       />
-      <path className="pt-ink" d={fillData(glyph, top)} fillRule="nonzero" />
-      {glyph && trimmed?.strokes?.length ? (
+      <path className="pt-ink" d={fillData(shaped, top)} fillRule="nonzero" />
+      {glyph && shaped?.strokes?.length ? (
         <path
           className="pt-stroke"
-          d={strokePathData(trimmed.strokes, top)}
+          d={strokePathData(shaped.strokes, top)}
           strokeWidth={weight}
           strokeLinecap={glyph.cap ?? 'round'}
           strokeLinejoin={glyph.join ?? 'round'}
@@ -169,8 +171,10 @@ export function Stage({ project, sheet, fitView, char, onSelectGlyph, onFrame }:
               key={a.char}
               box={a}
               glyph={project.glyphs[a.char]}
-              ascender={ascender}
+              // The font's offset lowers the top edge, as a glyph's own does.
+              ascender={ascender - (project.offsetY ?? 0)}
               weight={project.strokeWeight}
+              stretch={project.stretch ?? 0}
               selected={a.char === char}
             />
           ))}

@@ -5,6 +5,9 @@
    draws the sheet, from tokens.
    ============================================================ */
 
+/* The splash title's display face, as the docs site loads it. */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600..800&display=swap");
+
 html,
 body,
 #root {
@@ -356,9 +359,9 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  width: 16px;
-  padding: 4px;
+  gap: 6px;
+  width: 18px;
+  padding: 6px 0;
   border-radius: var(--radius-pill);
   /* The kit's capsule ground, the same as the control beside it. */
   background: var(--ctl-track);
@@ -366,8 +369,9 @@ body {
 
 .insp-arm {
   flex: none;
-  width: 9px;
-  height: 9px;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
   padding: 0;
   border: 1.5px solid color-mix(in srgb, var(--ctl-on-track) 70%, transparent);
   border-radius: 50%;
@@ -385,11 +389,14 @@ body {
 
 /* The diamond: a key on the frame under the playhead. A rotated square, the
    way the timeline draws `.tl-key` — hollow means the frame could take a key,
-   filled means it has one. */
+   filled means it has one. 8px across the sides is ~11px point to point, so it
+   sits optically level with the 10px circle above it. */
 .insp-diamond {
   flex: none;
+  box-sizing: border-box;
   width: 8px;
   height: 8px;
+  margin: 1px 0;
   padding: 0;
   border: 1.5px solid color-mix(in srgb, var(--ctl-on-track) 70%, transparent);
   background: transparent;
@@ -417,7 +424,8 @@ body {
    ------------------------------------------------------------------------- */
 
 /* The frame: a sheet of the panel's ground, edged like an artboard. */
-/* A matte: black ground, white letters, in either theme. */
+/* A matte in either theme: its ground and letters are the Colors section's,
+   set inline (black and white unless changed). */
 .pt-canvas-frame {
   fill: #000;
   stroke: var(--artboard-edge);
@@ -429,10 +437,10 @@ body {
   cursor: pointer;
 }
 .pt-canvas-letter .pt-ink {
-  fill: #fff;
+  fill: var(--canvas-ink, #fff);
 }
 .pt-canvas-letter .pt-stroke {
-  stroke: #fff;
+  stroke: var(--canvas-ink, #fff);
 }
 /* The selected letter takes the accent, so it's plain which glyph the
    inspector is keying. */
@@ -465,6 +473,43 @@ body {
   resize: vertical;
 }
 
+/* A colour: label, hex readout, and the system's colour well. */
+.pt-canvas-color {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
+.pt-canvas-color.is-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.pt-canvas-color .pt-canvas-field-label {
+  flex: 1;
+}
+.pt-canvas-color-value {
+  font: var(--type-label);
+  font-family: var(--font-mono, monospace);
+  color: var(--ctl-hint);
+}
+.pt-canvas-color input[type='color'] {
+  width: 28px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--artboard-edge);
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: inherit;
+}
+.pt-canvas-color input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.pt-canvas-color input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-md) - 1px);
+}
+
 .pt-canvas-dims {
   display: flex;
   flex-direction: column;
@@ -476,6 +521,45 @@ body {
   color: var(--ctl-text);
 }
 
+/* ---- Splash ----------------------------------------------------------------
+   The studio's name in the docs site's display face; the kit's sans stays on
+   everything else. The boot step that waits on document.fonts.ready covers its
+   download. */
+.pp-splash-title {
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
+}
+
+/* The app icon, large over the title: a soft two-layer drop shadow under it,
+   and a hairline of light around its rim, brightest along the top edge, laid
+   over the image by ::after since an inset shadow can't paint over an <img>. */
+.pt-splash-mark {
+  position: relative;
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin-bottom: var(--space-2);
+  border-radius: 24px;
+  box-shadow:
+    0 1px 2px hsl(var(--mono-h) 30% 8% / 0.12),
+    0 10px 28px -8px hsl(var(--mono-h) 30% 8% / 0.32);
+}
+.pt-splash-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.pt-splash-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px hsl(0 0% 100% / 0.22),
+    inset 0 1px 0 hsl(0 0% 100% / 0.45);
+  pointer-events: none;
+}
+
 /* ---- Too narrow ------------------------------------------------------------
    A phone gets one plate in the middle of the stage instead of the studio. */
 .pt-narrow {
@@ -484,16 +568,21 @@ body {
   min-height: 100dvh;
   padding: 16px;
   box-sizing: border-box;
-  background: var(--stage-bg);
+  /* The grounds swap: the page takes the plate's colour and the plate the
+     stage's, so the notice reads as a well in the panel rather than a plate on
+     the stage. */
+  background: var(--ctl-panel);
   font: var(--type-ui);
   -webkit-user-select: text;
   user-select: text;
 }
 .pt-narrow .panel {
   max-width: 100%;
+  background: var(--stage-bg);
+  border-color: var(--stage-bg);
 }
 .pt-narrow-copy {
-  margin: 0 0 12px;
+  margin: var(--space-2) 0;
   color: var(--ctl-text);
   line-height: 1.45;
 }

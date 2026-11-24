@@ -2,7 +2,8 @@
  * Which font parameters the timeline can key, how they're named and ranged,
  * and how they group into the timeline's rows.
  *
- * The font's weight is one channel; every glyph has its own advance width,
+ * The font has its weight, tracking, vertical offset and height; every glyph has its
+ * own advance width,
  * vertical offset and trim paths — named `width:A`, `offsetY:A`,
  * `trimEnd:A` and so on. The
  * timeline treats each group the way motion-studio treats a layer: one merged
@@ -15,7 +16,9 @@ import { sampleTrack, type Keyframe } from './anim';
 
 export type GlyphField = 'width' | 'offsetY' | 'trimStart' | 'trimEnd' | 'trimOffset';
 export type TrimField = 'trimStart' | 'trimEnd' | 'trimOffset';
-export type AnimProp = 'weight' | `${GlyphField}:${string}`;
+/** The font's own channels — no `:`, so they never collide with a glyph's. */
+export type FontField = 'weight' | 'tracking' | 'offsetY' | 'stretch';
+export type AnimProp = FontField | `${GlyphField}:${string}`;
 
 export interface Channel {
   label: string;
@@ -37,20 +40,33 @@ const FIELD_CHANNELS: Record<GlyphField, Channel> = {
 /** What an unset field reads as. */
 const FIELD_DEFAULT: Record<GlyphField, number> = { width: 0, offsetY: 0, trimStart: 0, trimEnd: 100, trimOffset: 0 };
 const GLYPH_FIELDS = Object.keys(FIELD_CHANNELS) as GlyphField[];
-const WEIGHT: Channel = { label: 'weight', min: 10, max: 300, step: 1, digits: 0 };
+const FONT_CHANNELS: Record<FontField, Channel> = {
+  weight: { label: 'weight', min: 10, max: 300, step: 1, digits: 0 },
+  tracking: { label: 'tracking', min: -300, max: 600, step: 5, digits: 0 },
+  offsetY: { label: 'vertical offset', min: -1000, max: 1000, step: 5, digits: 0 },
+  stretch: { label: 'height', min: -300, max: 800, step: 5, digits: 0 },
+};
 
 /** A glyph channel's field and character, or null for the font's own. */
 export function parseProp(prop: AnimProp): { field: GlyphField; char: string } | null {
-  if (prop === 'weight') return null;
   const at = prop.indexOf(':');
+  if (at < 0) return null;
   return { field: prop.slice(0, at) as GlyphField, char: prop.slice(at + 1) };
+}
+
+/** Whether a saved track's name is still a channel, so one left by an older
+ *  build can be dropped rather than break the timeline. */
+export function isAnimProp(prop: string): prop is AnimProp {
+  if (prop in FONT_CHANNELS) return true;
+  const at = prop.indexOf(':');
+  return at > 0 && prop.slice(0, at) in FIELD_CHANNELS;
 }
 
 export const glyphProp = (field: GlyphField, char: string): AnimProp => `${field}:${char}`;
 
 export const channelOf = (prop: AnimProp): Channel => {
   const g = parseProp(prop);
-  return g ? FIELD_CHANNELS[g.field] : WEIGHT;
+  return g ? FIELD_CHANNELS[g.field] : FONT_CHANNELS[prop as FontField];
 };
 
 /* ---- Groups ------------------------------------------------------------------ */
@@ -63,7 +79,7 @@ export interface Group {
   props: readonly AnimProp[];
 }
 
-export const FONT_GROUP: Group = { id: 'font', name: 'Font', props: ['weight'] };
+export const FONT_GROUP: Group = { id: 'font', name: 'Font', props: ['weight', 'tracking', 'offsetY', 'stretch'] };
 
 const glyphGroup = (char: string): Group => ({
   id: `glyph:${char}`,
@@ -96,10 +112,21 @@ export const laneLabel = (prop: AnimProp): string => channelOf(prop).label.repla
 
 /* ---- Base values -------------------------------------------------------------- */
 
+const fontValue = (project: FontProject, field: FontField): number =>
+  field === 'weight' ? project.strokeWeight : (project[field] ?? 0);
+
+/** The project with a font channel holding `v`: tracking, offset and height whole
+ *  units when `round`, and left unset at 0. */
+function setFont(project: FontProject, field: FontField, v: number, round: boolean): FontProject {
+  if (field === 'weight') return { ...project, strokeWeight: v };
+  const r = round ? Math.round(v) : v;
+  return { ...project, [field]: r === 0 ? undefined : r };
+}
+
 /** A channel's static value, read off the project. */
 export function baseOf(project: FontProject, prop: AnimProp): number {
   const g = parseProp(prop);
-  if (!g) return project.strokeWeight;
+  if (!g) return fontValue(project, prop as FontField);
   const glyph = project.glyphs[g.char];
   if (!glyph) return 0;
   return g.field === 'width' ? glyph.advanceWidth : (glyph[g.field] ?? FIELD_DEFAULT[g.field]);
@@ -123,7 +150,7 @@ const setField = (glyph: GlyphData, field: GlyphField, v: number, round: boolean
  *  as the inspector's own edits are. */
 export function withBase(project: FontProject, prop: AnimProp, v: number): FontProject {
   const g = parseProp(prop);
-  if (!g) return { ...project, strokeWeight: v };
+  if (!g) return setFont(project, prop as FontField, v, true);
   const glyph = project.glyphs[g.char];
   if (!glyph) return project;
   return { ...project, glyphs: { ...project.glyphs, [g.char]: setField(glyph, g.field, v, true) } };
@@ -157,7 +184,7 @@ export function resolveProject(project: FontProject, anim: AnimView, t: number):
     const g = parseProp(prop);
     if (g && !out.glyphs[g.char]) continue;
     const v = valueIn(project, anim, prop, t);
-    if (!g) out = { ...out, strokeWeight: v };
+    if (!g) out = setFont(out, prop as FontField, v, false);
     else {
       // Sampled values stay fractional between keys, so motion is smooth;
       // export rounds the advance itself.

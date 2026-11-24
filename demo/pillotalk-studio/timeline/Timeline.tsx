@@ -2,12 +2,11 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerE
 import type { Easing, Keyframe } from './anim';
 import { FONT_GROUP, groupsFor, laneLabel, type AnimProp, type Group, type GroupId } from './channels';
 import { GraphEditor, type GraphLane } from './GraphEditor';
-import { ChevronDownIcon, LockIcon, LoopIcon, PauseIcon, PlayIcon, SkipEndIcon, SkipStartIcon } from './icons';
+import { ChevronDownIcon, LockIcon, LoopIcon, PauseIcon, PlayIcon, SectionChevronIcon, SkipEndIcon, SkipStartIcon } from './icons';
 import { clampWindow, FULL_VIEW, rulerTicks } from './ruler';
 import {
   anim,
   clock,
-  DURATION,
   FPS,
   goEnd,
   goStart,
@@ -104,6 +103,7 @@ function Playhead({ viewIn, span }: { viewIn: number; span: number }) {
 /** fps · frame/total, and the timecode — which doubles as a vertical scrub control. */
 function Readout() {
   const time = transport.useSelect((s) => s.time);
+  const duration = anim.useSelect((s) => s.doc.duration);
   const grab = useRef<{ t0: number; y0: number } | null>(null);
   const [scrubbing, setScrubbing] = useState(false);
   const end = () => {
@@ -113,7 +113,7 @@ function Readout() {
   return (
     <div className="tl-readout">
       <span className="tl-meta">
-        {FPS} fps · {frameAt(time, FPS)}/{frameCount(DURATION, FPS)}
+        {FPS} fps · {frameAt(time, FPS)}/{frameCount(duration, FPS)}
       </span>
       <span
         className={`tl-time${scrubbing ? ' is-scrubbing' : ''}`}
@@ -167,6 +167,10 @@ function Timeline({
   bodyRef: React.Ref<HTMLDivElement>;
 }) {
   const { doc, muted, locked } = anim.use();
+  const duration = doc.duration;
+  // The wheel handler is bound once; it reads the length through this.
+  const durationRef = useRef(duration);
+  durationRef.current = duration;
   const loop = transport.useSelect((s) => s.loop);
   const work = transport.useSelect((s) => s.work);
 
@@ -184,13 +188,13 @@ function Timeline({
 
   // The visible window, as fractions of the duration.
   const [view, setView] = useState(FULL_VIEW);
-  const viewIn = view.in * DURATION;
-  const viewOut = view.out * DURATION;
+  const viewIn = view.in * duration;
+  const viewOut = view.out * duration;
   const span = Math.max(1e-6, viewOut - viewIn);
   const frac = (t: number) => (t - viewIn) / span;
   const timeAt = (f: number) => viewIn + f * span;
   const zoomed = view.in > 0 || view.out < 1;
-  const ticks = useMemo(() => rulerTicks(viewIn, viewOut, DURATION), [viewIn, viewOut]);
+  const ticks = useMemo(() => rulerTicks(viewIn, viewOut, duration), [viewIn, viewOut, duration]);
 
   const groups = useMemo(() => groupsFor(doc.tracks, selectedChar), [doc.tracks, selectedChar]);
   const lanes = useMemo(
@@ -294,18 +298,19 @@ function Timeline({
       const { left, width } = m;
       const { clientX } = e;
       setView((v) => {
-        const inSec = v.in * DURATION;
-        const outSec = v.out * DURATION;
+        const len = durationRef.current;
+        const inSec = v.in * len;
+        const outSec = v.out * len;
         const seen = Math.max(1e-6, outSec - inSec);
         if (!zooming) {
           const dt = (dx / width) * seen;
-          return clampWindow(inSec + dt, outSec + dt, DURATION, FPS);
+          return clampWindow(inSec + dt, outSec + dt, len, FPS);
         }
         const at = Math.max(0, Math.min(1, (clientX - left) / width));
         const anchor = inSec + at * seen;
         const stepd = Math.max(-ZOOM_STEP_CAP, Math.min(ZOOM_STEP_CAP, dy));
         const next = seen * Math.exp(stepd * ZOOM_SPEED);
-        return clampWindow(anchor - at * next, anchor - at * next + next, DURATION, FPS);
+        return clampWindow(anchor - at * next, anchor - at * next + next, len, FPS);
       });
     };
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -352,7 +357,7 @@ function Timeline({
         if (Math.abs(dx) < RETIME_PX) return; // still a click that selects
         g.moved = true;
       }
-      const t = snapToFrame(Math.max(0, Math.min(DURATION, g.t0 + (dx / m.width) * span)), FPS);
+      const t = snapToFrame(Math.max(0, Math.min(duration, g.t0 + (dx / m.width) * span)), FPS);
       if (frameAt(t, FPS) === frameAt(g.t, FPS)) return;
       moveKey(g.group, g.prop, g.t, t);
       g.t = t;
@@ -462,7 +467,7 @@ function Timeline({
             title={collapsed ? 'Expand timeline' : 'Collapse timeline'}
             onClick={onToggleCollapsed}
           >
-            <ChevronDownIcon />
+            <SectionChevronIcon />
           </button>
         </div>
       </div>
@@ -559,7 +564,7 @@ function Timeline({
           role="slider"
           aria-label="Playhead"
           aria-valuemin={0}
-          aria-valuemax={DURATION}
+          aria-valuemax={duration}
         >
           <div className="tl-ruler">
             {ticks.map(({ t, major, label }) => (
@@ -578,7 +583,7 @@ function Timeline({
               frac={frac}
               timeAt={timeAt}
               fps={FPS}
-              duration={DURATION}
+              duration={duration}
               onSetCurve={setCurve}
               onMoveKeyTo={moveKeyTo}
               onSelectKey={(prop, t) => {
@@ -627,7 +632,7 @@ function Timeline({
           <Playhead viewIn={viewIn} span={span} />
           {zoomed && (
             <div className="tl-zoom" title="Double-click the seeker to fit">
-              {(DURATION / span).toFixed(1)}×
+              {(duration / span).toFixed(1)}×
             </div>
           )}
         </div>
@@ -648,10 +653,12 @@ const FOLD_TIMEOUT_MS = 600;
  * transport bar. The stage above measures its own box and refits either way.
  */
 export function TimelineDock({ selected, tools }: { selected: string | null; tools?: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Opens folded, like the studio's plates.
+  const [collapsed, setCollapsed] = useState(true);
   const [folding, setFolding] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [bodyH, setBodyH] = useState<number | null>(null);
+  const [overflowing, setOverflowing] = useState(false);
   const dockRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const grab = useRef<{ y0: number; h0: number; max: number } | null>(null);
@@ -678,6 +685,30 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
     };
   }, []);
 
+  // Whether the lanes outrun the body, so the scrollbar can ease in and out
+  // rather than snap. Watches the body (the grip, the window) and whatever is
+  // inside it (rows added, groups expanded, lanes ↔ graph), re-observing the
+  // children whenever React swaps them.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const measure = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
+    const sizes = new ResizeObserver(measure);
+    const watch = () => {
+      sizes.disconnect();
+      sizes.observe(el);
+      for (const child of el.children) sizes.observe(child);
+      measure();
+    };
+    const swaps = new MutationObserver(watch);
+    swaps.observe(el, { childList: true });
+    watch();
+    return () => {
+      sizes.disconnect();
+      swaps.disconnect();
+    };
+  }, []);
+
   const endResize = () => {
     grab.current = null;
     setResizing(false);
@@ -686,7 +717,7 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
   return (
     <div
       ref={dockRef}
-      className={`dock-tl${collapsed ? ' is-collapsed' : ''}${resizing ? ' is-resizing' : ''}${folding ? ' is-folding' : ''}`}
+      className={`dock-tl${collapsed ? ' is-collapsed' : ''}${resizing ? ' is-resizing' : ''}${folding ? ' is-folding' : ''}${overflowing ? ' is-overflowing' : ''}`}
       style={bodyH === null ? undefined : ({ '--tl-body-h': `${bodyH}px` } as CSSProperties)}
     >
       <div

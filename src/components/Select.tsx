@@ -21,6 +21,10 @@ export interface SelectProps {
   /** Secondary hint line under the label. */
   hint?: ReactNode;
   disabled?: boolean;
+  /** A real `<select>` in the same capsule, so the list is the platform's own
+   *  popup (an NSMenu on macOS) instead of the kit's `Menu`. It doesn't take
+   *  the theme, which is the trade. */
+  native?: boolean;
 }
 
 /** Normalize the `string | SelectOption` shorthand. */
@@ -39,7 +43,41 @@ const toOption = (o: string | SelectOption): SelectOption => (typeof o === 'stri
  * Keyboard: Enter, Space, ArrowDown or ArrowUp on the capsule opens the list
  * with focus on the current choice; from there it is the menu's keyboard.
  */
-export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select({ value, onChange, options, label, hint, disabled }: SelectProps, ref) {
+export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select(props: SelectProps, ref) {
+  return props.native ? <NativeSelect {...props} /> : <MenuSelect {...props} ref={ref} />;
+});
+
+/** `Select` with `native`: the capsule is the `<select>` itself. */
+function NativeSelect({ value, onChange, options, label, hint, disabled }: SelectProps) {
+  const id = useId();
+  const labelId = label != null ? `${id}-label` : undefined;
+  const opts = options.map(toOption);
+  return (
+    <ControlRow label={label} hint={hint} labelId={labelId}>
+      <span className="dropdown">
+        <select
+          className="dropdown-trigger"
+          value={value}
+          disabled={disabled}
+          aria-labelledby={labelId}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          {!opts.some((o) => o.value === value) && <option value={value}>{value}</option>}
+          {opts.map((o) => (
+            <option key={o.value} value={o.value} disabled={o.disabled}>
+              {o.label ?? o.value}
+            </option>
+          ))}
+        </select>
+        <svg className="dropdown-chevron" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+          <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      </span>
+    </ControlRow>
+  );
+}
+
+const MenuSelect = forwardRef<HTMLButtonElement, SelectProps>(function MenuSelect({ value, onChange, options, label, hint, disabled }: SelectProps, ref) {
   const id = useId();
   const labelId = label != null ? `${id}-label` : undefined;
   const triggerId = `${id}-trigger`;
