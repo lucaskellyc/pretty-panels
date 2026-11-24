@@ -49,6 +49,9 @@ export interface GlyphData {
    *  units. Kept apart from the geometry so it reads back as one number;
    *  applied wherever the glyph is drawn or built. */
   offsetY?: number;
+  /** Where the font's stretch cuts this glyph, in font units up from the
+   *  baseline. Unset picks the height its paths cross most upright. */
+  stretchAt?: number;
   /** Trim paths (see trim.ts): the stroke paths are drawn only from
    *  `trimStart` to `trimEnd` percent of their length, slid along by
    *  `trimOffset` percent. Unset reads 0 / 100 / 0 — the whole glyph. */
@@ -68,6 +71,17 @@ export interface FontProject {
   xHeight: number;
   /** Width every stroke path is drawn and exported at, in font units. */
   strokeWeight: number;
+  /** Extra space added to every advance, in font units — so the canvas sets
+   *  its letters this much further apart and export widens each glyph by it.
+   *  Unset reads 0. */
+  tracking?: number;
+  /** Raises (or, negative, lowers) every glyph off the baseline, on top of
+   *  each glyph's own `offsetY`. Unset reads 0. */
+  offsetY?: number;
+  /** Height added to every glyph without scaling it (see stretch.ts): the part
+   *  above each glyph's cut rises by this many font units, curves whole,
+   *  joined by straight runs. Negative lowers it. Unset reads 0. */
+  stretch?: number;
   glyphs: Record<string, GlyphData>;
 }
 
@@ -104,6 +118,10 @@ export function isDrawn(glyph: GlyphData | undefined): boolean {
     (glyph.contours.some((c) => c.points.length >= 3) || (glyph.strokes ?? []).some((s) => s.segments.length > 0))
   );
 }
+
+/** How far a glyph sits above the baseline: its own offset plus the font's. */
+export const riseOf = (project: FontProject, glyph: GlyphData | undefined): number =>
+  (glyph?.offsetY ?? 0) + (project.offsetY ?? 0);
 
 /** SVG path data for stroke paths, in artboard space (y down, top = ascender). */
 export function strokePathData(strokes: StrokePath[] | undefined, ascender: number): string {

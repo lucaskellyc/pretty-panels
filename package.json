@@ -57,6 +57,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
     "clipper-lib": "^6.4.2",
+    "gifenc": "^1.0.3",
     "jsdom": "^29.1.1",
     "lottie-web": "^5.13.0",
     "mediabunny": "^1.61.6",

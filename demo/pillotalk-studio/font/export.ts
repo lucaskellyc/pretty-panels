@@ -1,7 +1,7 @@
 import { Font, Glyph, Path } from 'opentype.js';
-import { type FontProject, type GlyphData, isDrawn } from './model';
+import { type FontProject, type GlyphData, isDrawn, riseOf } from './model';
 import { glyphOutlines } from './outline';
-import { trimmedGlyph } from './trim';
+import { shapedGlyph } from './stretch';
 
 /** PostScript glyph name: the letter or digit itself, `uniXXXX` otherwise. */
 function glyphName(char: string): string {
@@ -10,11 +10,11 @@ function glyphName(char: string): string {
 }
 
 /** Filled outlines only: strokes are expanded at the font's weight here, and
- *  the glyph's trim and vertical offset applied. */
-function outline(glyph: GlyphData, weight: number): Path {
+ *  the glyph's stretch, trim and vertical offset (`dy`, its own plus the
+ *  font's) applied. */
+function outline(glyph: GlyphData, weight: number, stretch: number, dy: number): Path {
   const path = new Path();
-  const dy = glyph.offsetY ?? 0;
-  for (const points of glyphOutlines(trimmedGlyph(glyph), weight)) {
+  for (const points of glyphOutlines(shapedGlyph(glyph, stretch), weight)) {
     path.moveTo(Math.round(points[0].x), Math.round(points[0].y + dy));
     for (const p of points.slice(1)) path.lineTo(Math.round(p.x), Math.round(p.y + dy));
     path.close();
@@ -39,9 +39,11 @@ function notdef(project: FontProject): Glyph {
  * mapping would shadow the fallback font for that character.
  */
 export function buildFont(project: FontProject): Font {
+  // The font's tracking goes into every advance, the space's included.
+  const advance = (w: number) => Math.max(1, Math.round(w + (project.tracking ?? 0)));
   const glyphs: Glyph[] = [
     notdef(project),
-    new Glyph({ name: 'space', unicode: 32, advanceWidth: Math.round(project.unitsPerEm / 4), path: new Path() }),
+    new Glyph({ name: 'space', unicode: 32, advanceWidth: advance(project.unitsPerEm / 4), path: new Path() }),
   ];
 
   for (const glyph of Object.values(project.glyphs)) {
@@ -50,8 +52,8 @@ export function buildFont(project: FontProject): Font {
       new Glyph({
         name: glyphName(glyph.char),
         unicode: glyph.char.codePointAt(0)!,
-        advanceWidth: Math.round(glyph.advanceWidth),
-        path: outline(glyph, project.strokeWeight),
+        advanceWidth: advance(glyph.advanceWidth),
+        path: outline(glyph, project.strokeWeight, project.stretch ?? 0, riseOf(project, glyph)),
       }),
     );
   }

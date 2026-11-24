@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Section } from '../../src';
 import { codepointLabel, isDrawn, strokePathData, type FontProject, type GlyphData } from './font/model';
 import { SECTIONS } from './font/sheet';
-import { trimmedGlyph } from './font/trim';
+import { shapedGlyph } from './font/stretch';
 
 interface OutlinerProps {
   project: FontProject;
@@ -16,15 +16,18 @@ const Thumb = memo(function Thumb({
   ascender,
   height,
   weight,
+  stretch,
 }: {
   glyph: GlyphData | undefined;
   ascender: number;
   height: number;
   weight: number;
+  stretch: number;
 }) {
   const top = ascender - (glyph?.offsetY ?? 0);
-  const strokes = glyph && trimmedGlyph(glyph).strokes;
-  const d = (glyph?.contours ?? [])
+  const shaped = glyph && shapedGlyph(glyph, stretch);
+  const strokes = shaped?.strokes;
+  const d = (shaped?.contours ?? [])
     .filter((c) => c.points.length >= 3)
     .map((c) => c.points.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${top - p.y}`).join('') + 'Z')
     .join('');
@@ -77,7 +80,7 @@ export function Outliner({ project, char, onPick }: OutlinerProps) {
                   onClick={() => onPick(c)}
                   title={codepointLabel(c)}
                 >
-                  <Thumb glyph={g} ascender={project.ascender} height={height} weight={project.strokeWeight} />
+                  <Thumb glyph={g} ascender={project.ascender - (project.offsetY ?? 0)} height={height} weight={project.strokeWeight} stretch={project.stretch ?? 0} />
                   <span className="pt-outline-name">{c}</span>
                   <span className="pt-outline-meta">
                     {drawn ? describe(g!) : codepointLabel(c)}

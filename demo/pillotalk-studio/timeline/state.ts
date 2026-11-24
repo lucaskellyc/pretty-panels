@@ -11,7 +11,7 @@ import {
   type AnimDoc,
   type Curve,
 } from './anim';
-import { baseOf, findGroup, groupOf, valueIn, withBase, type AnimProp, type GroupId } from './channels';
+import { baseOf, findGroup, groupOf, isAnimProp, valueIn, withBase, type AnimProp, type GroupId } from './channels';
 import { Clock } from './clock';
 import { createStore } from './store';
 import { snapToFrame } from './timecode';
@@ -35,18 +35,12 @@ import { snapToFrame } from './timecode';
  */
 
 export const FPS = 30;
+/** A new comp's length, in seconds. Set per document from the canvas. */
 export const DURATION = 10;
+export const DURATION_MIN = 1;
+export const DURATION_MAX = 120;
 
 export type WorkRange = { in: number; out: number };
-
-export const transport = createStore({
-  time: 0,
-  playing: false,
-  loop: true,
-  work: { in: 0, out: DURATION } as WorkRange,
-});
-
-export const clock = new Clock(DURATION, (time, playing) => transport.set({ time, playing }));
 
 export type AnimState = {
   doc: AnimDoc<AnimProp>;
@@ -59,13 +53,21 @@ const EMPTY: AnimState = { doc: { fps: FPS, duration: DURATION, tracks: {} }, mu
 /** Saved beside the project, as the project is. */
 const STORAGE_KEY = 'pillotalk-studio:anim';
 
+/** A length within bounds, on the frame grid. */
+export const clampDuration = (d: number) =>
+  snapToFrame(Math.max(DURATION_MIN, Math.min(DURATION_MAX, Number.isFinite(d) ? d : DURATION)), FPS);
+
 function loadAnim(): AnimState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const a = JSON.parse(saved) as Partial<AnimState>;
       return {
-        doc: { fps: FPS, duration: DURATION, tracks: a.doc?.tracks ?? {} },
+        doc: {
+          fps: FPS,
+          duration: clampDuration(a.doc?.duration ?? DURATION),
+          tracks: Object.fromEntries(Object.entries(a.doc?.tracks ?? {}).filter(([p]) => isAnimProp(p))),
+        },
         muted: a.muted ?? [],
         locked: a.locked ?? [],
       };
@@ -85,6 +87,17 @@ anim.subscribe(() => {
     /* ignore */
   }
 });
+
+const initialDuration = anim.get().doc.duration;
+
+export const transport = createStore({
+  time: 0,
+  playing: false,
+  loop: true,
+  work: { in: 0, out: initialDuration } as WorkRange,
+});
+
+export const clock = new Clock(initialDuration, (time, playing) => transport.set({ time, playing }));
 
 /* ---- The project the base values live in ---------------------------------- */
 
@@ -115,6 +128,21 @@ export const goEnd = () => seek(transport.get().work.out);
 export function setLoop(loop: boolean) {
   clock.loop = loop;
   transport.set({ loop });
+}
+
+/** The comp's length. A work area that ran to the old end runs to the new
+ *  one, and one past it is cut back; keys beyond the end are kept, so
+ *  lengthening it again brings them back. */
+export function setDuration(seconds: number) {
+  const duration = clampDuration(seconds);
+  const { doc } = anim.get();
+  if (duration === doc.duration) return;
+  const { work } = transport.get();
+  const out = work.out >= doc.duration || work.out > duration ? duration : work.out;
+  clock.duration = duration;
+  anim.set({ doc: { ...doc, duration } });
+  setWork({ in: Math.min(work.in, out - 1 / FPS), out });
+  if (clock.time > duration) seek(duration);
 }
 
 export function setWork(work: WorkRange) {
@@ -158,12 +186,26 @@ function commit(next: AnimDoc<AnimProp>, tag: string) {
   anim.set({ doc: next });
 }
 
+/** Start over on another document's timeline: its tracks, mutes and locks,
+ *  with no undo back into the one it replaces. */
+export function replaceAnim(
+  next: Pick<AnimState, 'muted' | 'locked'> & { tracks: AnimDoc<AnimProp>['tracks']; duration: number },
+) {
+  past = [];
+  future = [];
+  lastTag = '';
+  const duration = clampDuration(next.duration);
+  clock.duration = duration;
+  anim.set({ doc: { fps: FPS, duration, tracks: next.tracks }, muted: next.muted, locked: next.locked });
+}
+
 export function undo() {
   const prev = past.pop();
   if (!prev) return;
   future.push(anim.get().doc);
   lastTag = '';
-  anim.set({ doc: prev });
+  // The length isn't an undo step: keep it as it is now.
+  anim.set({ doc: { ...prev, duration: anim.get().doc.duration } });
 }
 
 export function redo() {
@@ -171,7 +213,7 @@ export function redo() {
   if (!next) return;
   past.push(anim.get().doc);
   lastTag = '';
-  anim.set({ doc: next });
+  anim.set({ doc: { ...next, duration: anim.get().doc.duration } });
 }
 
 /* ---- Edits ------------------------------------------------------------------ */

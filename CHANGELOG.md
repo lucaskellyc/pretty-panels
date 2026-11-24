@@ -9,8 +9,33 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+### Added
+
+- A `collapsible` `Panel`'s header stays pinned to the top of its scroller
+  while any of the plate is in view, so the −/+ is always in reach. Its ground
+  is a fade from the plate's colour to transparent, letting the controls
+  slide under it. The plate now clips with `overflow: clip` rather than
+  `hidden` (same rounded trim, but not a scroll container), which is what lets
+  the header stick.
+- `Icon` gains `lock` and `unlock`, a padlock shut and open, filed with the
+  housekeeping marks after `close`. Pillotalk Studio's timeline lock uses them.
+- `Select` takes `native`: the capsule becomes a real `<select>`, so the list
+  is the platform's own popup (an NSMenu on macOS) rather than the kit's
+  `Menu`. It doesn't take the theme. The ref isn't forwarded in this mode.
+- `SplashScreen` takes `actionStyle="capsule"`: the landing actions become a
+  two-column grid of pill rows on a List row's ground, each led by its glyph.
+  `'card'` stays the default. `centered` gathers the mark, title and actions
+  (or load bar, its status underneath) into one column in the middle of the
+  banner. When the actions arrive, the mark and title glide up to make
+  room for them rather than jumping (skipped under reduced motion). Pillotalk
+  Studio's launch screen uses both, with its own glyph set in place of the
+  lucide icons.
+
 ### Changed
 
+- **`Tabs`' strip has no background.** It painted the plate's colour, which
+  hid a sticky collapsible header's fade; it is transparent now and shows
+  whatever it sits on.
 - **Docs site: no more atomic tiers.** The sidebar and the home catalog file
   components by family alone (Buttons, Choices, Glyphs …), each family in a
   hue of its own; the A1 / M2 / O1 part codes and the "Atoms / Slider" path in
@@ -18,6 +43,13 @@ well as features, so read the **Changed** notes before bumping a minor.
   still opens the right page. On narrow screens the drawer opens from a
   floating menu button in the bottom-right corner instead of the title's
   directory segment.
+
+### Fixed
+
+- **`SplashScreen` in dark mode.** The layer behind the banner was always
+  white while the banner's ink followed the plate, so a dark plate put light
+  text on white. It now takes the plate's own ground when dark (white when
+  light), and `--pp-splash-bg` overrides it.
 
 ## [0.4.0-alpha] — 2026-11-10
 

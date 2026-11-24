@@ -92,7 +92,8 @@ body:has(.dock-tl.is-resizing) .pt-stage {
     padding-block var(--dur-slow) var(--ease-out),
     margin-top var(--dur-slow) var(--ease-out),
     opacity var(--dur-fast) var(--ease-out),
-    visibility var(--dur-slow);
+    visibility var(--dur-slow),
+    --tl-sb var(--dur-base) var(--ease-out);
 }
 /* The height the dock's grip writes. Everything else in the dock is fixed
    chrome, so sizing the lane area sizes the dock — and the stage, which
@@ -107,9 +108,38 @@ body:has(.dock-tl.is-resizing) .pt-stage {
   height: var(--tl-body-h, auto);
   overflow: hidden auto;
 }
-/* The drag has to land on the frame, not 240ms behind the pointer. */
+/* The drag has to land on the frame, not 240ms behind the pointer — but the
+   scrollbar the drag summons still eases in (below). */
 .dock-tl.is-resizing .tl-body {
-  transition: none;
+  transition: --tl-sb var(--dur-base) var(--ease-out);
+}
+
+/* local: the scrollbar eases in and out instead of snapping.
+
+   `--tl-sb` runs 0 → 1 while the lanes overflow (`is-overflowing`, measured in
+   `TimelineDock`). The gutter is always reserved, so the bar never takes its
+   10px from the canvas in one frame; with nothing to scroll the body instead
+   hangs 10px out into the dock's right padding, gutter and all, and as
+   `--tl-sb` rises it draws back in — the lanes narrow smoothly while the thumb
+   fades up from transparent. Registered so it interpolates as a number.
+
+   The fold forces it to 0: `overflow: hidden` keeps the bar off then anyway,
+   and the body shouldn't be narrowing while it grows. */
+@property --tl-sb {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+.tl-body {
+  scrollbar-gutter: stable;
+  margin-right: calc(-10px * (1 - var(--tl-sb)));
+}
+.dock-tl.is-overflowing .tl-body {
+  --tl-sb: 1;
+}
+.dock-tl.is-collapsed .tl-body,
+.dock-tl.is-folding .tl-body {
+  --tl-sb: 0;
 }
 /* No scrollbar through the fold, in **either** direction.
 
@@ -147,9 +177,13 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .dock-tl.is-collapsed {
   padding-block: var(--space-3);
 }
-/* The chevron points the way the dock will go. */
-.tl-collapse svg {
-  transition: transform var(--dur-fast) var(--ease-out);
+/* local: the fold toggle wears a `Section` head's chevron — the same glyph,
+   turning on the same beat — but points the way the dock will go: up while
+   folded (it opens upward), down while open. It keeps the bar's hover fill. */
+.tl-btn.tl-collapse svg {
+  width: 12px;
+  height: 8px;
+  transition: transform var(--dur-base) var(--ease-out);
 }
 .dock-tl.is-collapsed .tl-collapse svg {
   transform: rotate(180deg);
@@ -165,7 +199,7 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    row pitch is unchanged, so the dock keeps its height. The gap is a variable
    because the name column and the lanes have to step in lockstep to stay in
    register; changing one hard-coded 4px alone would shear the rows apart. */
-.tl { display: flex; flex-direction: column; gap: var(--space-3); --tl-lane-h: 20px; --tl-lane-gap: 10px; --tl-ruler-h: 20px; --tl-prop-h: 16px; --tl-prop-gap: 4px; }
+.tl { display: flex; flex-direction: column; gap: var(--space-3); --tl-lane-h: 26px; --tl-lane-gap: 10px; --tl-ruler-h: 20px; --tl-prop-h: 20px; --tl-prop-gap: 4px; }
 /* local: a three-column grid rather than the DS's flex row, so the resolution
    strip stays centred in the *window* however wide the transport on its left or
    the readout on its right happen to be. The two flanking groups are
@@ -184,7 +218,13 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    resolution's strip and is now the graph editor's overshoot chips, which is
    why the rule outlived the control it was written for. */
 .tl-transport, .tl-seg { display: flex; gap: 2px; background: var(--ctl-btn); border-radius: var(--radius-pill); padding: 3px; }
-.tl-btn { height: 24px; min-width: 26px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ctl-text); font: var(--type-label); display: grid; place-items: center; cursor: default; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+/* local: the transport's circles fill its capsule edge to edge, so the pill is
+   exactly as tall as the loop and Graph buttons beside it. */
+.tl-transport { padding: 0; }
+/* local: 31px tall — an icon button is 31 wide (a 15px glyph in 8px of padding
+   each side), so matching the height makes it a true circle, not the DS's
+   24px oval. Text buttons take the same height so the bar stays level. */
+.tl-btn { height: 31px; min-width: 31px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ctl-text); font: var(--type-label); display: grid; place-items: center; cursor: default; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 /* local: button states are pretty-panels' (`.pp-platter-btn` / `.pp-text-btn`):
    plate ink on the quiet `--ctl-btn` ground, one step deeper on hover, and the
    accent carrying bright on-track ink when on. Those tokens keep contrast at any
@@ -207,7 +247,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .tl-readout { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
 /* local: the readout is also a control — dragging it vertically scrubs (see
    Timeline.tsx), hence the cursor and the active state. */
-.tl-time { margin-left: auto; font: var(--type-data); font-size: var(--text-md); font-variant-numeric: tabular-nums; color: var(--ctl-text); background: var(--ctl-btn); border-radius: var(--radius-pill); padding: 3px var(--space-3); cursor: ns-resize; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+/* local: as tall as the bar's 31px buttons, so the readout and the collapse
+   button beside it sit level. */
+.tl-time { display: inline-flex; align-items: center; height: 31px; box-sizing: border-box; margin-left: auto; font: var(--type-data); font-size: var(--text-md); font-variant-numeric: tabular-nums; color: var(--ctl-text); background: var(--ctl-btn); border-radius: var(--radius-pill); padding: 3px var(--space-3); cursor: ns-resize; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 .tl-time:hover { background: var(--ctl-btn-hover); }
 .tl-time.is-scrubbing { background: var(--ctl-accent); color: var(--ctl-on-track); }
 .tl-meta { font: var(--type-label); color: var(--ctl-hint); white-space: nowrap; text-transform: uppercase; }
@@ -317,8 +359,8 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    track at all. */
 .tl-body::-webkit-scrollbar { width: 10px; height: 10px; }
 .tl-body::-webkit-scrollbar-track { background: transparent; }
-.tl-body::-webkit-scrollbar-thumb { background: var(--ctl-track); background-clip: padding-box; border: 3px solid transparent; border-radius: var(--radius-pill); }
-.tl-body::-webkit-scrollbar-thumb:hover { background: var(--ctl-track-hover); background-clip: padding-box; }
+.tl-body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ctl-track) calc(var(--tl-sb) * 100%), transparent); background-clip: padding-box; border: 3px solid transparent; border-radius: var(--radius-pill); }
+.tl-body::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--ctl-track-hover) calc(var(--tl-sb) * 100%), transparent); background-clip: padding-box; }
 .tl-body::-webkit-scrollbar-corner { background: transparent; }
 
 /* The dashed edges are the work area's grips: the canvas hands a pointer within
@@ -399,7 +441,7 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    chip is on, except where the curve was dragged by hand and matches no preset,
    which is the honest reading of a `radiogroup` with nothing checked. */
 .tl-graph-ease { position: absolute; top: 4px; right: 4px; z-index: 1; }
-.tl-graph-ease .tl-btn { height: 20px; font-size: var(--text-2xs); }
+.tl-graph-ease .tl-btn { height: 20px; min-width: 26px; font-size: var(--text-2xs); }
 
 
 /* ---- local: open-action additions ------------------------------------- */

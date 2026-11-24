@@ -1,6 +1,7 @@
-import { Section, Select, Slider, Stepper, TextButton } from '../../src';
+import { Section, Select, Slider, Stepper, TextButton, TextField } from '../../src';
 import { CHARSET, isDrawn, type FontProject, type GlyphData, type LineCap } from './font/model';
 import { inkBounds } from './font/outline';
+import { autoCut } from './font/stretch';
 import { glyphProp, type TrimField } from './timeline/channels';
 import { KeyRow, type KeyContext } from './timeline/KeyGutter';
 
@@ -12,16 +13,25 @@ interface InspectorProps {
   /** The glyph selected on the stage, or null for the font as a whole. */
   char: string | null;
   onWeightChange: (weight: number) => void;
+  /** The font's tracking, vertical offset or added height, in font units. */
+  onFontChange: (field: 'tracking' | 'offsetY' | 'stretch', value: number) => void;
   /** Set every glyph's caps at once. */
   onCapChange: (cap: LineCap) => void;
+  /** The family or style name the exported font installs under. */
+  onNameChange: (field: 'familyName' | 'styleName', value: string) => void;
   onBearingChange: (side: 'lsb' | 'rsb', value: number) => void;
   /** The glyph's advance width, in font units. */
   onWidthChange: (value: number) => void;
   onOffsetChange: (value: number) => void;
+  /** Where the glyph is cut for its height; null hands it back to the glyph. */
+  onStretchAtChange: (value: number | null) => void;
   /** One of the glyph's trim-paths percentages. */
   onTrimChange: (field: TrimField, value: number) => void;
   onImport: () => void;
   onExport: () => void;
+  /** Open a saved document, or save the work as one. */
+  onOpen: () => void;
+  onSave: () => void;
   /** Start over from an empty project. */
   onReset: () => void;
 }
@@ -41,6 +51,7 @@ function GlyphSections({
   onBearingChange,
   onWidthChange,
   onOffsetChange,
+  onStretchAtChange,
   onTrimChange,
 }: {
   glyph: GlyphData;
@@ -50,8 +61,10 @@ function GlyphSections({
   onBearingChange: InspectorProps['onBearingChange'];
   onWidthChange: InspectorProps['onWidthChange'];
   onOffsetChange: InspectorProps['onOffsetChange'];
+  onStretchAtChange: InspectorProps['onStretchAtChange'];
 }) {
   const ink = inkBounds(glyph, weight);
+  const auto = autoCut(glyph);
   return (
     <>
       <Section title="Spacing">
@@ -97,6 +110,31 @@ function GlyphSections({
             format={units}
           />
         </KeyRow>
+      </Section>
+
+      <Section title="Height">
+        <Stepper
+          label="Cut at"
+          hint={
+            auto === null
+              ? 'Nothing drawn to stretch'
+              : glyph.stretchAt == null
+                ? "Where the font's height parts it — auto, where the paths run most upright"
+                : "Where the font's height parts it, up from the baseline"
+          }
+          value={Math.round(glyph.stretchAt ?? auto ?? 0)}
+          step={5}
+          disabled={auto === null}
+          onChange={onStretchAtChange}
+          format={units}
+        />
+        {glyph.stretchAt != null && (
+          <div className="pt-actions">
+            <TextButton label="Cut automatically" onClick={() => onStretchAtChange(null)}>
+              Auto cut
+            </TextButton>
+          </div>
+        )}
       </Section>
 
       <Section title="Trim paths">
@@ -153,13 +191,18 @@ export function Inspector({
   keys,
   char,
   onWeightChange,
+  onFontChange,
   onCapChange,
+  onNameChange,
   onBearingChange,
   onWidthChange,
   onOffsetChange,
+  onStretchAtChange,
   onTrimChange,
   onImport,
   onExport,
+  onOpen,
+  onSave,
   onReset,
 }: InspectorProps) {
   const cap = sharedCap(project);
@@ -175,6 +218,7 @@ export function Inspector({
           onBearingChange={onBearingChange}
           onWidthChange={onWidthChange}
           onOffsetChange={onOffsetChange}
+          onStretchAtChange={onStretchAtChange}
           onTrimChange={onTrimChange}
         />
       ) : (
@@ -190,6 +234,38 @@ export function Inspector({
               format={(v) => `${Math.round(v)} u`}
             />
           </KeyRow>
+          <KeyRow prop="tracking" ctx={keys}>
+            <Slider
+              label="Tracking"
+              value={Math.round(project.tracking ?? 0)}
+              min={-300}
+              max={600}
+              step={5}
+              onChange={(v) => onFontChange('tracking', v)}
+              format={units}
+            />
+          </KeyRow>
+          <KeyRow prop="offsetY" ctx={keys}>
+            <Stepper
+              label="Vertical offset"
+              hint="Every glyph, up from the baseline"
+              value={Math.round(project.offsetY ?? 0)}
+              step={5}
+              onChange={(v) => onFontChange('offsetY', v)}
+              format={units}
+            />
+          </KeyRow>
+          <KeyRow prop="stretch" ctx={keys}>
+            <Slider
+              label="Height"
+              value={project.stretch ?? 0}
+              min={-300}
+              max={800}
+              step={5}
+              onChange={(v) => onFontChange('stretch', v)}
+              format={(v) => `${v > 0 ? '+' : ''}${Math.round(v)} u`}
+            />
+          </KeyRow>
           <Select
             label="Caps"
             hint={cap === 'mixed' ? 'Glyphs differ — pick one to set them all' : 'All glyphs'}
@@ -200,6 +276,38 @@ export function Inspector({
             ]}
             onChange={(v) => onCapChange(v as LineCap)}
           />
+        </Section>
+      )}
+
+      {!glyph && (
+        <Section title="Name">
+          <TextField
+            label="Family"
+            hint="What the font installs as"
+            value={project.familyName}
+            placeholder="Untitled"
+            onChange={(v) => onNameChange('familyName', v)}
+          />
+          <TextField
+            label="Style"
+            value={project.styleName}
+            placeholder="Standard"
+            onChange={(v) => onNameChange('styleName', v)}
+          />
+        </Section>
+      )}
+
+      {!glyph && (
+        <Section title="Document">
+          <div className="pt-actions">
+            <TextButton label="Open document" onClick={onOpen}>
+              Open…
+            </TextButton>
+            <TextButton label="Save document" onClick={onSave}>
+              Save…
+            </TextButton>
+          </div>
+          <p className="pt-empty">Glyphs, timeline and canvas, as one .pillotalk file.</p>
         </Section>
       )}
 
@@ -218,7 +326,7 @@ export function Inspector({
           </div>
           <p className="pt-empty">
             {drawn === 0
-              ? 'Import <letter>u.svg / <letter>l.svg files to start.'
+              ? 'Import <letter>u.svg / <letter>l.svg / <digit>.svg files to start.'
               : `${drawn} of ${CHARSET.length} glyphs drawn.`}
           </p>
         </Section>

@@ -408,21 +408,45 @@ html {
   pointer-events: auto;
 }
 
-/* ---- Drawer toggle (narrow only). A kit IconButton floating over the page's
-   bottom-right corner, where a thumb reaches it; above the scrim (40) and the
-   drawer (50) so it can close what it opened. The plate shadow lifts it off
-   whatever scrolls under it. ---- */
+/* ---- Drawer toggle (narrow only). A kit TextButton floating over the page's
+   top-left corner, on the side the drawer slides in from; above the scrim (40)
+   and the drawer (50) so it can close what it opened. No shadow: it sits flat
+   on the page. `--fab-clear` is how far down it reaches, so
+   the page and the drawer's card can each start below it. ---- */
 .docs-menu-fab {
   display: none; /* -> block on narrow */
   position: fixed;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(20px, env(safe-area-inset-left));
+  top: max(20px, env(safe-area-inset-top));
   z-index: 60;
 }
-.docs-menu-fab .pp-round-btn {
-  width: 48px;
-  height: 48px;
-  box-shadow: var(--doc-shadow-panel);
+:root {
+  --fab-clear: calc(max(20px, env(safe-area-inset-top)) + 44px);
+}
+/* A capsule a size up from the kit's text button, so it reads as *the* way
+   into the docs rather than one more control on the page. Wide enough for
+   either word, so it doesn't change size as "Menu" turns to "Close". In light
+   mode it keeps the kit's own grey plate and hover; in dark mode it takes the
+   accent (below), which the grey would sink into. */
+.docs-menu-fab .pp-text-btn {
+  height: 44px;
+  min-width: 92px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-md);
+  transition: background 120ms ease, color 120ms ease, filter 120ms ease, transform 120ms ease;
+}
+.docs-menu-fab .pp-text-btn:active:not(:disabled) { transform: scale(0.95); }
+/* Dark: the same fill-and-ink pair as a solid copy chip. */
+@media (prefers-color-scheme: dark) {
+  .docs-menu-fab .pp-text-btn,
+  .docs-menu-fab .pp-text-btn:hover:not(:disabled),
+  .docs-menu-fab .pp-text-btn:active:not(:disabled) {
+    background: var(--doc-accent);
+    color: var(--doc-bg);
+  }
+  @media (hover: hover) {
+    .docs-menu-fab .pp-text-btn:hover:not(:disabled) { filter: brightness(1.08); }
+  }
 }
 
 /* ---- Content ---- */
@@ -1274,8 +1298,14 @@ html {
   .sidebar.is-open {
     transform: translateX(0);
   }
+  /* The menu button sits over the drawer's top-left corner, so the card starts
+     under it rather than tucking its brand link beneath the button. */
+  .sidebar {
+    padding-top: calc(var(--fab-clear) + 12px);
+  }
+  /* …and the page's heading clears it too, with 20px to spare. */
   .content {
-    --pad-top: 40px;
+    --pad-top: calc(var(--fab-clear) + 20px);
     --pad-x: 22px;
     padding-bottom: 80px;
   }

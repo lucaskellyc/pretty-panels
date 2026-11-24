@@ -11,7 +11,10 @@
   border: var(--border-width-thick) solid var(--ctl-panel);
   border-radius: var(--radius-lg);
   box-shadow: var(--doc-shadow-panel);
-  overflow: hidden;
+  /* `clip`, not `hidden`: it trims to the rounded corners just the same, but
+     isn't a scroll container — so a collapsible panel's sticky header pins to
+     whatever actually scrolls rather than to the plate. */
+  overflow: clip;
 }
 
 .panel-body {
@@ -604,6 +607,16 @@
 @media (hover: none) { .dropdown-trigger:active:not(:disabled) { background: var(--ctl-field-hover); } }
 .dropdown-trigger:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .dropdown-trigger:disabled { opacity: 0.5; cursor: default; }
+/* `native`: the capsule is a <select>, its own arrow and box dropped for the
+   kit's chevron and track; the list it opens is the platform's. */
+select.dropdown-trigger {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* The list is at least as wide as the capsule it opened from. `--pp-select-w`
    is measured on open and set on `.dropdown`; it reaches the menu by plain
    inheritance, top layer or not. Doubled class to outrank `.pp-menu`, which is
@@ -1314,8 +1327,11 @@
 
 /* ---- Splash screen ----
    A borderless banner floating in the middle of the window, artwork edge to
-   edge. The full-window layer under it is solid white, hiding the page, and
-   it catches the pointer, so the half-loaded app behind it can't be clicked. */
+   edge. The full-window layer under it is solid, hiding the page — white on a
+   light plate, the plate itself on a dark one, so the banner's ink (which
+   follows the plate) always has a ground to read on — and it catches the
+   pointer, so the half-loaded app behind it can't be clicked. Set
+   --pp-splash-bg to give it another ground. */
 .pp-splash {
   position: fixed;
   inset: 0;
@@ -1323,7 +1339,7 @@
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: #fff;
+  background: var(--pp-splash-bg, hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 100 + (1 - var(--mono-lit)) * var(--mono-l)) * 1%)));
 }
 .pp-splash.is-leaving {
   animation: pp-splash-out var(--dur-slow) var(--ease-out) both;
@@ -1342,7 +1358,7 @@
   padding: var(--space-6);
   overflow: hidden;
   border-radius: var(--radius-md);
-  /* The theme's ink over the white page; light once there's artwork, which
+  /* The theme's ink over the page; light once there's artwork, which
      is assumed dark. Everything drawn on the banner tints from currentColor. */
   color: var(--ctl-text);
   box-shadow: var(--doc-shadow-panel), 0 24px 60px -12px hsl(var(--mono-h) 30% 8% / 0.45);
@@ -1351,7 +1367,7 @@
 }
 
 /* The art layer fills the banner behind everything. Empty, it paints nothing
-   and the white page shows through. */
+   and the page's ground shows through. */
 .pp-splash-art {
   position: absolute;
   inset: 0;
@@ -1501,8 +1517,65 @@
 .pp-splash-action:disabled { opacity: 0.5; cursor: progress; }
 .pp-splash-action-icon { display: grid; place-items: center; margin-bottom: var(--space-2); }
 .pp-splash-action-icon > svg { display: block; width: 20px; height: 20px; }
+.pp-splash-action-text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .pp-splash-action-label { font: var(--type-label); font-weight: var(--fw-bold); font-size: var(--text-sm); }
 .pp-splash-action-desc { font: var(--type-label); font-size: var(--text-2xs); line-height: var(--lh-snug); opacity: 0.7; }
+
+/* ---- Capsule actions ----
+   `actionStyle="capsule"`: the cards become a two-column grid of pill rows
+   on a List row's ground, carrying --ctl-text so the description clears AA,
+   each led by its bare glyph in the same ink. Hover steps the row one further
+   in. Over artwork the row goes back to the cards' ink-tinted glass, since
+   the plate ramp means nothing there. */
+.pp-splash-actions.is-capsules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-3);
+  width: min(580px, 100%);
+  margin: 0 auto;
+}
+.is-capsules .pp-splash-action {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6) var(--space-3) var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--ctl-row);
+  color: var(--ctl-text);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+/* An odd count leaves the last capsule alone on its row: it spans the row and
+   sits in the middle at one column's width, so the set stays balanced. */
+.is-capsules .pp-splash-action:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc((100% - var(--space-3)) / 2);
+}
+.is-capsules .pp-splash-action-icon { flex: none; margin: 0; }
+.is-capsules .pp-splash-action-icon > svg { width: 22px; height: 22px; }
+.is-capsules .pp-splash-action-text { gap: 2px; }
+.is-capsules .pp-splash-action:hover:not(:disabled) { background: var(--ctl-row-parent); box-shadow: none; }
+.is-capsules .pp-splash-action:focus-visible { box-shadow: var(--focus-ring); }
+.has-art .is-capsules .pp-splash-action { background: color-mix(in srgb, currentColor 10%, transparent); color: inherit; backdrop-filter: blur(12px); }
+.has-art .is-capsules .pp-splash-action:hover:not(:disabled) { background: color-mix(in srgb, currentColor 16%, transparent); }
+
+/* ---- Centered ----
+   `centered`: everything gathers in the middle of the banner as one column —
+   the mark stacked over the title, then the actions or the load bar with its
+   status under it — rather
+   than pinning head and foot to opposite edges. */
+.pp-splash-banner.is-centered {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.is-centered .pp-splash-head { flex-direction: column; }
+.is-centered .pp-splash-foot { justify-content: center; }
+.is-centered .pp-splash-load { align-items: center; }
+/* Centered, the status reads as the bar's caption, so it goes under it. */
+.is-centered .pp-splash-status { order: 1; }
+.is-centered .pp-splash-actions { margin: 0; }
+.is-centered .pp-splash-action { text-align: left; }
 
 /* ---- Full screen ----
    The banner becomes the window: no gutter, corners or shadow, the art running
@@ -1517,7 +1590,7 @@
   border-radius: 0;
   box-shadow: none;
 }
-.pp-splash.is-fullscreen .pp-splash-actions {
+.pp-splash.is-fullscreen .pp-splash-actions:not(.is-capsules) {
   width: min(720px, 100%);
   margin: 0 auto;
 }
@@ -1526,6 +1599,8 @@
   .pp-splash-banner { aspect-ratio: auto; padding: var(--space-5); }
   .pp-splash.is-fullscreen .pp-splash-banner { padding: var(--space-5); overflow-y: auto; }
   .pp-splash-title { font-size: var(--text-2xl); }
+  .pp-splash-actions.is-capsules { grid-template-columns: 1fr; }
+  .is-capsules .pp-splash-action:last-child:nth-child(odd) { width: auto; justify-self: stretch; }
 }
 
 @keyframes pp-splash-out { to { opacity: 0; } }

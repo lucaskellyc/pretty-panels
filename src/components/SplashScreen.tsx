@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useState, forwardRef } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState, forwardRef } from 'react';
 import { ProgressBar } from './ProgressBar';
 import { cx } from './util';
 
@@ -39,9 +39,17 @@ export interface SplashScreenProps {
    *  until the app flips `open` false — usually from one of their `onClick`s.
    *  Leave unset while loading, then pass them when it's done. */
   actions?: SplashAction[];
+  /** How `actions` are drawn: `'card'`, a row of glass cards with the glyph
+   *  above the label, or `'capsule'`, a two-column grid of pill rows like a List's, each
+   *  led by its glyph. */
+  actionStyle?: 'card' | 'capsule';
   /** Fills the window edge to edge instead of floating as a card — the usual
    *  choice for a landing page, where nothing behind it is worth seeing. */
   fullscreen?: boolean;
+  /** Gathers everything into one centered column — mark over title, then the
+   *  actions or load line — instead of pinning the title to the top corner
+   *  and the status to the foot. */
+  centered?: boolean;
   /** The banner's artwork, filling it edge to edge behind the text — an `<img>`,
    *  `<video>` or SVG. Defaults to none, leaving the blurred page behind it. */
   art?: ReactNode;
@@ -75,7 +83,9 @@ export const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(functi
   progress,
   progressStyle = 'line',
   actions,
+  actionStyle = 'card',
   fullscreen = false,
+  centered = false,
   art,
   children,
   onExited,
@@ -85,14 +95,44 @@ export const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(functi
   // animationend below is what finally takes it down.
   const [mounted, setMounted] = useState(open);
   const titleId = useId();
+  const landing = actions != null && actions.length > 0;
 
   useEffect(() => {
     if (open) setMounted(true);
   }, [open]);
 
+  // The head's last resting top, so that when the actions arrive and the
+  // centered column regrows around them, the mark and title glide from where
+  // they were to where they now sit instead of jumping. Re-read after every
+  // render and on resize, so the jump measured is only the one landing made.
+  const headRef = useRef<HTMLDivElement>(null);
+  const headTop = useRef<number | null>(null);
+  const wasLanding = useRef(landing);
+  useLayoutEffect(() => {
+    const el = headRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top;
+    const from = headTop.current;
+    headTop.current = top;
+    if (wasLanding.current === landing) return;
+    wasLanding.current = landing;
+    if (from == null || Math.abs(from - top) < 1 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    // --ease-out, a little slower than --dur-slow: it's the whole head moving.
+    el.animate?.([{ transform: `translateY(${from - top}px)` }, { transform: 'none' }], {
+      duration: 520,
+      easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+    });
+  });
+  useEffect(() => {
+    const remeasure = () => {
+      if (headRef.current) headTop.current = headRef.current.getBoundingClientRect().top;
+    };
+    window.addEventListener('resize', remeasure);
+    return () => window.removeEventListener('resize', remeasure);
+  }, []);
+
   if (!mounted) return null;
 
-  const landing = actions != null && actions.length > 0;
   const pct = !landing && progress != null ? Math.round(Math.max(0, Math.min(1, progress)) * 1000) / 10 : null;
 
   return (
@@ -105,11 +145,11 @@ export const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(functi
         onExited?.();
       }}
     >
-      <div className={cx('pp-splash-banner', landing && 'is-landing', art != null && 'has-art', className)} aria-labelledby={titleId} aria-busy={open && !landing} role="region">
+      <div className={cx('pp-splash-banner', landing && 'is-landing', centered && 'is-centered', art != null && 'has-art', className)} aria-labelledby={titleId} aria-busy={open && !landing} role="region">
         <div className="pp-splash-art" aria-hidden="true">
           {art}
         </div>
-        <div className="pp-splash-head">
+        <div className="pp-splash-head" ref={headRef}>
           {logo != null && <div className="pp-splash-logo">{logo}</div>}
           <div>
             <div className="pp-splash-title" id={titleId}>
@@ -119,7 +159,7 @@ export const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(functi
           </div>
         </div>
         {landing && (
-          <div className="pp-splash-actions">
+          <div className={cx('pp-splash-actions', actionStyle === 'capsule' && 'is-capsules')}>
             {actions.map((a, i) => (
               <button
                 key={i}
@@ -134,8 +174,10 @@ export const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(functi
                     {a.icon}
                   </span>
                 )}
-                <span className="pp-splash-action-label">{a.label}</span>
-                {a.description != null && <span className="pp-splash-action-desc">{a.description}</span>}
+                <span className="pp-splash-action-text">
+                  <span className="pp-splash-action-label">{a.label}</span>
+                  {a.description != null && <span className="pp-splash-action-desc">{a.description}</span>}
+                </span>
               </button>
             ))}
           </div>
