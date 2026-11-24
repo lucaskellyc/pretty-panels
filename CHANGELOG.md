@@ -43,6 +43,14 @@ well as features, so read the **Changed** notes before bumping a minor.
   still opens the right page. On narrow screens the drawer opens from a
   floating menu button in the bottom-right corner instead of the title's
   directory segment.
+- **Docs site: Pillotalk Studio fits narrow screens.** The "needs a wider
+  window" notice is gone. When the stage can't hold both plates beside the
+  sheet, they open one at a time and the sheet takes the full width; below
+  480px an open plate drops beneath the other's strip. A plate's open body is
+  held to the room it has and scrolls inside, so its fold runs in step with its
+  width rather than snapping. The timeline is a floating plate, its corners
+  concentric with the pills inside, and its lanes no longer hang into the
+  padding with overlay scrollbars.
 
 ### Fixed
 

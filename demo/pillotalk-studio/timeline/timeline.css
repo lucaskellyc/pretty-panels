@@ -14,9 +14,17 @@
   position: relative;
   flex: none;
   z-index: var(--z-sticky);
-  padding: var(--space-4) var(--space-5) var(--space-5);
+  /* local: a plate floating on the stage's ground like the docked panels —
+     their surface, edge and shadow, inset by their gap. One padding all
+     round, and corners that radius plus the bar's 31px pills' (.tl-btn), so
+     the pills in its corners sit concentric with it; folded, it is one pill
+     around them. */
+  padding: var(--space-3);
+  margin: 0 var(--space-3) var(--space-3);
   background: var(--ctl-panel);
-  border-top: var(--border-width) solid var(--ctl-panel);
+  border: var(--border-width-thick) solid var(--ctl-panel);
+  border-radius: calc(31px / 2 + var(--space-3) + var(--border-width-thick));
+  box-shadow: var(--doc-shadow-panel);
 }
 
 /* The dock's top edge, dragged to give the lanes more or less room. It sits
@@ -132,7 +140,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 }
 .tl-body {
   scrollbar-gutter: stable;
-  margin-right: calc(-10px * (1 - var(--tl-sb)));
+  /* local: by the gutter TimelineDock measures, which overlay scrollbars
+     leave at 0 — a fixed 10px hung the lanes into the padding there. */
+  margin-right: calc(var(--tl-gutter, 10px) * -1 * (1 - var(--tl-sb)));
 }
 .dock-tl.is-overflowing .tl-body {
   --tl-sb: 1;
@@ -245,6 +255,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 /* local: fps + frame counter travel with the timecode, so one auto margin
    carries the pair to the right rather than each claiming its own share. */
 .tl-readout { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+/* local: on a narrow screen the frame counter goes first, so the timecode
+   and the collapse button stay on the bar. */
+@media (max-width: 560px) { .tl-meta { display: none; } }
 /* local: the readout is also a control — dragging it vertically scrubs (see
    Timeline.tsx), hence the cursor and the active state. */
 /* local: as tall as the bar's 31px buttons, so the readout and the collapse
@@ -327,7 +340,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    rather than competing with it. */
 .tl-prop-lane .tl-key { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-width: 1px; }
 
-.tl-canvas { position: relative; background: var(--ctl-btn); border-radius: 14px; padding: 0 10px; overflow: hidden; cursor: ew-resize; }
+/* local: the bar's pill radius, so the lanes sit concentric in the dock's
+   lower corners as the pills do in its upper ones. */
+.tl-canvas { position: relative; background: var(--ctl-btn); border-radius: calc(31px / 2); padding: 0 10px; overflow: hidden; cursor: ew-resize; }
 .tl-ruler { position: relative; height: var(--tl-ruler-h); }
 .tl-tick { position: absolute; top: 8px; bottom: 0; left: calc(var(--t) * 100%); width: 1px; background: color-mix(in srgb, var(--ctl-text) 35%, transparent); }
 .tl-tick.is-major { top: 4px; background: color-mix(in srgb, var(--ctl-text) 70%, transparent); }

@@ -659,6 +659,9 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
   const [resizing, setResizing] = useState(false);
   const [bodyH, setBodyH] = useState<number | null>(null);
   const [overflowing, setOverflowing] = useState(false);
+  /** The width the body's scrollbar gutter actually takes: none with overlay
+   *  scrollbars, so the body hangs out into the padding only as far as that. */
+  const [gutter, setGutter] = useState<number | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const grab = useRef<{ y0: number; h0: number; max: number } | null>(null);
@@ -692,7 +695,10 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
   useEffect(() => {
     const el = bodyRef.current;
     if (!el) return;
-    const measure = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
+    const measure = () => {
+      setOverflowing(el.scrollHeight > el.clientHeight + 1);
+      setGutter(el.offsetWidth - el.clientWidth);
+    };
     const sizes = new ResizeObserver(measure);
     const watch = () => {
       sizes.disconnect();
@@ -718,7 +724,12 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
     <div
       ref={dockRef}
       className={`dock-tl${collapsed ? ' is-collapsed' : ''}${resizing ? ' is-resizing' : ''}${folding ? ' is-folding' : ''}${overflowing ? ' is-overflowing' : ''}`}
-      style={bodyH === null ? undefined : ({ '--tl-body-h': `${bodyH}px` } as CSSProperties)}
+      style={
+        {
+          ...(bodyH === null ? null : { '--tl-body-h': `${bodyH}px` }),
+          ...(gutter === null ? null : { '--tl-gutter': `${gutter}px` }),
+        } as CSSProperties
+      }
     >
       <div
         className="dock-tl-grip"

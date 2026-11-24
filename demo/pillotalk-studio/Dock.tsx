@@ -8,6 +8,8 @@ import type { EditMessage } from './types';
 
 /** The docked column's width, which framing keeps the sheet clear of. */
 export const DOCK_W = 320;
+/** The kit's margin under an open panel body (panels.css). */
+const BODY_MARGIN = 4;
 
 /**
  * One docked plate. Rolled up, it draws in from the column's width to hug its
@@ -20,6 +22,7 @@ export function DockPanel({
   width = DOCK_W,
   collapsed,
   onCollapsedChange,
+  reserve,
   children,
 }: {
   className: string;
@@ -30,10 +33,33 @@ export function DockPanel({
   width?: number;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
+  /** Given, the open body is held to the column's height less this (the
+   *  plates below) and scrolls inside: the fold then runs over what is on
+   *  screen, in step with the width, rather than over content mostly clipped
+   *  away. */
+  reserve?: number;
   children: ReactNode;
 }) {
   const slot = useRef<HTMLDivElement>(null);
   const [stripWidth, setStripWidth] = useState<number | null>(null);
+  const [bodyRoom, setBodyRoom] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = slot.current;
+    const column = el?.parentElement;
+    const panel = el?.querySelector<HTMLElement>('.panel');
+    const head = panel?.querySelector<HTMLElement>('.panel-head');
+    if (reserve == null || !column || !panel || !head) return setBodyRoom(null);
+    const measure = () => {
+      const strip = head.offsetHeight + parseFloat(getComputedStyle(panel).borderTopWidth) * 2;
+      setBodyRoom(Math.max(0, column.clientHeight - reserve - strip - BODY_MARGIN));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(column);
+    ro.observe(head);
+    return () => ro.disconnect();
+  }, [reserve]);
 
   // Re-measured when the title changes too: the inspector's follows the
   // selection, rolled up or not.
@@ -71,7 +97,12 @@ export function DockPanel({
     <div
       ref={slot}
       className={className}
-      style={stripWidth ? ({ '--dock-panel-w': `${stripWidth}px` } as CSSProperties) : undefined}
+      style={
+        {
+          ...(stripWidth ? { '--dock-panel-w': `${stripWidth}px` } : null),
+          ...(bodyRoom != null ? { '--dock-body-room': `${bodyRoom}px` } : null),
+        } as CSSProperties
+      }
     >
       <Panel title={title} width={width} collapsible collapsed={collapsed} onCollapsedChange={onCollapsedChange}>
         {children}
@@ -85,6 +116,7 @@ export function DockPanel({
  * to the studio's handler.
  */
 export function Dock({
+  compact,
   project,
   keys,
   char,
@@ -97,6 +129,8 @@ export function Dock({
   onSave,
   onReset,
 }: {
+  /** The stage is too narrow for both columns (App's MIN_ROOM). */
+  compact: boolean;
   /** The project at the playhead. */
   project: FontProject;
   keys: KeyContext;
@@ -114,10 +148,11 @@ export function Dock({
 
   return (
     // A column down the right edge; a tall inspector scrolls inside it.
-    <div className="pt-dock" style={{ width: DOCK_W }}>
+    <div className={compact ? 'pt-dock is-compact' : 'pt-dock'} style={{ width: DOCK_W }}>
       <DockPanel
         className="pt-dock-slot is-scrolling"
         title={title}
+        reserve={0}
         collapsed={collapsed}
         onCollapsedChange={onCollapsedChange}
       >

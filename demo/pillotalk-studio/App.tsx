@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Tabs } from '../../src';
 import { exportOtf } from './font/export';
 import { CHARSET, createProject, isDrawn, shiftGlyph, toLineCap, type FontProject, type GlyphData, type LineCap } from './font/model';
@@ -13,7 +13,6 @@ import { exportGif } from './gif';
 import { exportLottie } from './lottie';
 import { Outliner } from './Outliner';
 import { Splash } from './Splash';
-import { NarrowScreen, useTooNarrow } from './NarrowScreen';
 import { Stage } from './Stage';
 import { glyphProp, groupOf, resolveProject } from './timeline/channels';
 import type { KeyContext } from './timeline/KeyGutter';
@@ -48,6 +47,9 @@ const VIEW_TABS = [
 /** The glyphs plate's width, docked over the stage's left edge. */
 const SIDEBAR_W = 264;
 const GUTTER = 16;
+/** A stage without room for both columns and this much sheet between them is
+ *  compact: the plates take turns instead of sitting side by side. */
+const MIN_ROOM = 320;
 
 /** The last session's project, if local storage kept it. */
 function loadProject(): FontProject {
@@ -71,12 +73,7 @@ function loadProject(): FontProject {
  * inspector in its top-right, over the timeline dock. Every plate rolls up to
  * its header, and the timeline folds down to its transport bar.
  */
-/** The studio, or on a phone a note saying it needs more room. */
 export function App() {
-  return useTooNarrow() ? <NarrowScreen /> : <Studio />;
-}
-
-function Studio() {
   const [project, setProject] = useState<FontProject>(loadProject);
   const [char, setChar] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -138,6 +135,8 @@ function Studio() {
   // ---- dock ---------------------------------------------------------------
 
   const [dockCollapsed, setDockCollapsed] = useState(true);
+  /** Compact, the one plate open: the glyphs, the inspector, or neither. */
+  const [compactOpen, setCompactOpen] = useState<'glyphs' | 'inspector' | null>(null);
 
   // ---- timeline ------------------------------------------------------------
 
@@ -200,10 +199,24 @@ function Studio() {
   // ---- view ---------------------------------------------------------------
 
   const { box, fit, setView } = fitView;
+  // Measured on the stage area, not the sheet's stage: that one is hidden,
+  // and measures nothing, while the canvas is up.
+  const stageAreaRef = useRef<HTMLDivElement>(null);
+  const [stageWidth, setStageWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = stageAreaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setStageWidth(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const compact = stageWidth > 0 && stageWidth < SIDEBAR_W + DOCK_W + GUTTER * 4 + MIN_ROOM;
+  const glyphsCollapsed = compact ? compactOpen !== 'glyphs' : sidebarCollapsed;
   // The glyphs plate covers the stage's left edge and the inspector its
-  // right: frame into the room between them.
-  const leftRoom = SIDEBAR_W + GUTTER;
-  const dockRoom = DOCK_W + GUTTER;
+  // right: frame into the room between them. Compact, they are mostly rolled
+  // up, so the sheet takes the whole width.
+  const leftRoom = compact ? 0 : SIDEBAR_W + GUTTER;
+  const dockRoom = compact ? 0 : DOCK_W + GUTTER;
   const gapOffset = (leftRoom - dockRoom) / 2;
   const roomWidth = box.width - GUTTER * 2 - leftRoom - dockRoom;
 
@@ -424,7 +437,7 @@ function Studio() {
 
   return (
     <div className="pt-app">
-      <div className="pt-stage-area">
+      <div ref={stageAreaRef} className="pt-stage-area">
         {/* Both stay mounted, the other one hidden: each keeps its own pan
             and zoom across a switch, and is measured when it reappears. */}
         <div hidden={onCanvas}>
@@ -448,14 +461,15 @@ function Studio() {
           />
         </div>
 
-        <div className="pt-dock is-left" style={{ width: SIDEBAR_W }}>
+        <div className={compact ? 'pt-dock is-left is-compact' : 'pt-dock is-left'} style={{ width: SIDEBAR_W }}>
           <DockPanel
             className="pt-dock-slot is-scrolling"
+            reserve={0}
             /* Open, the tabs are the header — the strip and the roll-up share
                one row. Rolled up, the plate hugs a plain title instead: a tab
                strip has no width of its own to draw in to. */
             title={
-              sidebarCollapsed ? (
+              glyphsCollapsed ? (
                 onCanvas ? 'Canvas' : 'Glyphs'
               ) : (
                 <Tabs
@@ -467,8 +481,8 @@ function Studio() {
               )
             }
             width={SIDEBAR_W}
-            collapsed={sidebarCollapsed}
-            onCollapsedChange={setSidebarCollapsed}
+            collapsed={glyphsCollapsed}
+            onCollapsedChange={(c) => (compact ? setCompactOpen(c ? null : 'glyphs') : setSidebarCollapsed(c))}
           >
             {onCanvas ? (
               <CanvasControls
@@ -492,8 +506,9 @@ function Studio() {
           project={shown}
           keys={keys}
           char={char}
-          collapsed={dockCollapsed}
-          onCollapsedChange={setDockCollapsed}
+          compact={compact}
+          collapsed={compact ? compactOpen !== 'inspector' : dockCollapsed}
+          onCollapsedChange={(c) => (compact ? setCompactOpen(c ? null : 'inspector') : setDockCollapsed(c))}
           onEdit={onEdit}
           onImport={() => fileRef.current?.click()}
           onExport={doExport}
