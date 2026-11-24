@@ -1,7 +1,7 @@
 import { Children, type CSSProperties, type ReactNode, type RefObject, isValidElement, useEffect, useLayoutEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { IconButton } from './IconButton';
 import { ELLIPSIS } from './ListRow';
-import { Popover } from './Popover';
+import { Popover, type PopoverSide } from './Popover';
 import { cx } from './util';
 
 export interface ToolbarProps {
@@ -22,6 +22,11 @@ export interface ToolbarProps {
   /** Accessible name + tooltip for the overflow button, and the name of the
    *  sheet it opens. Worth setting in a localised app; the default is English. */
   overflowLabel?: string;
+  /** The side of the `⋯` the sheet opens on: below a row and beside a column
+   *  by default. It still flips when the window has no room there. A bar along
+   *  the foot of a view wants `'top'`, so the sheet opens up over the view
+   *  rather than down over whatever the bar sits on. */
+  overflowSide?: PopoverSide;
   /** Accessible name. With one the bar becomes a labelled `group`; without, it
    *  is chrome, and the things inside it carry their own semantics. */
   label?: string;
@@ -88,12 +93,21 @@ function useFold(
     if (!el || !enabled) return;
 
     const cs = getComputedStyle(el);
-    const px = (v: string) => parseFloat(v) || 0;
+    // The items are measured off their rects, which are in screen pixels: under
+    // a CSS `zoom` or a scale transform those are not the bar's own, which its
+    // `client*` box and computed padding and gap are in. So the room is put in
+    // screen pixels too, the bar's own lengths scaled by the ratio of its rect
+    // to its layout size — or every item looks that much wider than the room
+    // and the bar folds early.
+    const rect = el.getBoundingClientRect();
+    const layout = vertical ? el.offsetHeight : el.offsetWidth;
+    const scale = layout ? (vertical ? rect.height : rect.width) / layout : 1;
+    const px = (v: string) => (parseFloat(v) || 0) * scale;
     // `client*` is the padding box, and the bar declares no padding — but a
     // `className` of yours can, and an item laid out into it would spill.
     const room = vertical
-      ? el.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom)
-      : el.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight);
+      ? el.clientHeight * scale - px(cs.paddingTop) - px(cs.paddingBottom)
+      : el.clientWidth * scale - px(cs.paddingLeft) - px(cs.paddingRight);
     // Not laid out yet — a hidden tab, a first paint under `display: none`. Zero
     // is no evidence, and folding on it would make a lone ⋯ the bar's first
     // frame. (A bar that hugs its contents never fills a box either, so it never
@@ -217,6 +231,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
   orientation = 'horizontal',
   overflow = false,
   overflowLabel = 'More tools',
+  overflowSide,
   label,
   className,
   style,
@@ -293,7 +308,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
           open={open}
           onClose={() => setOpen(false)}
           anchor={more}
-          side={vertical ? 'right' : 'bottom'}
+          side={overflowSide ?? (vertical ? 'right' : 'bottom')}
           align="end"
         >
           <div

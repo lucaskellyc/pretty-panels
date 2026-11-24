@@ -20,7 +20,7 @@
      the pills in its corners sit concentric with it; folded, it is one pill
      around them. */
   padding: var(--space-3);
-  margin: 0 var(--space-3) var(--space-3);
+  margin: 0 max(var(--space-3), env(safe-area-inset-right)) max(var(--space-3), env(safe-area-inset-bottom)) max(var(--space-3), env(safe-area-inset-left));
   background: var(--ctl-panel);
   border: var(--border-width-thick) solid var(--ctl-panel);
   border-radius: calc(31px / 2 + var(--space-3) + var(--border-width-thick));
@@ -219,9 +219,24 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    flanking groups to claim equal columns, or it drifts with whichever side is
    wider. With that strip gone there is nothing to centre, and space-between is
    what "one group at each end" actually says. */
-.tl-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.tl-bar-side { display: flex; align-items: center; gap: var(--space-2); }
-.tl-bar-side.is-end { justify-content: flex-end; }
+/* local: and now the kit's Toolbar (Timeline.tsx), whose `end` carries the
+   readout and fold button to the far edge; only the gap is ours. */
+.tl-bar { gap: var(--space-2); }
+/* local: the Toolbar's ⋯, at the bar's 31px pill size rather than the kit's
+   34px, so it lines up with the buttons beside it. */
+.tl-bar .pp-toolbar-more { width: 31px; height: 31px; }
+/* local: in the ⋯ sheet a folded button reads as a row — icon and label side
+   by side — and the icon-only loop chip gets its word. */
+.tl-sheet-label { display: none; }
+/* local: the sheet opens up clear of the whole plate, not just off the ⋯ —
+   the dock's padding (--space-3) and edge (--border-width-thick), plus the
+   kit's 4px. A literal, since Popover reads it as a number. */
+.tl-bar .pp-popover {
+  --pp-popover-gap: 18px;
+}
+.pp-toolbar-sheet .tl-sheet-label { display: inline; }
+.pp-toolbar-sheet .tl-btn { display: flex; align-items: center; justify-content: flex-start; gap: var(--space-2); padding: 0 var(--space-3); }
+.pp-toolbar-sheet .tl-transport { align-self: flex-start; }
 /* local: `.tl-seg` is the *same* control the transport is — a pill of segments
    with the chosen one in the accent — so it shares the rule rather than being a
    second answer to what a segmented control looks like. It was the viewport
@@ -275,6 +290,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    its own height when the lanes outgrow the body, which is what the body then
    scrolls through. */
 .tl-body { display: grid; grid-template-columns: 124px 1fr; grid-template-rows: minmax(min-content, 1fr); gap: var(--space-2); }
+/* local: on a narrow screen the channel names give the lanes some of their
+   column. */
+@media (max-width: 560px) { .tl-body { grid-template-columns: 96px 1fr; } }
 /* local: no ruler header in this app — pad the name column down to its lanes. */
 .tl-names { display: flex; flex-direction: column; gap: var(--tl-lane-gap); padding-top: var(--tl-ruler-h); }
 /* local: a row is a *group* — a layer's name (or lane) with its property rows
@@ -338,7 +356,7 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 .tl-prop-lane.is-off { opacity: 0.4; }
 /* Smaller diamonds too, so a property key reads as part of the mark above it
    rather than competing with it. */
-.tl-prop-lane .tl-key { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-width: 1px; }
+.tl-prop-lane .tl-key { width: 8px; height: 8px; margin: -4px 0 0 -4px; }
 
 /* local: the bar's pill radius, so the lanes sit concentric in the dock's
    lower corners as the pills do in its upper ones. */
@@ -361,10 +379,18 @@ body:has(.dock-tl.is-resizing) .pt-stage {
 /* local: keys drag horizontally to retime, so they take the grab cursor rather
    than the DS's inert one — the canvas underneath asks for a scrub cursor, and
    a key is the one thing on it that doesn't scrub. */
-.tl-key { position: absolute; top: 50%; left: calc(var(--t) * 100%); width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--ctl-knob-off); border: 2px solid var(--ctl-switch-off); border-radius: 3px; transform: rotate(45deg); cursor: grab; }
-.tl-key:hover { background: var(--ctl-knob-on); }
-.tl-key[aria-selected="true"] { background: var(--ctl-accent); border-color: var(--ctl-knob-on); }
-.tl-key[data-ease="hold"] { border-radius: 0; }
+/* local: drawn as the inspector's key diamond (.insp-diamond) — a sharp
+   square turned 45°, a thin outline, filled with the accent when selected
+   — but inked in the plate's text colour rather than the track's, since the
+   lanes are lighter than the inspector's gutter and a light theme's white
+   outline vanished on them — so a key reads the same in both places. The ease
+   still shows in the shape: linear a circle, hold an upright square. The
+   ::after widens the grab without growing the mark. */
+.tl-key { position: absolute; top: 50%; left: calc(var(--t) * 100%); box-sizing: border-box; width: 10px; height: 10px; margin: -5px 0 0 -5px; background: transparent; border: 1.5px solid color-mix(in srgb, var(--ctl-text) 70%, transparent); transform: rotate(45deg); cursor: grab; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+.tl-key::after { content: ''; position: absolute; inset: -4px; }
+.tl-key:hover { border-color: var(--ctl-knob-on); }
+.tl-key[aria-selected="true"] { background: var(--ctl-accent); border-color: var(--ctl-accent); }
+.tl-key[data-ease="hold"] { transform: none; }
 .tl-key[data-ease="linear"] { border-radius: 50%; }
 
 /* local: the lane area scrolls once the dock is dragged shorter than its
@@ -439,6 +465,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
    change shape when the view does. */
 .tl-graph-names { gap: 4px; }
 .tl-graph-name { width: 100%; cursor: default; }
+/* local: one line, like the lanes' names — a long one ("Vertical Offset")
+   ellipsizes rather than wrapping out of its pill. */
+.tl-graph-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tl-graph-name.is-selected { box-shadow: inset 0 0 0 1px var(--ctl-accent); }
 /* Enough distinct hues to tell a handful of context curves apart, and a
    repeat past that — the focused lane is the accent, so these only have to

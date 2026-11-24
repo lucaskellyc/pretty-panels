@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import { Toolbar } from '../../../src';
 import type { Easing, Keyframe } from './anim';
 import { FONT_GROUP, groupsFor, laneLabel, type AnimProp, type Group, type GroupId } from './channels';
 import { GraphEditor, type GraphLane } from './GraphEditor';
@@ -194,7 +195,16 @@ function Timeline({
   const frac = (t: number) => (t - viewIn) / span;
   const timeAt = (f: number) => viewIn + f * span;
   const zoomed = view.in > 0 || view.out < 1;
-  const ticks = useMemo(() => rulerTicks(viewIn, viewOut, duration), [viewIn, viewOut, duration]);
+  // The ruler's width, so a narrow one spaces its labels out (rulerTicks).
+  const [rulerW, setRulerW] = useState(Infinity);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setRulerW(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const ticks = useMemo(() => rulerTicks(viewIn, viewOut, duration, rulerW), [viewIn, viewOut, duration, rulerW]);
 
   const groups = useMemo(() => groupsFor(doc.tracks, selectedChar), [doc.tracks, selectedChar]);
   const lanes = useMemo(
@@ -433,32 +443,18 @@ function Timeline({
 
   return (
     <div className={`tl${retiming ? ' is-retiming' : ''}`}>
-      <div className="tl-bar">
-        <div className="tl-bar-side">
-          <div className="tl-transport">
-            <button className="tl-btn" aria-label="Go to start" title="Go to start" onClick={goStart}>
-              <SkipStartIcon />
-            </button>
-            <PlayButton />
-            <button className="tl-btn" aria-label="Go to end" title="Go to end" onClick={goEnd}>
-              <SkipEndIcon />
-            </button>
-          </div>
-          <button className="tl-btn tl-chip" aria-pressed={loop} aria-label="Loop the work area" title="Loop the work area" onClick={() => setLoop(!loop)}>
-            <LoopIcon />
-          </button>
-          <button
-            className="tl-btn tl-chip"
-            aria-pressed={graph}
-            title={graph ? 'Show keyframe lanes' : 'Show the value graph'}
-            onClick={() => setGraph((v) => !v)}
-          >
-            Graph
-          </button>
-          {tools}
-        </div>
-
-        <div className="tl-bar-side is-end">
+      {/* local: the kit's Toolbar, folding what a narrow bar has no room for —
+          the tools, then Graph, then Loop, then the transport — into a ⋯
+          sheet. The timecode and the fold button are `end`, which never folds.
+          The sheet opens upward, over the stage: below, the plate's own lanes
+          and the window's foot would crop it. */}
+      <Toolbar
+        className="tl-bar"
+        overflow
+        overflowLabel="More timeline controls"
+        overflowSide="top"
+        end={
+          <>
           <Readout />
           <button
             className="tl-btn tl-collapse"
@@ -469,8 +465,34 @@ function Timeline({
           >
             <SectionChevronIcon />
           </button>
+          </>
+        }
+      >
+        <div key="transport" className="tl-transport">
+          <button className="tl-btn" aria-label="Go to start" title="Go to start" onClick={goStart}>
+            <SkipStartIcon />
+          </button>
+          <PlayButton />
+          <button className="tl-btn" aria-label="Go to end" title="Go to end" onClick={goEnd}>
+            <SkipEndIcon />
+          </button>
         </div>
-      </div>
+        <button key="loop" className="tl-btn tl-chip" aria-pressed={loop} aria-label="Loop the work area" title="Loop the work area" onClick={() => setLoop(!loop)}>
+          <LoopIcon />
+          {/* Shown only once folded into the sheet, where an icon alone says less. */}
+          <span className="tl-sheet-label">Loop</span>
+        </button>
+        <button
+          key="graph"
+          className="tl-btn tl-chip"
+          aria-pressed={graph}
+          title={graph ? 'Show keyframe lanes' : 'Show the value graph'}
+          onClick={() => setGraph((v) => !v)}
+        >
+          Graph
+        </button>
+        {tools}
+      </Toolbar>
 
       <div className="tl-body" ref={bodyRef}>
         {graph ? (
@@ -482,7 +504,7 @@ function Timeline({
                 aria-pressed={graphGroup === g.id}
                 onClick={() => setGraphGroup(g.id)}
               >
-                {g.name}
+                <span className="tl-graph-text">{g.name}</span>
               </button>
             ))}
             {graphLanes.map(({ prop, label }, i) => (
@@ -494,7 +516,7 @@ function Timeline({
                 onClick={() => setFocusProp(prop)}
               >
                 <span className="tl-graph-swatch" style={vars({ '--n': i })} />
-                {label}
+                <span className="tl-graph-text">{label}</span>
               </button>
             ))}
           </div>
@@ -664,7 +686,7 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
   const [gutter, setGutter] = useState<number | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const grab = useRef<{ y0: number; h0: number; max: number } | null>(null);
+  const grab = useRef<{ y0: number; h0: number; scale: number; max: number } | null>(null);
   const foldTimer = useRef(0);
 
   const toggleCollapsed = () => {
@@ -742,15 +764,20 @@ export function TimelineDock({ selected, tools }: { selected: string | null; too
           e.preventDefault();
           e.currentTarget.setPointerCapture(e.pointerId);
           const h0 = bodyRef.current?.offsetHeight ?? 0;
-          const chrome = (dockRef.current?.offsetHeight ?? h0) - h0;
-          grab.current = { y0: e.clientY, h0, max: Math.max(MIN_BODY, window.innerHeight - MIN_STAGE - chrome) };
+          const dock = dockRef.current;
+          const chrome = (dock?.offsetHeight ?? h0) - h0;
+          // local: the pointer and the window are in screen pixels, the dock's
+          // heights in its own — which differ when it is zoomed (studio.css's
+          // phone zoom). Screen lengths are divided by the ratio to match.
+          const scale = dock?.offsetHeight ? dock.getBoundingClientRect().height / dock.offsetHeight : 1;
+          grab.current = { y0: e.clientY, h0, scale, max: Math.max(MIN_BODY, (window.innerHeight - MIN_STAGE) / scale - chrome) };
           setResizing(true);
         }}
         onPointerMove={(e) => {
           const g = grab.current;
           if (!g) return;
           if (e.buttons === 0) return endResize();
-          setBodyH(Math.max(MIN_BODY, Math.min(g.max, g.h0 + (g.y0 - e.clientY))));
+          setBodyH(Math.max(MIN_BODY, Math.min(g.max, g.h0 + (g.y0 - e.clientY) / g.scale)));
         }}
         onPointerUp={endResize}
         onPointerCancel={endResize}

@@ -2,7 +2,7 @@ import { memo, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react
 import { strokePathData, type FontProject, type GlyphData, type Point } from './font/model';
 import type { Artboard as ArtboardBox, Sheet } from './font/sheet';
 import { shapedGlyph } from './font/stretch';
-import type { FitView } from './view';
+import { useTouchTap, type FitView } from './view';
 
 interface StageProps {
   project: FontProject;
@@ -89,8 +89,16 @@ export function Stage({ project, sheet, fitView, char, onSelectGlyph, onFrame }:
   const hitArtboard = (e: { target: EventTarget }) =>
     (e.target as Element).closest('[data-char]')?.getAttribute('data-char') ?? null;
 
+  // A touch pans or pinches (useFitView); one that stays put is a click.
+  const tap = useTouchTap((target) => {
+    const hit = hitArtboard({ target });
+    if (!hit) onSelectGlyph(null);
+    else if (hit === char) onFrame(hit);
+    else onSelectGlyph(hit);
+  });
+
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
-    if (e.button !== 0) return;
+    if (tap.down(e) || e.button !== 0) return;
     const hit = hitArtboard(e);
     if (hit) {
       if (hit === char) onFrame(hit);
@@ -103,6 +111,7 @@ export function Stage({ project, sheet, fitView, char, onSelectGlyph, onFrame }:
   };
 
   const onPointerMove = (e: PointerEvent) => {
+    if (tap.move(e)) return;
     const g = pan.current;
     if (!g) return;
     if (e.buttons === 0) {
@@ -117,7 +126,8 @@ export function Stage({ project, sheet, fitView, char, onSelectGlyph, onFrame }:
     fitView.pan(dx, dy);
   };
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: PointerEvent) => {
+    if (tap.up(e)) return;
     const g = pan.current;
     pan.current = null;
     if (g && g.travel < CLICK_SLOP) onSelectGlyph(null);

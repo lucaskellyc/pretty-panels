@@ -2,7 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObje
 
 /**
  * Fitting content into a box, and the view gestures on top of it — trackpad
- * pan, pinch zoom about the pointer, and a way back to the fit.
+ * pan, pinch zoom about the pointer, touch pan and pinch, and a way back to
+ * the fit.
  *
  * Ported from motion-studio's `studio/view.ts`, with `fit` and `setView`
  * exposed so the stage can frame a single artboard.
@@ -105,6 +106,64 @@ export function useFitView(width: number, height: number): FitView {
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
+  // Touch: one finger pans, two pinch about their midpoint and pan with it.
+  // Anywhere on the stage, artboards included — the stages themselves only
+  // turn a touch that never travels into a tap.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const touches = new Map<number, { x: number; y: number }>();
+    const down = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    };
+    const move = (e: PointerEvent) => {
+      const t = touches.get(e.pointerId);
+      if (!t) return;
+      if (touches.size === 1) {
+        const dx = e.clientX - t.x;
+        const dy = e.clientY - t.y;
+        t.x = e.clientX;
+        t.y = e.clientY;
+        setViewState((v) => (dx || dy ? { ...v, x: v.x + dx, y: v.y + dy } : v));
+        return;
+      }
+      const [a, b] = touches.values();
+      const mid0 = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const d0 = Math.hypot(a.x - b.x, a.y - b.y);
+      t.x = e.clientX;
+      t.y = e.clientY;
+      const mid1 = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const d1 = Math.hypot(a.x - b.x, a.y - b.y);
+      if (!d0) return;
+      const box = el.getBoundingClientRect();
+      const cx = box.left + box.width / 2;
+      const cy = box.top + box.height / 2;
+      setViewState((v) => {
+        const zoom = clamp(v.zoom * (d1 / d0), MIN_ZOOM, MAX_ZOOM);
+        // Pin the point under the fingers, then follow them.
+        const ratio = zoom / v.zoom;
+        const ox = mid0.x - cx - v.x;
+        const oy = mid0.y - cy - v.y;
+        return {
+          zoom,
+          x: v.x + ox * (1 - ratio) + (mid1.x - mid0.x),
+          y: v.y + oy * (1 - ratio) + (mid1.y - mid0.y),
+        };
+      });
+    };
+    const up = (e: PointerEvent) => touches.delete(e.pointerId);
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+  }, []);
+
   const reset = useCallback(() => setViewState(FIT_VIEW), []);
   const pan = useCallback(
     (dx: number, dy: number) => setViewState((v) => (dx || dy ? { ...v, x: v.x + dx, y: v.y + dy } : v)),
@@ -125,5 +184,53 @@ export function useFitView(width: number, height: number): FitView {
     reset,
     pan,
     setView,
+  };
+}
+
+/** Travel under which a touch is a tap rather than the start of a pan. */
+const TAP_SLOP = 8;
+
+interface TouchLike {
+  type: string;
+  pointerType: string;
+  pointerId: number;
+  clientX: number;
+  clientY: number;
+  target: EventTarget;
+}
+
+/**
+ * A stage's taps. Touch pans and pinches belong to useFitView, so a stage
+ * hands its touches here instead of acting on the press: `onTap` runs on the
+ * lift, for a touch that never travelled and had no second finger join it.
+ * Each handler returns whether the event was a touch, and so taken.
+ */
+export function useTouchTap(onTap: (target: Element) => void) {
+  const tap = useRef<{ id: number; x: number; y: number; target: Element; live: boolean } | null>(null);
+  const handle = useRef(onTap);
+  handle.current = onTap;
+  return {
+    down(e: TouchLike) {
+      if (e.pointerType !== 'touch') return false;
+      if (tap.current) tap.current.live = false;
+      else tap.current = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target as Element, live: true };
+      return true;
+    },
+    move(e: TouchLike) {
+      const t = tap.current;
+      if (e.pointerType !== 'touch') return false;
+      if (t && t.id === e.pointerId && Math.hypot(e.clientX - t.x, e.clientY - t.y) > TAP_SLOP) t.live = false;
+      return true;
+    },
+    up(e: TouchLike) {
+      if (e.pointerType !== 'touch') return false;
+      const t = tap.current;
+      if (t && t.id === e.pointerId) {
+        tap.current = null;
+        // A cancelled touch (the browser took it) is never a tap.
+        if (t.live && e.type !== 'pointercancel') handle.current(t.target);
+      }
+      return true;
+    },
   };
 }

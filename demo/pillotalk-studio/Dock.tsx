@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Panel } from '../../src';
+import { Icon, Panel, type IconName } from '../../src';
 import type { FontProject } from './font/model';
 import { codepointLabel } from './font/model';
 import { Inspector } from './Inspector';
@@ -8,105 +8,148 @@ import type { EditMessage } from './types';
 
 /** The docked column's width, which framing keeps the sheet clear of. */
 export const DOCK_W = 320;
-/** The kit's margin under an open panel body (panels.css). */
+/** A rolled-up plate's icon, in px at its 24px size. */
+const DOCK_ICON_SIZE = 24;
+
+/** Icons whose ink sits off the middle of their frame, and the nudge that
+ *  puts it back, in px at DOCK_ICON_SIZE: the negated centre of their ink,
+ *  measured off the rendered glyph. The marquee's box outline outweighs its
+ *  cursor, so its mass sits up and to the left. Under ~0.5px is left alone. */
+const OPTICAL_OFFSET: Partial<Record<IconName, [number, number]>> = {
+  marquee: [1.5, 1.5],
+};
+
+/** A kit icon sized for a rolled-up plate and centred by eye rather than by
+ *  its frame. */
+export function DockIcon({ name }: { name: IconName }) {
+  const [x, y] = OPTICAL_OFFSET[name] ?? [0, 0];
+  return (
+    <span className="pt-dock-glyph" style={x || y ? { translate: `${x}px ${y}px` } : undefined}>
+      <Icon name={name} size={DOCK_ICON_SIZE} />
+    </span>
+  );
+}
+
+/** The circle's close glyph: a plain cross in the plate's ink, where the
+ *  kit's `close` icon is a filled badge with the cross knocked out of it. */
+const CLOSE = (
+  <svg width={DOCK_ICON_SIZE} height={DOCK_ICON_SIZE} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+    <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+  </svg>
+);
+
+/** The kit's margin under a panel body (panels.css). */
 const BODY_MARGIN = 4;
+/** The rolled-up circle, and the gap between it and the plate it opens. */
+const ORB = 48;
+const ORB_GAP = 12;
+/** A bottom sheet's share of its column at most, leaving the stage above it
+ *  in view and in reach. */
+const SHEET_MAX = 0.5;
 
 /**
- * One docked plate. Rolled up, it draws in from the column's width to hug its
- * header — the title and the −/+ — pinned to its corner. The kit's Panel keeps its width when collapsed, so the
- * header is measured here and the plate's width overridden (app.css).
+ * One docked plate, opened from a circle holding its icon. The circle stays
+ * pinned to its corner whether or not the plate is open: open, the plate
+ * scales out of it — headerless, under it — and the circle turns to a close
+ * button.
  */
 export function DockPanel({
   className,
   title,
+  icon,
   width = DOCK_W,
   collapsed,
   onCollapsedChange,
   reserve,
+  sheet = false,
   children,
 }: {
   className: string;
-  /** A string, or a node such as a `Tabs` strip, which the Panel makes its
-   *  header. Only a string title can be rolled up to — see the measurement. */
-  title: ReactNode;
+  /** The name the circle opens and closes the plate by. */
+  title: string;
+  /** What the circle shows while the plate is closed. */
+  icon: ReactNode;
   /** The plate's open width, which its content is laid out at. */
   width?: number;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
-  /** Given, the open body is held to the column's height less this (the
-   *  plates below) and scrolls inside: the fold then runs over what is on
-   *  screen, in step with the width, rather than over content mostly clipped
-   *  away. */
+  /** Given, the open body is held to the column's height less this (what
+   *  else takes the column besides the circle) and scrolls inside. */
   reserve?: number;
+  /** Open, sit at the foot of the column as a bottom sheet no taller than
+   *  SHEET_MAX of it — a phone's layout, keeping the stage in view above. It
+   *  gets there by the plate's margin (--dock-drop), worked out here from the
+   *  height it opens to; the circle stays put, and the plate still scales out
+   *  of it. */
+  sheet?: boolean;
   children: ReactNode;
 }) {
   const slot = useRef<HTMLDivElement>(null);
-  const [stripWidth, setStripWidth] = useState<number | null>(null);
   const [bodyRoom, setBodyRoom] = useState<number | null>(null);
+  const [drop, setDrop] = useState(0);
 
   useLayoutEffect(() => {
     const el = slot.current;
     const column = el?.parentElement;
     const panel = el?.querySelector<HTMLElement>('.panel');
-    const head = panel?.querySelector<HTMLElement>('.panel-head');
-    if (reserve == null || !column || !panel || !head) return setBodyRoom(null);
+    const inner = panel?.querySelector<HTMLElement>('.panel-body-inner');
+    if (reserve == null || !column || !panel || !inner) {
+      setBodyRoom(null);
+      setDrop(0);
+      return;
+    }
     const measure = () => {
-      const strip = head.offsetHeight + parseFloat(getComputedStyle(panel).borderTopWidth) * 2;
-      setBodyRoom(Math.max(0, column.clientHeight - reserve - strip - BODY_MARGIN));
+      const top = ORB + ORB_GAP;
+      const edge = parseFloat(getComputedStyle(panel).borderTopWidth) * 2 + BODY_MARGIN;
+      const room = Math.max(0, (sheet ? column.clientHeight * SHEET_MAX : column.clientHeight - top - reserve) - edge);
+      setBodyRoom(room);
+      // How far below the circle the sheet's top lands: the column's foot,
+      // less the plate as it opens.
+      setDrop(sheet ? Math.max(0, column.clientHeight - top - (edge + Math.min(inner.offsetHeight, room))) : 0);
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(column);
-    ro.observe(head);
+    ro.observe(inner);
     return () => ro.disconnect();
-  }, [reserve]);
+  }, [reserve, sheet]);
 
-  // Re-measured when the title changes too: the inspector's follows the
-  // selection, rolled up or not.
+  // Closed, the plate is scaled away but still laid out: keep it out of the
+  // tab order and the accessibility tree.
   useLayoutEffect(() => {
-    const measure = () => {
-      const panel = slot.current?.querySelector<HTMLElement>('.panel');
-      const head = panel?.querySelector<HTMLElement>('.panel-head');
-      const label = head?.querySelector<HTMLElement>('b');
-      const button = head?.querySelector<HTMLElement>('.panel-collapse-btn');
-      if (!collapsed || !panel || !head || !label || !button) return setStripWidth(null);
-      const h = getComputedStyle(head);
-      const border = parseFloat(getComputedStyle(panel).borderLeftWidth) * 2;
-      setStripWidth(
-        Math.ceil(
-          parseFloat(h.paddingLeft) +
-            label.getBoundingClientRect().width +
-            parseFloat(h.columnGap) +
-            button.offsetWidth +
-            parseFloat(h.paddingRight) +
-            border,
-        ),
-      );
-    };
-    measure();
-    // Rolled up from the last visit, it is measured before the label's face
-    // has loaded; measure again once it has.
-    let live = true;
-    document.fonts.ready.then(() => live && measure());
-    return () => {
-      live = false;
-    };
-  }, [collapsed, title]);
+    const panel = slot.current?.querySelector<HTMLElement>('.panel');
+    if (panel) panel.inert = collapsed;
+  }, [collapsed]);
+
+  const label = collapsed ? `Show ${title}` : `Hide ${title}`;
 
   return (
     <div
       ref={slot}
-      className={className}
+      className={`${className}${collapsed ? '' : ' is-open'}`}
       style={
         {
-          ...(stripWidth ? { '--dock-panel-w': `${stripWidth}px` } : null),
           ...(bodyRoom != null ? { '--dock-body-room': `${bodyRoom}px` } : null),
+          ...(drop ? { '--dock-drop': `${drop}px` } : null),
         } as CSSProperties
       }
     >
-      <Panel title={title} width={width} collapsible collapsed={collapsed} onCollapsedChange={onCollapsedChange}>
-        {children}
-      </Panel>
+      <button
+        type="button"
+        className="pt-dock-orb"
+        aria-expanded={!collapsed}
+        aria-label={label}
+        title={label}
+        onClick={() => onCollapsedChange(!collapsed)}
+      >
+        <span className="pt-dock-icon" aria-hidden>
+          {icon}
+        </span>
+        <span className="pt-dock-icon is-close" aria-hidden>
+          {CLOSE}
+        </span>
+      </button>
+      <Panel width={width}>{children}</Panel>
     </div>
   );
 }
@@ -116,7 +159,10 @@ export function DockPanel({
  * to the studio's handler.
  */
 export function Dock({
-  compact,
+  columnClass,
+  width,
+  reserve,
+  sheet,
   project,
   keys,
   char,
@@ -129,8 +175,15 @@ export function Dock({
   onSave,
   onReset,
 }: {
-  /** The stage is too narrow for both columns (App's MIN_ROOM). */
-  compact: boolean;
+  /** ' is-compact' when the stage is too narrow for both columns (App's
+   *  MIN_ROOM), ' is-compact is-phone' when a plate spans it. */
+  columnClass: string;
+  /** The column's width, and the plate's open width. */
+  width: number;
+  /** What of the column the plate leaves to others (DockPanel's). */
+  reserve: number;
+  /** Open as a bottom sheet (DockPanel's). */
+  sheet: boolean;
   /** The project at the playhead. */
   project: FontProject;
   keys: KeyContext;
@@ -148,11 +201,14 @@ export function Dock({
 
   return (
     // A column down the right edge; a tall inspector scrolls inside it.
-    <div className={compact ? 'pt-dock is-compact' : 'pt-dock'} style={{ width: DOCK_W }}>
+    <div className={`pt-dock${columnClass}`} style={{ width }}>
       <DockPanel
         className="pt-dock-slot is-scrolling"
         title={title}
-        reserve={0}
+        icon={<DockIcon name="dial" />}
+        width={width}
+        reserve={reserve}
+        sheet={sheet}
         collapsed={collapsed}
         onCollapsedChange={onCollapsedChange}
       >
