@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Tabs } from '../../src';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Platter } from '../../src';
 import { exportOtf } from './font/export';
 import { CHARSET, createProject, isDrawn, shiftGlyph, toLineCap, type FontProject, type GlyphData, type LineCap } from './font/model';
 import { inkBounds } from './font/outline';
 import { importSvgs, type ImportFile } from './font/svgImport';
 import { layoutSheet } from './font/sheet';
 import { CanvasControls, CanvasStage, useCanvasSettings, type CanvasSettings } from './Canvas';
-import { DOCK_W, Dock, DockPanel } from './Dock';
+import { DOCK_W, Dock, DockIcon, DockPanel } from './Dock';
 import type { EditMessage, PreviewSettings } from './types';
 import { DOCUMENT_EXTENSION, parseDocument, saveDocument } from './document';
 import { exportGif } from './gif';
@@ -39,9 +39,9 @@ const STORAGE_KEY = 'pillotalk-studio:project';
 const VIEW_KEY = 'pillotalk-studio:view';
 
 type StudioView = 'glyphs' | 'canvas';
-const VIEW_TABS = [
-  { id: 'glyphs', label: 'Glyphs' },
-  { id: 'canvas', label: 'Canvas' },
+const VIEW_ITEMS = [
+  { text: 'Glyphs', value: 'glyphs' },
+  { text: 'Canvas', value: 'canvas' },
 ];
 
 /** The glyphs plate's width, docked over the stage's left edge. */
@@ -50,6 +50,14 @@ const GUTTER = 16;
 /** A stage without room for both columns and this much sheet between them is
  *  compact: the plates take turns instead of sitting side by side. */
 const MIN_ROOM = 320;
+/** A stage narrower than this is a phone's: an open plate spans it, less the
+ *  plates' inset (--space-3) each side. */
+const PHONE_W = 600;
+const PLATE_INSET = 12;
+/** On a phone the plates and the timeline are drawn this much larger (CSS
+ *  `zoom`, via --pt-zoom), for reading and for fingers. 1.15 is as far as a
+ *  393px phone goes with the transport still on the timeline's bar. */
+const PHONE_ZOOM = 1.15;
 
 /** The last session's project, if local storage kept it. */
 function loadProject(): FontProject {
@@ -212,6 +220,11 @@ export function App() {
   }, []);
   const compact = stageWidth > 0 && stageWidth < SIDEBAR_W + DOCK_W + GUTTER * 4 + MIN_ROOM;
   const glyphsCollapsed = compact ? compactOpen !== 'glyphs' : sidebarCollapsed;
+  const phone = compact && stageWidth < PHONE_W;
+  // In the zoomed column's own pixels, which the zoom then scales back out to
+  // the stage's width less the inset.
+  const phoneW = (stageWidth - PLATE_INSET * 2 * PHONE_ZOOM) / PHONE_ZOOM;
+  const columnClass = phone ? ' is-compact is-phone' : compact ? ' is-compact' : '';
   // The glyphs plate covers the stage's left edge and the inspector its
   // right: frame into the room between them. Compact, they are mostly rolled
   // up, so the sheet takes the whole width.
@@ -436,7 +449,7 @@ export function App() {
   };
 
   return (
-    <div className="pt-app">
+    <div className="pt-app" style={phone ? ({ '--pt-zoom': PHONE_ZOOM } as CSSProperties) : undefined}>
       <div ref={stageAreaRef} className="pt-stage-area">
         {/* Both stay mounted, the other one hidden: each keeps its own pan
             and zoom across a switch, and is measured when it reappears. */}
@@ -461,26 +474,14 @@ export function App() {
           />
         </div>
 
-        <div className={compact ? 'pt-dock is-left is-compact' : 'pt-dock is-left'} style={{ width: SIDEBAR_W }}>
+        <div className={`pt-dock is-left${columnClass}`} style={{ width: phone ? phoneW : SIDEBAR_W }}>
           <DockPanel
             className="pt-dock-slot is-scrolling"
             reserve={0}
-            /* Open, the tabs are the header — the strip and the roll-up share
-               one row. Rolled up, the plate hugs a plain title instead: a tab
-               strip has no width of its own to draw in to. */
-            title={
-              glyphsCollapsed ? (
-                onCanvas ? 'Canvas' : 'Glyphs'
-              ) : (
-                <Tabs
-                  items={VIEW_TABS}
-                  value={studioView}
-                  onChange={(id) => setStudioView(id as StudioView)}
-                  label="Sidebar"
-                />
-              )
-            }
-            width={SIDEBAR_W}
+            sheet={phone}
+            title={onCanvas ? 'Canvas' : 'Glyphs'}
+            icon={<DockIcon name={onCanvas ? 'marquee' : 'pen'} />}
+            width={phone ? phoneW : SIDEBAR_W}
             collapsed={glyphsCollapsed}
             onCollapsedChange={(c) => (compact ? setCompactOpen(c ? null : 'glyphs') : setSidebarCollapsed(c))}
           >
@@ -502,11 +503,30 @@ export function App() {
           </DockPanel>
         </div>
 
+        {/* The view switcher, a plate of its own in the row the rolled-up
+            circles sit in: centred between the two columns, or compact (when
+            they open one at a time) on the stage. */}
+        <div
+          className="pt-views"
+          style={compact ? undefined : ({ '--views-offset': `${(SIDEBAR_W - DOCK_W) / 2}px` } as CSSProperties)}
+        >
+          <Platter
+            mode="single"
+            label="View"
+            items={VIEW_ITEMS}
+            value={studioView}
+            onChange={(v) => setStudioView(v as StudioView)}
+          />
+        </div>
+
         <Dock
           project={shown}
           keys={keys}
           char={char}
-          compact={compact}
+          columnClass={columnClass}
+          reserve={0}
+          sheet={phone}
+          width={phone ? phoneW : DOCK_W}
           collapsed={compact ? compactOpen !== 'inspector' : dockCollapsed}
           onCollapsedChange={(c) => (compact ? setCompactOpen(c ? null : 'inspector') : setDockCollapsed(c))}
           onEdit={onEdit}

@@ -45,11 +45,18 @@ const TICK_STEPS = [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
  *  minors — the ruler the DS component was drawn with, unchanged until you
  *  actually zoom. */
 const MAX_MAJORS = 8;
+/** The room a major's label needs, in px: `0.25s` in the ruler's mono face
+ *  with a gap after it. A narrow ruler takes a coarser step rather than
+ *  running its labels into each other. */
+const MIN_MAJOR_PX = 48;
 
 /**
  * Ruler ticks across the **visible window**, minors at a quarter of the major —
  * the DS ruler's proportions, but with the step chosen for the zoom rather than
  * fixed at quarter-seconds.
+ *
+ * The step is the finest that keeps to MAX_MAJORS across the window and, given
+ * the ruler's width in px, leaves each label MIN_MAJOR_PX.
  *
  * Only the window is generated. A fixed 0.25s walk of a ten-minute composition
  * is 2,400 elements with all but a dozen off-screen, and zoomed the other way it
@@ -59,11 +66,13 @@ export function rulerTicks(
   viewIn: number,
   viewOut: number,
   duration: number,
+  width = Infinity,
 ): Array<{ t: number; major: boolean; label: string }> {
   {
     const span = Math.max(1e-6, viewOut - viewIn);
+    const maxMajors = Math.max(1, Math.min(MAX_MAJORS, Math.floor(width / MIN_MAJOR_PX)));
     const step =
-      TICK_STEPS.find((s) => span / s <= MAX_MAJORS) ?? TICK_STEPS[TICK_STEPS.length - 1];
+      TICK_STEPS.find((s) => span / s <= maxMajors) ?? TICK_STEPS[TICK_STEPS.length - 1];
     const minor = step / 4;
     const from = Math.max(0, viewIn);
     const to = Math.min(duration, viewOut);

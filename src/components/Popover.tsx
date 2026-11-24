@@ -246,18 +246,25 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
 
     // A point anchor has no box to clear, so it keeps no gap from one: a context
     // menu opens with its corner at the cursor, the way every platform's does.
-    const gap = rect.width || rect.height ? pxVar(el, '--pp-popover-gap', 4) : 0;
+    // The gap is the surface's own length, so it scales with a CSS `zoom` on
+    // the way out like the rest of it (below); the inset is the viewport's.
+    const zoom = (el as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom || 1;
+    const gap = rect.width || rect.height ? pxVar(el, '--pp-popover-gap', 4) * zoom : 0;
     const inset = pxVar(el, '--pp-popover-inset', 8);
     // The documentElement's client box rather than `innerWidth` / `innerHeight`:
     // those count a classic scrollbar as room the surface doesn't have.
     const root = document.documentElement;
     const p = place(rect, box, side, align, gap, inset, root.clientWidth, root.clientHeight);
 
-    el.style.left = `${Math.round(p.left)}px`;
-    el.style.top = `${Math.round(p.top)}px`;
+    // Everything above is in the viewport's pixels, but the surface's own
+    // lengths are in its pixels: under a CSS `zoom` on an ancestor (which the
+    // top layer still inherits) they are scaled on the way out, so they go in
+    // divided by it.
+    el.style.left = `${Math.round(p.left / zoom)}px`;
+    el.style.top = `${Math.round(p.top / zoom)}px`;
     // Rounded down: half a pixel over the cap is still a pixel off the screen.
-    el.style.setProperty('--pp-popover-room', `${Math.floor(p.maxHeight)}px`);
-    el.style.setProperty('--pp-popover-span', `${Math.floor(p.maxWidth)}px`);
+    el.style.setProperty('--pp-popover-room', `${Math.floor(p.maxHeight / zoom)}px`);
+    el.style.setProperty('--pp-popover-span', `${Math.floor(p.maxWidth / zoom)}px`);
     el.dataset.side = p.side;
   };
 

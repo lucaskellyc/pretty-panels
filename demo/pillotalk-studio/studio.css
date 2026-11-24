@@ -84,15 +84,19 @@ body {
   min-height: 0;
 }
 
+/* The stage is framed in the room above the timeline, but draws on down under
+   it: the timeline is a plate floating on the stage like the others, not a
+   bar with the window's ground behind it. The app clips at the window. */
 .pt-stage {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   cursor: grab;
 }
 
 .pt-sheet {
   display: block;
+  overflow: visible;
   touch-action: none;
 }
 
@@ -293,69 +297,174 @@ body {
    no column wider than the stage. */
 .pt-dock.is-compact {
   max-width: calc(100% - var(--space-3) * 2);
-  transition: top var(--dur-slow) var(--ease-out);
 }
-.pt-dock.is-compact:has(.panel:not(.is-collapsed)) {
+.pt-dock.is-compact:has(.pt-dock-slot.is-open) {
   z-index: 3;
 }
-/* Narrower still, an open plate would cover the other column's strip (the
-   inspector's open 320px beside the ~110px glyphs strip, or the glyphs' 264px
-   beside an inspector strip of up to ~150px): it drops below the row of
-   strips (a rolled-up plate's 48px header), leaving that strip to tap. */
-@media (max-width: 480px) {
-  .pt-dock.is-compact:has(.panel:not(.is-collapsed)) {
-    top: calc(var(--space-3) * 2 + 48px);
+
+/* A plate's circle, pinned to its column's corner whether the plate is open
+   or not, with the plate under it. The circle is the plates' surface and
+   shadow at 48px, one flat fill so a hover darkens it whole; the row it sits in is the one the view switcher shares.
+   Only the circle and an open plate catch the pointer: the rest of the column
+   is left to the stage. */
+.pt-dock-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+.pt-dock.is-left .pt-dock-slot {
+  align-items: flex-start;
+}
+.pt-dock-orb {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--ctl-panel);
+  border: none;
+  border-radius: 50%;
+  box-shadow: var(--doc-shadow-panel);
+  color: var(--ctl-text);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The kit's collapse-button hover, over the whole circle. */
+@media (hover: hover) {
+  .pt-dock-orb:hover {
+    background: var(--ctl-bar);
   }
 }
+@media (hover: none) {
+  .pt-dock-orb:active {
+    background: var(--ctl-bar);
+  }
+}
+.pt-dock-orb:focus-visible {
+  outline: none;
+  box-shadow: var(--doc-shadow-panel), var(--focus-ring);
+}
+/* The icon and the close glyph share the circle's middle and swap with the
+   plate: one shrinks away as the other grows in. */
+.pt-dock-icon {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    scale var(--dur-base) var(--ease-out);
+}
+.pt-dock-icon.is-close,
+.pt-dock-slot.is-open .pt-dock-icon:not(.is-close) {
+  opacity: 0;
+  scale: 0;
+}
+.pt-dock-slot.is-open .pt-dock-icon.is-close {
+  opacity: 1;
+  scale: 1;
+}
+.pt-dock-glyph {
+  display: grid;
+}
 
-/* Rolled up, a plate draws in to hug its header (DockPanel measures it into
-   --dock-panel-w), pinned to its edge, while the kit folds its body — the
-   same duration and curve, so they land together. The body's content keeps
-   the column's width and is clipped, never reflowed. Only the plates catch
-   the pointer: a rolled-up one leaves the column's width beside it to the
-   stage. */
+/* The plate scales out of the circle's middle and back into it. The origin
+   reaches up past the gap (and, as a bottom sheet, the drop) to the circle,
+   and in from the plate's edge by half its width. Closed, it is still laid
+   out at full size — so the column's room is settled before it opens — just
+   scaled to nothing and out of reach (DockPanel makes it inert). */
 .pt-dock .panel {
-  width: var(--dock-panel-w, 100%);
-  margin-left: auto;
+  --dock-orb-y: calc(-1 * (var(--dock-drop, 0px) + var(--space-3)) - 24px);
+  flex: none;
+  margin-top: var(--dock-drop, 0px);
+  transform-origin: calc(100% - 24px) var(--dock-orb-y);
+  scale: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    scale var(--dur-slow) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out),
+    visibility 0s linear var(--dur-slow);
+  visibility: hidden;
+}
+.pt-dock.is-left .panel {
+  transform-origin: 24px var(--dock-orb-y);
+}
+.pt-dock-slot.is-open .panel {
+  scale: 1;
+  opacity: 1;
   pointer-events: auto;
-  transition: width var(--dur-slow) var(--ease-out);
+  visibility: visible;
+  transition:
+    scale var(--dur-slow) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    visibility 0s;
 }
-.pt-dock .panel-head b {
-  white-space: nowrap;
-}
-/* Tighter under the title: the body starts right at the header's own bottom
-   padding. Trimmed from the body rather than the header, so a rolled-up
-   strip stays even top and bottom. */
 .pt-dock .panel-body-inner {
-  padding-top: 0;
+  padding-top: var(--space-3);
 }
 @media (prefers-reduced-motion: reduce) {
+  .pt-dock .panel,
+  .pt-dock-slot.is-open .panel {
+    transition-property: opacity, visibility;
+  }
   .pt-dock .panel {
-    transition-duration: 1ms;
+    scale: 1;
   }
 }
 
-/* The plates give up height to the stage, and scroll inside their slots. */
+/* The plates give up height to the stage, and their bodies scroll inside:
+   DockPanel measures the room the column has into --dock-body-room. */
 .pt-dock-slot.is-scrolling {
   flex: 0 1 auto;
+}
+.pt-dock-slot.is-scrolling .panel-body {
+  max-height: var(--dock-body-room, none);
   overflow-y: auto;
   scrollbar-width: none;
-  border-radius: var(--radius-lg);
-}
-.pt-dock-slot.is-scrolling::-webkit-scrollbar {
-  display: none;
 }
 
-/* The plates' bodies are held to the room the column has for them
-   (DockPanel measures it into --dock-body-room) and scroll inside, under the
-   pinned header: the kit's fold then animates over what is on screen. */
-.pt-dock-slot.is-scrolling .panel.is-collapsible .panel-body {
-  height: min(var(--panel-body-h, 0px), var(--dock-body-room, 100vh));
-  overflow-y: auto;
-  scrollbar-width: none;
+/* Where the body's scroll cuts the content off, it fades out instead of
+   slicing a section square across. Each edge fades only while there is more
+   that way: the fades ride the body's own scroll timeline, which is inactive
+   when nothing overflows, leaving both at 0. */
+@property --dock-fade-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
 }
-.pt-dock-slot.is-scrolling .panel.is-collapsible.is-collapsed .panel-body {
-  height: 0;
+@property --dock-fade-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes pt-dock-fade {
+  0% { --dock-fade-top: 0px; --dock-fade-bottom: 32px; }
+  8% { --dock-fade-top: 32px; }
+  92% { --dock-fade-bottom: 32px; }
+  100% { --dock-fade-top: 32px; --dock-fade-bottom: 0px; }
+}
+.pt-dock-slot.is-scrolling .panel-body {
+  -webkit-mask-image: linear-gradient(
+    transparent,
+    #000 var(--dock-fade-top),
+    #000 calc(100% - var(--dock-fade-bottom)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    transparent,
+    #000 var(--dock-fade-top),
+    #000 calc(100% - var(--dock-fade-bottom)),
+    transparent
+  );
+  animation: pt-dock-fade linear both;
+  animation-timeline: scroll(self);
 }
 .pt-dock-slot.is-scrolling .panel-body::-webkit-scrollbar {
   display: none;
@@ -564,6 +673,17 @@ body {
   font-family: 'Plus Jakarta Sans', var(--font-sans);
 }
 
+/* On a phone (App's PHONE_W) the splash's contents are drawn larger, like the
+   plates and the timeline but further: it is the whole screen and nothing else
+   competes for it. The backdrop stays as is; only what sits on it scales. */
+@media (max-width: 600px) {
+  .pp-splash-head,
+  .pp-splash-actions,
+  .pp-splash-foot {
+    zoom: 1.3;
+  }
+}
+
 /* The app icon, large over the title: a soft two-layer drop shadow under it,
    and a hairline of light around its rim, brightest along the top edge, laid
    over the image by ::after since an inset shadow can't paint over an <img>. */
@@ -593,4 +713,91 @@ body {
     inset 0 0 0 1px hsl(0 0% 100% / 0.22),
     inset 0 1px 0 hsl(0 0% 100% / 0.45);
   pointer-events: none;
+}
+
+/* ---- Touch -----------------------------------------------------------------
+   A finger needs more to aim at than a pointer. The small controls keep their
+   look and grow an invisible hit area round it, sized so neighbours don't
+   steal each other's taps; the glyph rows grow for real. */
+@media (pointer: coarse) {
+  .pt-app :is(.panel-collapse-btn, .stepper-btn, .insp-arm, .insp-diamond, .tl-twisty, .tl-dot, .tl-lock) {
+    position: relative;
+  }
+  .pt-app :is(.panel-collapse-btn, .stepper-btn)::after,
+  .pt-app :is(.insp-arm, .insp-diamond)::after,
+  .pt-app :is(.tl-twisty, .tl-dot, .tl-lock)::after {
+    content: '';
+    position: absolute;
+  }
+  /* Room all round. */
+  .pt-app :is(.panel-collapse-btn, .stepper-btn)::after {
+    inset: -10px;
+  }
+  /* Stacked in an 18px gutter: out sideways, barely up and down. */
+  .pt-app :is(.insp-arm, .insp-diamond)::after {
+    inset: -3px -10px;
+  }
+  /* In a row 6px apart in the channel's pill: up and down, barely sideways. */
+  .pt-app :is(.tl-twisty, .tl-dot, .tl-lock)::after {
+    inset: -10px -3px;
+  }
+  .pt-outline-row {
+    height: 36px;
+  }
+}
+
+/* ---- Safe areas ------------------------------------------------------------
+   The plates and the timeline keep clear of a notch and the home indicator
+   (index.html's viewport-fit=cover hands those edges to the page). */
+.pt-dock {
+  right: max(var(--space-3), env(safe-area-inset-right));
+}
+.pt-dock.is-left {
+  left: max(var(--space-3), env(safe-area-inset-left));
+}
+
+/* ---- View switcher ---------------------------------------------------------
+   Glyphs | Canvas, on a plate of its own floating at the top of the stage:
+   the plates' surface, edge and shadow round the kit's Platter, as tall as a
+   rolled-up plate's circle so the row lines up. Centred in the gap between the
+   columns (App offsets it by half their difference), or compact, on the
+   stage. */
+.pt-views {
+  position: absolute;
+  top: var(--space-3);
+  left: calc(50% + var(--views-offset, 0px));
+  z-index: 2;
+  box-sizing: border-box;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-1);
+  translate: -50% 0;
+  background: var(--ctl-panel);
+  border: var(--border-width-thick) solid var(--ctl-panel);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--doc-shadow-panel);
+  transition: top var(--dur-slow) var(--ease-out);
+}
+
+/* Three colours and no more: the plate, its ink, and the accent. The kit's
+   Platter brings a tray of its own, which inside a plate is a second ground
+   ringed by the first — dropped, so the segments sit straight on the plate,
+   and the lit one's label takes the plate's colour rather than a fourth. */
+.pt-views .pp-platter {
+  background: transparent;
+}
+.pt-views .pp-platter-seg:has(input:checked),
+.pt-views .pp-platter-btn.is-active {
+  color: var(--ctl-panel);
+}
+
+/* ---- Phone zoom ------------------------------------------------------------
+   On a phone (App's PHONE_W) the plates and the timeline are drawn larger —
+   App sets --pt-zoom on the root — so their text reads and their controls take
+   a finger. The stage is left at 1: it has its own pinch. */
+.pt-dock,
+.pt-views,
+.dock-tl {
+  zoom: var(--pt-zoom, 1);
 }

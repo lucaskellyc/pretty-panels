@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover: the studio insets itself for the notch and home
+         indicator (studio.css). maximum-scale=1: iOS otherwise zooms the page
+         into a focused field whose text is under 16px, and leaves it zoomed;
+         the stage has its own pinch. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
     <meta name="description" content="Pillotalk Studio — a font editor built on pretty-panels: import SVG glyphs, set weight and spacing, export an .otf." />
     <title>Pillotalk Studio</title>
   </head>

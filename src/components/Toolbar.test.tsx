@@ -67,4 +67,27 @@ describe('Toolbar overflow', () => {
     expect(onAction).toHaveBeenCalled();
     expect(screen.queryByRole('group', { name: 'More tools' })).toBeNull();
   });
+
+  it('measures its room in screen pixels under a CSS zoom', () => {
+    // Zoomed 1.5×: the bar's own box is still 100px, but on screen it and
+    // everything in it are half as large again. Two items need 180px of
+    // the 150 there is, one beside the ⋯ needs 120 — so one stays, as it would
+    // unzoomed. Measured against the unzoomed 100px, none would.
+    const zoomed = () => {
+      const bar = document.querySelector('.pp-toolbar') as HTMLElement;
+      Object.defineProperty(bar, 'clientWidth', { value: 100, configurable: true });
+      Object.defineProperty(bar, 'offsetWidth', { value: 100, configurable: true });
+      giveBox(bar, { width: 150 });
+      for (const item of bar.querySelectorAll(':scope > .pp-toolbar-item')) giveBox(item, { width: 90 });
+      const more = bar.querySelector(':scope > .pp-toolbar-more');
+      if (more) giveBox(more, { width: 30 });
+    };
+    const { rerender } = render(<Bar onAction={() => {}} />);
+    zoomed();
+    rerender(<Bar onAction={() => {}} />);
+    zoomed();
+    rerender(<Bar onAction={() => {}} />);
+    const bar = screen.getByRole('group', { name: 'Tools' });
+    expect(bar.querySelectorAll(':scope > .pp-toolbar-item').length).toBe(1);
+  });
 });

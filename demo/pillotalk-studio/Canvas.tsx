@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type Mo
 import { RadioGroup, Section, Slider, TextButton, Toggle, Vector } from '../../src';
 import { isDrawn, riseOf, strokePathData, type FontProject, type GlyphData } from './font/model';
 import { shapedGlyph } from './font/stretch';
-import { useFitView } from './view';
+import { useFitView, useTouchTap } from './view';
 import { DURATION_MAX, DURATION_MIN, FPS } from './timeline/state';
 
 /**
@@ -416,14 +416,18 @@ export function CanvasStage({
   const hit = (e: { target: EventTarget }) =>
     (e.target as Element).closest('[data-char]')?.getAttribute('data-char') ?? null;
 
+  // A touch pans or pinches (useFitView); one that stays put is a click.
+  const tap = useTouchTap((target) => onSelectGlyph(hit({ target })));
+
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
-    if (e.button !== 0) return;
+    if (tap.down(e) || e.button !== 0) return;
     const c = hit(e);
     if (c) return onSelectGlyph(c);
     pan.current = { x: e.clientX, y: e.clientY, travel: 0 };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: PointerEvent) => {
+    if (tap.move(e)) return;
     const g = pan.current;
     if (!g) return;
     if (e.buttons === 0) {
@@ -437,7 +441,8 @@ export function CanvasStage({
     g.travel += Math.abs(dx) + Math.abs(dy);
     fitView.pan(dx, dy);
   };
-  const onPointerUp = () => {
+  const onPointerUp = (e: PointerEvent) => {
+    if (tap.up(e)) return;
     const g = pan.current;
     pan.current = null;
     if (g && g.travel < CLICK_SLOP) onSelectGlyph(null);
