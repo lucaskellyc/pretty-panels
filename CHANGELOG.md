@@ -9,6 +9,39 @@ well as features, so read the **Changed** notes before bumping a minor.
 
 ## [Unreleased]
 
+## [0.4.2-alpha] — 2026-11-24
+
+### Added
+
+- `Toolbar` takes `overflowSide`, the side of the `⋯` its sheet opens on
+  (below a row and beside a column by default, still flipping when the window
+  has no room). A bar along the foot of a view wants `'top'`. Pillotalk
+  Studio's timeline uses it.
+
+### Fixed
+
+- **A folding `Toolbar` under CSS `zoom` or a scale.** It measured its items in
+  screen pixels but its own room in layout pixels, so a bar drawn 1.15× larger
+  folded items it had room for. The room is now scaled to screen pixels too.
+- **A `Popover` under CSS `zoom`.** It placed itself in screen pixels but wrote
+  its position and size caps in its own, which the top layer still scales by
+  an ancestor's `zoom`, so a surface in a zoomed subtree landed off its anchor
+  (and off the screen). They are now divided by the zoom, and the gap off the
+  anchor scales with it.
+
+### Pillotalk Studio (docs demo)
+
+- The docked plates open from their circles: the circle stays in its corner
+  and the plate scales out of it, headerless, with the circle turned to a
+  close button.
+- The stage draws on under the floating timeline instead of stopping above it.
+- A tall plate's body fades at its scroll edges instead of cutting off square.
+- The view switcher and the plate circles are flattened to three colours.
+- Timeline keys are drawn like the inspector's key diamonds.
+- The ruler spaces its labels by width, so a narrow timeline doesn't run
+  them together; long graph channel names ellipsize.
+- The launch screen's contents are drawn larger on phones.
+
 ## [0.4.1-alpha] — 2026-11-24
 
 ### Added
@@ -549,7 +582,8 @@ Five new components, and the stylesheet stops reaching for the network.
   `TextButton` and `Platter`, shipped as ESM + CJS bundles with TypeScript types
   and a single extracted stylesheet.
 
-[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.1-alpha...HEAD
+[Unreleased]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.2-alpha...HEAD
+[0.4.2-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.1-alpha...v0.4.2-alpha
 [0.4.1-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.4.0-alpha...v0.4.1-alpha
 [0.4.0-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.3-alpha...v0.4.0-alpha
 [0.3.3-alpha]: https://github.com/lucaskellyc/pretty-panels/compare/v0.3.2-alpha...v0.3.3-alpha
