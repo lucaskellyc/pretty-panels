@@ -854,6 +854,13 @@ body {
 .pt-views .pp-platter-btn.is-active {
   color: var(--ctl-panel);
 }
+/* Dark, the plate's near-black sinks into the accent; the label goes white. */
+@media (prefers-color-scheme: dark) {
+  .pt-views .pp-platter-seg:has(input:checked),
+  .pt-views .pp-platter-btn.is-active {
+    color: white;
+  }
+}
 /* A tab under the pointer lights the way a plate's circle does — only an
    unlit one: a single-mode segment carries .pp-platter-btn too but never
    .is-active, so both exclusions sit on the one selector, or the lit tab
