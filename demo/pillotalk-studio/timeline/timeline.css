@@ -195,6 +195,9 @@ body:has(.dock-tl.is-resizing) .pt-stage {
   height: 8px;
   transition: transform var(--dur-base) var(--ease-out);
 }
+/* local: on the plate itself rather than a capsule, so it lights the way the
+   plates' circles and the view tabs do. */
+.tl-btn.tl-collapse:hover { background: var(--ctl-bar); }
 .dock-tl.is-collapsed .tl-collapse svg {
   transform: rotate(180deg);
 }
