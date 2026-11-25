@@ -43,7 +43,7 @@ body {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --stage-bg: #222;
+    --stage-bg: #000;
   }
 }
 
@@ -68,6 +68,68 @@ body {
   --ctl-track: hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 54 + (1 - var(--mono-lit)) * min(var(--mono-l) + 5, 54)) * 1%));
   --ctl-track-hover: hsl(var(--mono-h) var(--mono-s) calc((var(--mono-lit) * 46 + (1 - var(--mono-lit)) * min(var(--mono-l) + 10, 54)) * 1%));
 }
+/* Dark, on a black page: the plates a lifted near-black, the sections in them a
+   step up, and the buttons and capsules (button, track and row grounds) a
+   dark grey above both, so they read as raised rather than as holes —
+   fields, sliders and steppers (the field grounds) included. The
+   sections come down from the kit's lift to make room under the controls. */
+@media (prefers-color-scheme: dark) {
+  .pt-app {
+    --ctl-panel: hsl(var(--mono-h) var(--mono-s) 13%);
+    --ctl-section: hsl(var(--mono-h) var(--mono-s) 17%);
+    /* The circles' hover (and the tabs', below), a step off the plate. */
+    --ctl-bar: hsl(var(--mono-h) var(--mono-s) 19%);
+    --ctl-btn: hsl(var(--mono-h) var(--mono-s) 24%);
+    --ctl-btn-hover: hsl(var(--mono-h) var(--mono-s) 29%);
+    --ctl-track: hsl(var(--mono-h) var(--mono-s) 24%);
+    --ctl-track-hover: hsl(var(--mono-h) var(--mono-s) 29%);
+    --ctl-row: hsl(var(--mono-h) var(--mono-s) 21%);
+    --ctl-field: hsl(var(--mono-h) var(--mono-s) 24%);
+    --ctl-field-hover: hsl(var(--mono-h) var(--mono-s) 29%);
+    --ctl-field-deep-hover: hsl(var(--mono-h) var(--mono-s) 33%);
+  }
+}
+
+/* ---- Lift ------------------------------------------------------------------
+   Everything that floats on the stage — the plates, their circles, the view
+   capsule, the timeline — sits on a soft shadow and catches a rim of light
+   along its top edge. The shadow is a hairline for the outline, a tight
+   contact shadow, and a soft fall; on the black dark-mode page the shadow all
+   but vanishes, so there the rim does the lifting. The rim is dark mode's
+   only. The demo doesn't load the
+   docs' demo.css, where --doc-shadow-panel otherwise comes from. */
+.pt-app {
+  --doc-shadow-panel:
+    0 0 0 0.5px hsl(var(--mono-h) 20% 20% / 0.08),
+    0 1px 2px hsl(var(--mono-h) 20% 20% / 0.08),
+    0 6px 18px -6px hsl(var(--mono-h) 25% 15% / 0.18);
+  /* Light mode has no rim: the shadow lifts the plates there. */
+  --pt-rim: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  .pt-app {
+    --doc-shadow-panel:
+      0 0 0 0.5px hsl(0 0% 0% / 0.6),
+      0 1px 2px hsl(0 0% 0% / 0.4),
+      0 8px 22px -6px hsl(0 0% 0% / 0.6);
+    --pt-rim: hsl(0 0% 100% / 0.12);
+  }
+}
+/* The bordered plates' 2px border is their own ground, so the rim is painted
+   into it: a padding-box layer of the plate over a border-box gradient that
+   is lit at the top and gone within a capsule's half-height, so it follows
+   the corners round and fades down the sides. (An inset shadow would land
+   inside the border, a bevel 2px in rather than a rim.) */
+.pt-app .panel,
+.pt-app .dock-tl,
+.pt-views {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--ctl-panel) 0 0) padding-box,
+    linear-gradient(var(--pt-rim), transparent 24px) border-box,
+    var(--ctl-panel);
+}
+
 .pt-app *,
 .pt-app *::before,
 .pt-app *::after {
@@ -328,7 +390,8 @@ body {
   background: var(--ctl-panel);
   border: none;
   border-radius: 50%;
-  box-shadow: var(--doc-shadow-panel);
+  /* No border to paint the rim into, so it is an inset light at the edge. */
+  box-shadow: var(--doc-shadow-panel), inset 0 1px 0 var(--pt-rim);
   color: var(--ctl-text);
   cursor: pointer;
   pointer-events: auto;
@@ -347,7 +410,7 @@ body {
 }
 .pt-dock-orb:focus-visible {
   outline: none;
-  box-shadow: var(--doc-shadow-panel), var(--focus-ring);
+  box-shadow: var(--doc-shadow-panel), inset 0 1px 0 var(--pt-rim), var(--focus-ring);
 }
 /* The icon and the close glyph share the circle's middle and swap with the
    plate: one shrinks away as the other grows in. */
@@ -773,8 +836,8 @@ body {
   align-items: center;
   padding: 0 var(--space-1);
   translate: -50% 0;
-  background: var(--ctl-panel);
-  border: var(--border-width-thick) solid var(--ctl-panel);
+  /* Ground and rim: Lift, above. */
+  border: var(--border-width-thick) solid transparent;
   border-radius: var(--radius-pill);
   box-shadow: var(--doc-shadow-panel);
   transition: top var(--dur-slow) var(--ease-out);
@@ -790,6 +853,20 @@ body {
 .pt-views .pp-platter-seg:has(input:checked),
 .pt-views .pp-platter-btn.is-active {
   color: var(--ctl-panel);
+}
+/* A tab under the pointer lights the way a plate's circle does — only an
+   unlit one: a single-mode segment carries .pp-platter-btn too but never
+   .is-active, so both exclusions sit on the one selector, or the lit tab
+   would lose its accent under the pointer. */
+@media (hover: hover) {
+  .pt-views .pp-platter-btn:not(.is-active, :has(input:checked)):hover {
+    background: var(--ctl-bar);
+  }
+}
+@media (hover: none) {
+  .pt-views .pp-platter-btn:not(.is-active, :has(input:checked)):active {
+    background: var(--ctl-bar);
+  }
 }
 
 /* ---- Phone zoom ------------------------------------------------------------
